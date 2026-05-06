@@ -3,8 +3,8 @@ use std::io::{self, IsTerminal, Read, Write};
 const DASH: &str = "\u{2504}"; // ┄ BOX DRAWINGS LIGHT TRIPLE DASH HORIZONTAL
 const DIM_ON: &[u8] = b"\x1b[38;5;8m";
 const DIM_OFF: &[u8] = b"\x1b[39m";
-const EDGE_DIM_ON: &[u8] = b"\x1b[2m";
-const EDGE_DIM_OFF: &[u8] = b"\x1b[22m";
+const EDGE_DIM_ON: &[u8] = b"\x1b[38;5;236m";
+const EDGE_DIM_OFF: &[u8] = b"\x1b[39m";
 
 struct Parsed {
     graph_end: usize,
@@ -56,14 +56,16 @@ fn decode_utf8(bytes: &[u8], i: usize) -> (u32, usize) {
 }
 
 fn is_graph_char(cp: u32) -> bool {
-    matches!(cp,
-        0x2500..=0x257F      // box drawing block
+    matches!(
+        cp,
+        0x2500
+            ..=0x257F      // box drawing block
         | 0x40               // @
         | 0x7E               // ~
         | 0xD7               // ×
         | 0x25CB             // ○
         | 0x25CF             // ●
-        | 0x25C6             // ◆
+        | 0x25C6 // ◆
     )
 }
 
@@ -131,14 +133,48 @@ fn is_node_char(cp: u32) -> bool {
     matches!(cp, 0x40 | 0x25CB | 0x25CF | 0x25C6 | 0xD7)
 }
 
+// Replace jj's commit-node glyphs with Nerd Font icons.
+fn map_node_char(cp: u32) -> Option<&'static str> {
+    match cp {
+        0x40 => Some("󰛿"),   // @ → working copy
+        0x25CB => Some(""), // ○ → regular (mutable)
+        0x25C6 => Some(""), // ◆ → immutable
+        0xD7 => Some(""),   // × → conflicted
+        0x25CF => Some(""), // ● → alternate
+        _ => None,
+    }
+}
+
+// Map jj box-drawing graph chars to Unicode 16.0 Large Type Pieces
+// (U+1CE1A..U+1CE50). Single-cell visual equivalents.
+fn map_graph_char(cp: u32) -> Option<&'static str> {
+    match cp {
+        0x2500 | 0x2504 | 0x2508 => Some("\u{1CE1F}"), // ─ ┄ ┈ → 𜸟
+        0x2502 => Some("\u{1CE29}"),                   // │ → 𜸩
+        0x250C | 0x256D => Some("\u{1CE1A}"),          // ┌ ╭ → 𜸚
+        0x2510 | 0x256E => Some("\u{1CE24}"),          // ┐ ╮ → 𜸤
+        0x2514 | 0x2570 => Some("\u{1CE3E}"),          // └ ╰ → 𜸾
+        0x2518 | 0x256F => Some("\u{1CE43}"),          // ┘ ╯ → 𜹃
+        0x251C => Some("\u{1CE28}"),                   // ├ → 𜸨
+        0x2524 => Some("\u{1CE37}"),                   // ┤ → 𜸷
+        0x252C => Some("\u{1CE20}"),                   // ┬ → 𜸠
+        0x2534 => Some("\u{1CE40}"),                   // ┴ → 𜹀
+        0x253C => Some("\u{1CE3A}"),                   // ┼ → 𜸺
+        _ => None,
+    }
+}
+
 // Emit ANSI sequences from `bytes`, optionally filtering params.
 // `filter` returns true for params we should DROP.
 fn emit_filtered_ansi(bytes: &[u8], out: &mut Vec<u8>, filter: impl Fn(&str) -> bool) {
     let mut i = 0;
     while i < bytes.len() {
         if let Some(end) = skip_csi(bytes, i) {
-            if bytes[i] == 0x1b && i + 1 < bytes.len() && bytes[i + 1] == b'['
-                && end > 0 && bytes[end - 1] == b'm'
+            if bytes[i] == 0x1b
+                && i + 1 < bytes.len()
+                && bytes[i + 1] == b'['
+                && end > 0
+                && bytes[end - 1] == b'm'
             {
                 let params = std::str::from_utf8(&bytes[i + 2..end - 1]).unwrap_or("");
                 if !filter(params) {
@@ -181,13 +217,19 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
 
         let (cp, len) = decode_utf8(bytes, i);
         if is_node_char(cp) {
-            // Pass through verbatim — preserve jj's original ANSI for nodes.
+            // Preserve jj's original ANSI; swap glyph for Nerd Font icon.
             out.extend_from_slice(ansi_bytes);
-            out.extend_from_slice(&bytes[i..i + len]);
+            match map_node_char(cp) {
+                Some(replacement) => out.extend_from_slice(replacement.as_bytes()),
+                None => out.extend_from_slice(&bytes[i..i + len]),
+            }
         } else {
             emit_filtered_ansi(ansi_bytes, out, is_fg_color_sgr);
             out.extend_from_slice(EDGE_DIM_ON);
-            out.extend_from_slice(&bytes[i..i + len]);
+            match map_graph_char(cp) {
+                Some(replacement) => out.extend_from_slice(replacement.as_bytes()),
+                None => out.extend_from_slice(&bytes[i..i + len]),
+            }
             out.extend_from_slice(EDGE_DIM_OFF);
         }
         i += len;
@@ -196,9 +238,16 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
 
 fn is_fg_color_sgr(params: &str) -> bool {
     let parts: Vec<&str> = params.split(';').collect();
-    match parts.first().and_then(|p| p.parse::<u16>().ok()).unwrap_or(999) {
+    match parts
+        .first()
+        .and_then(|p| p.parse::<u16>().ok())
+        .unwrap_or(999)
+    {
         30..=37 | 39 | 90..=97 => true,
-        38 => parts.get(1).map(|p| *p == "5" || *p == "2").unwrap_or(false),
+        38 => parts
+            .get(1)
+            .map(|p| *p == "5" || *p == "2")
+            .unwrap_or(false),
         _ => false,
     }
 }
@@ -252,7 +301,11 @@ fn run() -> io::Result<()> {
 
     for (line, p) in lines.iter().zip(parsed.iter()) {
         let trailing_nl = line.last() == Some(&b'\n');
-        let body = if trailing_nl { &line[..line.len() - 1] } else { *line };
+        let body = if trailing_nl {
+            &line[..line.len() - 1]
+        } else {
+            *line
+        };
 
         match p {
             Some(p) => {

@@ -1,0 +1,300 @@
+[m
+𜸜 𜸜𜸚𜸟𜸤𜸜𜸝𜸢𜸜𜸚𜸟𜸤  𜸜  𜸚𜸟𜸤𜸛𜸟𜸤𜸚𜸟𜸤𜸛𜸟𜸥  𜸞𜸠𜸥𜸜 𜸜𜸛𜸟𜸤𜸛𜸟𜸥  𜸛𜸟𜸤𜸜𜸛𜸟𜸥𜸚𜸟𜸤𜸛𜸟𜸥𜸚𜸟𜸤
+𜸩 𜸩𜸾𜸟𜸤𜸩𜸩𜸫𜸹𜸩 𜸧  𜸩  𜸨𜸟𜸶𜸨𜸟𜸷𜸩 𜸧𜸨𜸟    𜸩 𜸫𜸳𜸻𜸨𜸟𜹃𜸨𜸟   𜸨𜸟𜹃𜸩𜸨𜸟 𜸩  𜸨𜸟 𜸾𜸟𜸤
+𜸾𜸟𜹃𜸾𜸟𜹃𜸼𜸼 𜸼𜸾𜸟𜹃  𜸽𜸟𜸥𜸼 𜸼𜸼 𜸼𜸾𜸟𜹃𜸽𜸟𜸥   𜸼  𜸼 𜸼  𜸽𜸟𜸥  𜸼  𜸼𜸽𜸟𜸥𜸾𜸟𜹃𜸽𜸟𜸥𜸾𜸟𜹃
+
+
+𜸜𜸝𜸢𜸜𜸞𜸠𜸥𜸛𜸟𜸤𜸚𜸟𜸤𜸛𜸟𜸤𜸜 𜸜𜸚𜸟𜸤𜸞𜸠𜸥𜸜𜸚𜸟𜸤𜸝𜸢𜸜
+𜸩𜸩𜸫𜸹 𜸩 𜸨𜸟𜸷𜸩 𜸩𜸩 𜸩𜸩 𜸩𜸩   𜸩 𜸩𜸩 𜸩𜸩𜸫𜸹
+𜸼𜸼 𜸼 𜸼 𜸼 𜸼𜸾𜸟𜹃𜸽𜸟𜹃𜸾𜸟𜹃𜸾𜸟𜹃 𜸼 𜸼𜸾𜸟𜹃𜸼 𜸼
+
+Unicode 16.0 reintroduces large type pieces to modern terminals.
+
+Back in the 1970's, terminals were expensive high-tech pieces of equipment.
+Several manufacturers competed to provide more features and justify paying
+more for a terminal than we pay for a microcomputer today.
+One of the high-end terminal was the Hewlett-Packard 2640 Series. It had
+lot of advanced features and tricks to improve the visual quality and
+flexibility, including the ability to add characters ROM chips to support
+other alphabets, mathematical symbols, and semigraphics.
+
+Everybody knows the Box Drawings set of characters to create tables and UI
+elements in text terminals, but HP went further, they decided to design a
+64 extended characters ROM especially to display large characters.
+
+This isn't some width or height doubling control code like the DECDHL (DEC
+Double-Height Line), but more like FIGlet, using normal-sized characters as
+pieces of a larger glyph. But unlike FIGlet, the idea was to design pieces
+of large characters that would fit together perfectly when composed in a
+grid instead of reusing existing characters.
+
+The large type pieces are 55 characters especially designed to be combined
+together to create large text:
+
+ U+1CE1A  [100m𜸚[49m [100m𜸛[49m [100m𜸜[49m [100m𜸝[49m [100m𜸞[49m [100m𜸟[49m [100m𜸠[49m [100m𜸡[49m [100m𜸢[49m [100m𜸣[49m [100m𜸤[49m [100m𜸥[49m [100m𜸦[49m [100m𜸧[49m [100m𜸨[49m [100m𜸩[49m [100m𜸪[49m [100m𜸫[49m [100m𜸬[49m [100m𜸭[49m [100m𜸮[49m [100m𜸯[49m [100m𜸰[49m [100m𜸱[49m [100m𜸲[49m [100m𜸳[49m [100m𜸴[49m [100m𜸵[49m
+           [100m𜸶[49m [100m𜸷[49m [100m𜸸[49m [100m𜸹[49m [100m𜸺[49m [100m𜸻[49m [100m𜸼[49m [100m𜸽[49m [100m𜸾[49m [100m𜸿[49m [100m𜹀[49m [100m𜹁[49m [100m𜹂[49m [100m𜹃[49m [100m𜹄[49m [100m𜹅[49m [100m𜹆[49m [100m𜹇[49m [100m𜹈[49m [100m𜹉[49m [100m𜹊[49m [100m𜹋[49m [100m𜹌[49m [100m𜹍[49m [100m𜹎[49m [100m𜹏[49m [100m𜹐[49m   U+1CE50
+
+Because these are characters, not terminal effects, they are not limited to a
+terminal. The same large type text can be used in Unicode plain-text files.
+The only requirement is to use a font that includes those characters.
+
+To display properly, you need a font with support for large type pieces.
+For example:
+ • ]8;;https://github.com/microsoft/cascadia-code/Microsoft Cascadia]8;; 2404.23
+ • ]8;;https://github.com/the-moonwitch/Cozette/Cozette]8;; 1.27.0
+ • ]8;;https://github.com/be5invis/Iosevka/Iosevka]8;; 29.0.0
+ • ]8;;https://unifoundry.com/unifont/Unifont]8;; 16.0.01 (requires Unifont Upper)
+
+This document explains how large type pieces work if you want to understand
+the details and be able to customize the look of your large text.
+But to make them easier to use, I also created a FIGlet font with over 1000
+pre-built large characters, named ]8;;https://github.com/PhMajerus/FIGfontsphm-largetype]8;;.
+If you only need a single-screen reference to copy characters from, see ]8;;https://github.com/PhMajerus/Documents/blob/main/CheatSheets/Large%20Type%20Pieces.txtmy
+Large Type Pieces cheat sheet]8;;.
+
+
+𜸚𜸟𜸤𜸚𜸟𜸤𜸝𜸢𜸜𜸝𜸢𜸜𜸛𜸟𜸥𜸚𜸟𜸤𜸞𜸠𜸥𜸜𜸝𜸢𜸜𜸚𜸟𜸤  𜸛𜸟𜸤𜸜𜸛𜸟𜸥𜸚𜸟𜸤𜸛𜸟𜸥𜸚𜸟𜸤
+𜸩  𜸩 𜸩𜸩𜸫𜸹𜸩𜸫𜸹𜸨𜸟 𜸩   𜸩 𜸩𜸩𜸫𜸹𜸩 𜸧  𜸨𜸟𜹃𜸩𜸨𜸟 𜸩  𜸨𜸟 𜸾𜸟𜸤
+𜸾𜸟𜹃𜸾𜸟𜹃𜸼 𜸼𜸼 𜸼𜸽𜸟𜸥𜸾𜸟𜹃 𜸼 𜸼𜸼 𜸼𜸾𜸟𜹃  𜸼  𜸼𜸽𜸟𜸥𜸾𜸟𜹃𜸽𜸟𜸥𜸾𜸟𜹃
+
+Each letter is usually built using a grid of 3×3 Large Type Piece characters:
+ [2m┌─┬─┬─┐[22m          [2m┌─┬─┬─┐[22m          [2m┌─┬─┬─┐[22m
+ [2m│[22m𜸛[2m│[22m𜸟[2m│[22m𜸤[2m│[22m          [2m│[22m𜸜[2m│ │[22m𜸜[2m│[22m          [2m│[22m𜸝[2m│[22m𜸢[2m│[22m𜸜[2m│[22m
+ [2m├─┼─┼─┤[22m  𜸛𜸟𜸤     [2m├─┼─┼─┤[22m  𜸜 𜸜     [2m├─┼─┼─┤[22m  𜸝𜸢𜸜
+ [2m│[22m𜸨[2m│[22m𜸟[2m│[22m𜸷[2m│[22m  𜸨𜸟𜸷     [2m│[22m𜸪[2m│[22m𜸲[2m│[22m𜸸[2m│[22m  𜸪𜸲𜸸     [2m│[22m𜸩[2m│[22m𜸫[2m│[22m𜸹[2m│[22m  𜸩𜸫𜸹
+ [2m├─┼─┼─┤[22m  𜸽𜸟𜹃     [2m├─┼─┼─┤[22m  𜸼 𜸼     [2m├─┼─┼─┤[22m  𜸼 𜸼
+ [2m│[22m𜸽[2m│[22m𜸟[2m│[22m𜹃[2m│[22m          [2m│[22m𜸼[2m│ │[22m𜸼[2m│[22m          [2m│[22m𜸼[2m│ │[22m𜸼[2m│[22m
+ [2m└─┴─┴─┘[22m          [2m└─┴─┴─┘[22m          [2m└─┴─┴─┘[22m
+The number of cells used can vary to create lowercase or non-latin letters,
+but the mechanism stays the same.
+
+Each character fits precisely in its bounding box, whether it has corners,
+borders, or terminating lines:
+ [2m𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧[22m𜸚𜸟𜸤𜸛𜸟𜸤𜸚𜸟𜸤𜸬𜸦 𜸚𜸟𜸤𜸚𜸟𜸤[2m𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧[22m
+ [2m𜸞𜸺𜸥𜸞𜸺𜸥𜸞𜸺𜸥𜸞𜸺𜸥𜸞𜸺𜸥𜸞𜸺𜸥[22m𜸨𜸟𜸶𜸨𜸟𜸷𜸩   𜸩 𜸚𜸟𜹃 𜸟𜸷[2m𜸞𜸺𜸥𜸞𜸺𜸥𜸞𜸺𜸥𜸞𜸺𜸥𜸞𜸺𜸥𜸞𜸺𜸥[22m
+ [2m𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄[22m𜸼 𜸼𜸽𜸟𜹃𜸾𜸟𜹃𜸞𜹀𜸥𜸽𜸟𜸥𜸾𜸟𜹃[2m𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄[22m
+To achieve this, the pieces are designed to not only connect where they
+touch, but also reach the same bounding box limits when extending outward.
+
+
+𜸚𜸟𜸤𜸚𜸟𜸤𜸛𜸟𜸤𜸝𜸢𜸜𜸛𜸟𜸥𜸛𜸟𜸤𜸚𜸟𜸤
+𜸩  𜸩 𜸩𜸨𜸟𜸷𜸩𜸫𜸹𜸨𜸟 𜸨𜸟𜸷𜸾𜸟𜸤
+𜸾𜸟𜹃𜸾𜸟𜹃𜸼 𜸼𜸼 𜸼𜸽𜸟𜸥𜸼 𜸼𜸾𜸟𜹃
+
+Corners can be straight or bevelled/rounded. They combine with each other, as
+well as with lines pieces.
+ ┌─────┬───┬─────┐  𜸛𜸠𜸧[2m𜸞𜸠𜸜𜸧[22m     Corners from the bottom and top groups
+ │ 𜸚 𜸛 │ 𜸠 │ 𜸧 𜸤 │  𜸨𜸺𜸶[2m 𜸞𜸺𜸥[22m     can also be used in the middle groups,
+ ├─────┼───┼─────┤  𜸽𜹀𜹄[2m𜸞𜹀𜸼𜹄[22m     as well as used as terminating lines
+ │ 𜸮 𜸨 │ 𜸺 │ 𜸶 𜸷 │  [2m𜸨𜹍𜸶[22m         without a connecting middle/crossbar piece:
+ ├─────┼───┼─────┤  𜸚𜸠𜸤[2m𜸞𜸠𜸜𜸧[22m      𜸛𜸟𜸤  𜸛𜸟𜸤  𜸜       𜸚𜸟𜸤  𜸚𜸟𜸤
+ │ 𜸾 𜸽 │ 𜹀 │ 𜹄 𜹃 │  𜸮𜸺𜸷[2m 𜸞𜸺𜸥[22m      𜸨𜸟𜸷  𜸨𜸟𜹃  𜸨𜸟𜸤     𜸩 𜸩  𜸩  
+ └─────┴───┴─────┘  𜸾𜹀𜹃[2m𜸞𜹀𜸼𜹄[22m      𜸽𜸟𜹃  𜸼    𜸽𜸟𜹃     𜸾𜸟𜹃  𜸾𜸟𜹃
+
+The bevelled/rounded corners design can depend on the font providing the
+large type pieces. They can be bevelled/chamfered, curved/rounded, a circle
+quadrant with a straight vertical stem, or any non-straight corner shape.
+You should not depend on their exact design, only on their function.
+
+
+𜸜  𜸜𜸝𜸢𜸜𜸛𜸟𜸥𜸚𜸟𜸤
+𜸩  𜸩𜸩𜸫𜸹𜸨𜸟 𜸾𜸟𜸤
+𜸽𜸟𜸥𜸼𜸼 𜸼𜸽𜸟𜸥𜸾𜸟𜹃
+
+Lines must align on the same bounding box as corners.
+To achieve this, a set of crossbars and terminating stems are provided.
+Horizontal stems align precisely on the outer border of vertical lines, and
+vertical stems align precisely on the outer border of horizontal lines.
+      ┌───┬───┬───┐
+ ┌───┐│ 𜸞 │ 𜸟 │ 𜸥 │     Termination stems are typically used on the outside
+ │ 𜸜 │└───┴───┴───┘     of characters to match the bounding box of corners,
+ ├───┤     𜸞𜸟𜸥          but they can also be used inside to provide a more
+ │ 𜸩 │   𜸜[2m𜸞𜸺𜸜𜸶𜸛[22m𜸜[2m𜸧[22m       natural distance from lines perpendicular to them.
+ ├───┤   𜸩[2m 𜸞𜸺𜸥[22m𜸞𜸺𜸥        𜸚𜸟𜸤  𜸚𜸟𜸤     𜸛𜸟𜸤  𜸛𜸟𜸤
+ │ 𜸼 │   𜸼[2m𜸞𜹀𜸼𜹄𜸽[22m𜸼[2m𜹄[22m        𜸩𜸟𜸷  𜸩𜸞𜸷     𜸺 𜸩  𜸺𜸥𜸩
+ └───┘                   𜸼𜸟𜹃  𜸼𜸞𜹃     𜸽𜸟𜹃  𜸽𜸟𜹃
+
+
+𜸛𜸟𜸤𜸜𜸚𜸟𜸤𜸚𜸟𜸤𜸚𜸟𜸤𜸝𜸢𜸜𜸚𜸟𜸤𜸜  𜸚𜸟𜸤
+𜸩 𜸩𜸩𜸨𜸟𜸶𜸩 𜸧𜸩 𜸩𜸩𜸫𜸹𜸨𜸟𜸶𜸩  𜸾𜸟𜸤
+𜸽𜸟𜹃𜸼𜸼 𜸼𜸾𜸟𜹃𜸾𜸟𜹃𜸼 𜸼𜸼 𜸼𜸽𜸟𜸥𜸾𜸟𜹃
+
+Diagonal pieces are a bit more complex because to achieve an angle of around
+45°, they need to connect by groups of three. Several pieces are provided for
+corners, cusps, and joining segments between them.
+
+ ╌┬───────┬───────┬───────┬╌    Lines from the third group can connect
+  │   [2m𜸜 𜸜[22m │ 𜸦 𜸯 𜸝 │ [2m𜸜𜸜[22;96m 𜸱[91m↙[39m │     to either vertical lines up or down,
+  │  𜸡𜸫𜸬𜸪 │ 𜸴 𜸲   │ 𜸸𜸻𜸢𜹂  │     or to lines of the first group vertically,
+  │ [91m↗[96m𜸰[39;2m 𜸼𜸼[22m │ 𜹆 𜹁 𜸿 │ [2m𜸼 𜸼[22m   │     but not horizontally.
+  │       │ 𜸹 𜸳 𜸵 │       │      [2m𜸛𜸜𜸧[22m𜸝𜸢[2m𜸟𜸟𜸟𜸟𜸟𜸟𜸟[22m𜸱[2m𜸟[22m𜸬𜸢[2m𜸟𜸟𜸟[22m𜸱[2m𜸟𜸟𜸟[22m𜸬𜸢𜸬𜸲𜸡𜸦[2m𜸛𜸜𜸧[22m
+ ╌┴───────┴───────┴───────┴╌     [2m𜸞𜸺𜸥[22m𜸩𜸫𜸲𜸢𜸬𜸢[2m𜸟[22m𜸬𜸴𜹂𜹁𜸻𜸫𜸲𜸡𜸴𜹂𜸲𜸡𜸴𜸻𜸫𜸻[2m𜸟[22m𜸰𜸩[2m𜸞𜸺𜸥[22m
+   group 1 group 2 group 3       [2m𜸽𜸼𜹄[22m𜸼[2m𜸟𜸟[22m𜸫𜸻𜸫𜹁𜸻[2m𜸟𜸟𜸟𜸟𜸟𜸟[22m𜸰[2m𜸟𜸟𜸟[22m𜸰[2m𜸟𜸟𜸟𜸟𜸟𜸟[22m𜸼[2m𜸽𜸼𜹄[22m
+
+The low cusp can be either aligned to the bottom of a letter using the one
+from the second group [100m𜹁[49m, or slightly crossing the border of a cell using the
+one from the first group [100m𜸡[49m. The high cusp can only be slightly crossing the
+border of a cell using the one from the third group [100m𜹂[49m.
+When the cusp slightly crosses the border of a cell, a tiny extra
+corresponding piece, [100m𜸱[49m or [100m𜸰[49m, is required across that border to extend the
+line a bit in the adjacent cell. These cusps also fit exactly with a vertical
+crossbar or stem.
+It is also possible to create a cusp by connecting lines from groups 1 and 2
+horizontally, [100m𜸫𜸻[49m or [100m𜸬𜸢[49m.
+
+Note there is no straight downward line in the second group. A diagonal line
+going down through the center of a cell always have the extra crossing stem.
+
+These diagonal pieces make it possible to create proper diagonal lines:
+ [2m┌───┐ ┌───┬───┬────┐ ┌───┐ ┌───┐ ┌───┬───┬────┐ ┌───┐ ┌───┐ ┌───┐ ┌───┬───┐[22m
+ [2m│𜸜 𜸜│ │[22m𜸝𜸡𜸦[2m│[22m𜸝𜸡𜸦[2m│[22m𜸝𜸢𜸬𜸦[2m│ │[22m𜸝𜸢[2m𜸜│ │𜸜 𜸜│ │𜸜 𜸜│𜸜 𜸜│𜸜  𜸜│ │𜸜 𜸜│ │𜸜 𜸜│ │𜸛𜸟𜸧│ │𜸞𜸟𜸧│𜸚𜸟𜸤│[22m
+ [2m│𜸨[22m𜸯𜸸[2m│ │𜸩𜸼𜸩│𜸩[22m𜸰[2m𜸩│𜸩[22m𜸫𜸻[2m𜸩│ │𜸩[22m𜸫𜸹[2m│ │𜸩 𜸩│ │𜸩𜸜𜸩│𜸩[22m𜸱[2m𜸩│𜸩[22m𜸬𜸢[2m𜸩│ │[22m𜸪𜸲𜸸[2m│ │[22m𜸫𜸳𜸻[2m│ │[22m𜸬𜸴𜸻[2m│ │[22m 𜸵𜸻[2m│[22m 𜸵𜸻[2m│[22m
+ [2m│𜸼 𜸼│ │𜸼 𜸼│𜸼 𜸼│𜸼  𜸼│ │𜸼 𜸼│ │[22m𜸫𜹁𜸻[2m│ │[22m𜸿𜹂𜹆[2m│[22m𜸿𜹂𜹆[2m│[22m𜸿𜸻𜸫𜹆[2m│ │𜸼 𜸼│ │ 𜸼 │ │𜸽𜸟𜹄│ │ 𜸼 │ 𜹊 │[22m
+ [2m└───┘ └───┴───┴────┘ └───┘ └───┘ └───┴───┴────┘ └───┘ └───┘ └───┘ └───┴───┘[22m
+(beware of tiny pieces at bottom and top of the cusps of M and W repectively)
+
+Finally, a special bottom right rounded corner [100m𜹃[49m with an extra diagonal line
+that provides the extra stem for the Q is a special character just for that:
+ [2m┌───┐[22m
+ [2m│𜸚𜸟𜸤│[22m   This is a standalone diagonal or tail for the Q,
+ [2m│𜸩 𜸩│[22m   it does not combine with any of the other
+ [2m│𜸾𜸟[22m𜹅[2m│[22m   diagonals from the groups above.
+ [2m└───┘[22m
+The [100m𜹅[49m stem does not connect with any other piece and its design can vary
+depending on the font providing the large type pieces. You should not depend
+on its exact position for your large letters design, only on its function.
+
+
+𜸚𜸟𜸤𜸞𜸠𜸥𜸜 𜸜𜸛𜸟𜸥𜸛𜸟𜸤  𜸜  𜸜𜸝𜸢𜸜𜸛𜸟𜸥𜸚𜸟𜸤  𜸚𜸟𜸤𜸝𜸢𜸜𜸛𜸟𜸤  𜸛𜸟𜸤𜸚𜸟𜸤𜸞𜸠𜸥𜸚𜸟𜸤
+𜸩 𜸩 𜸩 𜸨𜸟𜸶𜸨𜸟 𜸨𜸟𜸷  𜸩  𜸩𜸩𜸫𜸹𜸨𜸟 𜸾𜸟𜸤  𜸨𜸟𜸶𜸩𜸫𜸹𜸩 𜸩  𜸩 𜸩𜸩 𜸩 𜸩 𜸾𜸟𜸤
+𜸾𜸟𜹃 𜸼 𜸼 𜸼𜸽𜸟𜸥𜸼 𜸼  𜸽𜸟𜸥𜸼𜸼 𜸼𜸽𜸟𜸥𜸾𜸟𜹃  𜸼 𜸼𜸼 𜸼𜸽𜸟𜹃  𜸽𜸟𜹃𜸾𜸟𜹃 𜸼 𜸾𜸟𜹃
+
+Shorter and longer vertical terminating stems are used when they shouldn't
+reach the character bounding box. They can align with any of the horizontal
+lines borders, or extend outside by the same length:
+
+ [2m𜸛𜸜𜸧[22m𜹈[2m𜸠[22m𜹇[2m𜸛𜸜𜸧𜸛𜸟𜸧𜸛𜸜𜸧𜸛𜸟𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛[22m𜸣[2m𜸧[22m↙ Top termination of square symbols.
+ [2m𜸞𜸺𜸥𜸨[22m𜹋[2m𜸶𜸞𜸺𜸥[22m𜹊[2m𜸺[22m𜹎[2m𜸞𜸺𜸥[22m𜹉[2m𜸺[22m𜹏[2m𜸞𜸺𜸥𜸞[22m𜹍[2m𜸥𜸞𜸺𜸥𜸞𜸺𜸥[22m
+ [2m𜸽𜸼𜹄[22m𜹌[2m𜹀[22m𜹐[2m𜸽𜸼𜹄𜸽𜸟𜹄𜸽𜸼𜹄𜸽𜸟𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽[22m𜸭[2m𜹄[22m↖ Bottom termination of square symbols.
+
+The most common ones are the last two, used for mathematical operators
+heights, and dots of lowercase letters, as well as the slightly longer first
+one of the second group, used as dots for ponctuation symbols:
+ [2m┌───┐ ┌───┐ ┌───┐[22m
+ [2m│ [22m𜸣[2m │ │ [22m𜸣[2m │ │𜸚𜸟𜸤│[22m
+ [2m│𜸞𜸺𜸥│ │ 𜸜 │ │ 𜸵𜸻│[22m
+ [2m│ [22m𜸭[2m │ │ 𜸼 │ │ [22m𜹊[2m │[22m
+ [2m└───┘ └───┘ └───┘[22m
+
+Finally, the original Hewlett-Packard characters ROM contained some quadrants:
+ [2m𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧𜸛𜸜𜸧[22m   Using normal and reverse video, those provided the
+ [2m𜸞[22m▚[2m𜸥𜸞[22m▘[2m𜸥𜸞[22m▝[2m𜸥𜸞[22m▖[2m𜸥𜸞[22m▗[2m𜸥𜸞[22m▀[2m𜸥𜸞[22m▌[2m𜸥[22m   whole quadrants set: [100m▚[49m [100m▘[49m [100m▝[49m [100m▖[49m [100m▗[49m [100m▀[49m [100m▌[49m + [100m▞[49m [100m▟[49m [100m▙[49m [100m▜[49m [100m▛[49m [100m▄[49m [100m▐[49m
+ [2m𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄𜸽𜸼𜹄[22m
+These were used as heavier dots and lines for some punctuation symbols:
+ [2m┌───┐ ┌───┐ ┌───┐ ┌───┐[22m
+ [2m│   │ │   │ │   │ │[22m▚▚▚[2m│[22m
+ [2m│   │ │ [22m▘[2m │ │   │ │[22m▚▚▚[2m│[22m
+ [2m│ [22m▘[2m │ │ [22m▘[2m │ │[22m▀▀▀[2m│ │[22m▚▚▚[2m│[22m
+ [2m└───┘ └───┘ └───┘ └───┘[22m
+Nowadays with Unicode, all the other semigraphic characters can be used as
+well.
+
+[2;3m(For those who have been counting, aside for the extra blank space character,
+there was one other character to complete the original 64 characters set ROM.
+Hewlett-Packard had an almost duplicate of [22;23;100m𜸫[49;2;3m that they never used.)[22;23m
+
+
+𜸛𜸟𜸥𜸜 𜸜𜸚𜸟𜸤𜸝𜸡𜸦𜸛𜸟𜸤𜸜  𜸛𜸟𜸥  𜸚𜸟𜸤𜸜 𜸜𜸚𜸟𜸤𜸛𜸟𜸤𜸚𜸟𜸤𜸚𜸟𜸤𜸞𜸠𜸥𜸛𜸟𜸥𜸛𜸟𜸤  𜸚𜸟𜸤𜸛𜸟𜸥𜸞𜸠𜸥
+𜸨𜸟 𜸪𜸲𜸸𜸨𜸟𜸶𜸩𜸰𜸩𜸨𜸟𜹃𜸩  𜸨𜸟   𜸩  𜸨𜸟𜸶𜸨𜸟𜸶𜸨𜸟𜸷𜸨𜸟𜸶𜸩   𜸩 𜸨𜸟 𜸨𜸟𜸷  𜸾𜸟𜸤𜸨𜸟  𜸩 
+𜸽𜸟𜸥𜸼 𜸼𜸼 𜸼𜸼 𜸼𜸼  𜸽𜸟𜸥𜸽𜸟𜸥  𜸾𜸟𜹃𜸼 𜸼𜸼 𜸼𜸼 𜸼𜸼 𜸼𜸾𜸟𜹃 𜸼 𜸽𜸟𜸥𜸼 𜸼  𜸾𜸟𜹃𜸽𜸟𜸥 𜸼 
+
+As part of their documentation, Hewlett-Packard provided a table to compose
+the ASCII characters using the large type pieces and quadrants:
+ [2m┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐[22m
+ [2m│ ␣ │ ! │ " │ # │ $ │ % │ & │ ' │ ( │ ) │ * │ + │ , │ - │ . │ / │[22m
+ [2m│[22m   [2m│[22m 𜸜 [2m│[22m𜸜𜸜 [2m│[22m   [2m│[22m𜸚𜸺𜸤[2m│[22m𜹇 𜹇[2m│[22m𜸚𜸤 [2m│[22m 𜸜 [2m│[22m 𜸚𜸥[2m│[22m𜸞𜸤 [2m│[22m   [2m│[22m 𜸣 [2m│[22m   [2m│[22m   [2m│[22m   [2m│[22m 𜸣 [2m│[22m
+ [2m│[22m   [2m│[22m 𜸩 [2m│[22m   [2m│[22m𜸺𜸺 [2m│[22m𜸾𜸺𜸤[2m│[22m𜸬𜸴𜸻[2m│[22m𜸮𜹀𜸺[2m│[22m   [2m│[22m 𜸩 [2m│[22m 𜸩 [2m│[22m𜸪𜸲𜸸[2m│[22m𜸞𜸺𜸥[2m│[22m   [2m│[22m𜸞𜸟𜸥[2m│[22m   [2m│[22m𜸞𜸟𜸥[2m│[22m
+ [2m│[22m   [2m│[22m 𜹊 [2m│[22m   [2m│[22m𜸺𜸺 [2m│[22m𜸾𜸺𜹃[2m│[22m𜹐 𜹐[2m│[22m𜸾𜸟𜹃[2m│[22m   [2m│[22m 𜸾𜸥[2m│[22m𜸞𜹃 [2m│[22m   [2m│[22m 𜸭 [2m│[22m 𜹃 [2m│[22m   [2m│[22m ▘ [2m│[22m 𜸭 [2m│[22m
+ [2m├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤[22m
+ [2m│ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │ : │ ; │ < │ = │ > │ ? │[22m
+ [2m│[22m𜸚𜸟𜸤[2m│[22m 𜸦 [2m│[22m𜸚𜸟𜸤[2m│[22m𜸚𜸟𜸤[2m│[22m𜸜 𜸜[2m│[22m𜸛𜸟𜸥[2m│[22m𜸚𜸟𜸤[2m│[22m𜸞𜸟𜸧[2m│[22m𜸚𜸟𜸤[2m│[22m𜸚𜸟𜸤[2m│[22m   [2m│[22m   [2m│[22m 𜸬 [2m│[22m   [2m│[22m 𜸢 [2m│[22m𜸚𜸟𜸤[2m│[22m
+ [2m│[22m𜸩 𜸩[2m│[22m 𜸩 [2m│[22m𜸚𜸟𜹃[2m│[22m 𜸟𜸷[2m│[22m𜸽𜸟𜸺[2m│[22m𜸽𜸟𜸤[2m│[22m𜸨𜸟𜸤[2m│[22m 𜸵𜸻[2m│[22m𜸮𜸟𜸷[2m│[22m𜸾𜸟𜸶[2m│[22m ▘ [2m│[22m 𜹐 [2m│[22m 𜸫 [2m│[22m𜸞𜸟𜸥[2m│[22m 𜸻 [2m│[22m 𜸵𜸻[2m│[22m
+ [2m│[22m𜸾𜸟𜹃[2m│[22m 𜸼 [2m│[22m𜸽𜸟𜸥[2m│[22m𜸾𜸟𜹃[2m│[22m  𜸼[2m│[22m𜸾𜸟𜹃[2m│[22m𜸾𜸟𜹃[2m│[22m 𜸼 [2m│[22m𜸾𜸟𜹃[2m│[22m𜸾𜸟𜹃[2m│[22m ▘ [2m│[22m 𜹃 [2m│[22m   [2m│[22m𜸞𜸟𜸥[2m│[22m   [2m│[22m 𜹊 [2m│[22m
+ [2m├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤[22m
+ [2m│ @ │ A │ B │ C │ D │ E │ F │ G │ H │ I │ J │ K │ L │ M │ N │ O │[22m
+ [2m│[22m𜸚𜸟𜸤[2m│[22m𜸚𜸟𜸤[2m│[22m𜸛𜸟𜸤[2m│[22m𜸚𜸟𜸤[2m│[22m𜸛𜸟𜸤[2m│[22m𜸛𜸟𜸥[2m│[22m𜸛𜸟𜸥[2m│[22m𜸚𜸟𜸤[2m│[22m𜸜 𜸜[2m│[22m 𜸠 [2m│[22m  𜸜[2m│[22m𜸜 𜸜[2m│[22m𜸜  [2m│[22m𜸝𜸡𜸦[2m│[22m𜸝𜸢𜸜[2m│[22m𜸛𜸟𜸧[2m│[22m
+ [2m│[22m𜸚𜸧𜸩[2m│[22m𜸨𜸟𜸶[2m│[22m𜸨𜸟𜸷[2m│[22m𜸩  [2m│[22m𜸩 𜸩[2m│[22m𜸨𜸟 [2m│[22m𜸨𜸟 [2m│[22m𜸩 𜸧[2m│[22m𜸨𜸟𜸶[2m│[22m 𜸩 [2m│[22m  𜸩[2m│[22m𜸨𜸯𜸸[2m│[22m𜸩  [2m│[22m𜸩𜸰𜸩[2m│[22m𜸩𜸫𜸹[2m│[22m𜸩 𜸩[2m│[22m
+ [2m│[22m𜸾𜹀𜹃[2m│[22m𜸼 𜸼[2m│[22m𜸽𜸟𜹃[2m│[22m𜸾𜸟𜹃[2m│[22m𜸽𜸟𜹃[2m│[22m𜸽𜸟𜸥[2m│[22m𜸼  [2m│[22m𜸾𜸟𜹃[2m│[22m𜸼 𜸼[2m│[22m 𜹀 [2m│[22m𜸾𜸟𜹃[2m│[22m𜸼 𜸼[2m│[22m𜸽𜸟𜸥[2m│[22m𜸼 𜸼[2m│[22m𜸼 𜸼[2m│[22m𜸽𜸟𜹄[2m│[22m
+ [2m├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤[22m
+ [2m│ P │ Q │ R │ S │ T │ U │ V │ W │ X │ Y │ Z │ [ │ \ │ ] │ ^ │ _ │[22m
+ [2m│[22m𜸛𜸟𜸤[2m│[22m𜸚𜸟𜸤[2m│[22m𜸛𜸟𜸤[2m│[22m𜸚𜸟𜸤[2m│[22m𜸞𜸠𜸥[2m│[22m𜸜 𜸜[2m│[22m𜸜 𜸜[2m│[22m𜸜 𜸜[2m│[22m𜸜 𜸜[2m│[22m𜸜 𜸜[2m│[22m𜸛𜸟𜸧[2m│[22m 𜸛𜸥[2m│[22m𜸜  [2m│[22m𜸞𜸧 [2m│[22m 𜸱 [2m│[22m   [2m│[22m
+ [2m│[22m𜸨𜸟𜹃[2m│[22m𜸩 𜸩[2m│[22m𜸨𜸟𜸷[2m│[22m𜸾𜸟𜸤[2m│[22m 𜸩 [2m│[22m𜸩 𜸩[2m│[22m𜸩 𜸩[2m│[22m𜸩𜸱𜸩[2m│[22m𜸪𜸲𜸸[2m│[22m𜸫𜸳𜸻[2m│[22m𜸬𜸴𜸻[2m│[22m 𜸩 [2m│[22m𜸫𜸲𜸢[2m│[22m 𜸩 [2m│[22m 𜹂 [2m│[22m   [2m│[22m
+ [2m│[22m𜸼  [2m│[22m𜸾𜸟𜹅[2m│[22m𜸼 𜸼[2m│[22m𜸾𜸟𜹃[2m│[22m 𜸼 [2m│[22m𜸾𜸟𜹃[2m│[22m𜸫𜹁𜸻[2m│[22m𜸿𜹂𜹆[2m│[22m𜸼 𜸼[2m│[22m 𜸼 [2m│[22m𜸽𜸟𜹄[2m│[22m 𜸽𜸥[2m│[22m  𜸼[2m│[22m𜸞𜹄 [2m│[22m   [2m│[22m▀▀▀[2m│[22m
+ [2m├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤[22m
+ [2m│ ` │ a │ b │ c │ d │ e │ f │ g │ h │ i │ j │ k │ l │ m │ n │ o │[22m
+ [2m│[22m 𜸤 [2m│[22m   [2m│[22m𜸜  [2m│[22m   [2m│[22m 𜸜 [2m│[22m   [2m│[22m𜸚𜸤 [2m│[22m   [2m│[22m𜸜  [2m│[22m 𜸣 [2m│[22m 𜸣 [2m│[22m𜸜  [2m│[22m 𜸜 [2m│[22m   [2m│[22m   [2m│[22m   [2m│[22m
+ [2m│[22m   [2m│[22m𜸚𜸧 [2m│[22m𜸨𜸤 [2m│[22m𜸚𜸥 [2m│[22m𜸚𜸶 [2m│[22m𜸚𜸤 [2m│[22m𜸺  [2m│[22m𜸚𜸧 [2m│[22m𜸨𜸤 [2m│[22m 𜸜 [2m│[22m 𜸜 [2m│[22m𜸨𜸷 [2m│[22m 𜸩 [2m│[22m𜸝𜸦 [2m│[22m𜸛𜸤 [2m│[22m𜸚𜸤 [2m│[22m
+ [2m│[22m   [2m│[22m𜸾𜹄 [2m│[22m𜸽𜹃 [2m│[22m𜸾𜸥 [2m│[22m𜸾𜹄 [2m│[22m𜸾𜸥 [2m│[22m𜸼  [2m│[22m𜸾𜸶 [2m│[22m𜸼𜸼 [2m│[22m 𜸼 [2m│[22m𜸾𜹃 [2m│[22m𜸼𜸼 [2m│[22m 𜸼 [2m│[22m𜸼𜸼 [2m│[22m𜸼𜸼 [2m│[22m𜸾𜹃 [2m│[22m
+ [2m├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤[22m
+ [2m│ p │ q │ r │ s │ t │ u │ v │ w │ x │ y │ z │ { │ ¦ │ } │ ~ │ ␡ │[22m
+ [2m│[22m   [2m│[22m   [2m│[22m   [2m│[22m   [2m│[22m𜸣  [2m│[22m   [2m│[22m   [2m│[22m   [2m│[22m   [2m│[22m   [2m│[22m   [2m│[22m 𜸚𜸥[2m│[22m 𜹈 [2m│[22m𜸞𜸤 [2m│[22m   [2m│[22m▚▚▚[2m│[22m
+ [2m│[22m𜸛𜸤 [2m│[22m𜸚𜸧 [2m│[22m𜸚𜸥 [2m│[22m𜸚𜸥 [2m│[22m𜸺  [2m│[22m𜸜𜸜 [2m│[22m𜸜𜸜 [2m│[22m𜸜𜸜 [2m│[22m𜸮𜸷 [2m│[22m𜸜𜸜 [2m│[22m𜸞𜸧 [2m│[22m 𜸷 [2m│[22m   [2m│[22m 𜸮 [2m│[22m𜸚𜸟𜹃[2m│[22m▚▚▚[2m│[22m
+ [2m│[22m𜸨𜹃 [2m│[22m𜸾𜸶 [2m│[22m𜸼  [2m│[22m𜸞𜹃 [2m│[22m𜸾𜹃 [2m│[22m𜸽𜹄 [2m│[22m𜸾𜹃 [2m│[22m𜸿𜹆 [2m│[22m𜸼𜸼 [2m│[22m𜸾𜸶 [2m│[22m𜸽𜸥 [2m│[22m 𜸾𜸥[2m│[22m 𜹌 [2m│[22m𜸞𜹃 [2m│[22m   [2m│[22m▚▚▚[2m│[22m
+ [2m└───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘[22m
+ [2;3m(Source: HP 2641A/2645A/2645S Display Station Reference Manual, Table B-16)[22;23m
+
+This is only an example, the ASCII characters can be modernized, and the
+large type pieces can be used to create other letters as well.
+
+The 'O' suggested by HP is rectangular because their terminal's Roman   [40;48:5:16;37;38:5:195m 𜺡▂𜺢 [m
+uppercase characters set contained a rounded '0' with no dot or slash   [40;48:5:16;37;38:5:195m ▌ ▐ [m
+within, and a very rectangular 'O' to properly differentiate it on CRT: [40;48:5:16;37;38:5:195m ▌ ▐ [m
+It can be modified to be more in line with contemporary terminal fonts. [40;48:5:16;37;38:5:195m 𜺪🮂𜺩 [m
+
+Below is an example of alternate versions of some ASCII characters:
+ [2m┌───╥───╥───╥───╥───╥───╥───╥───╥───╥───╥───╥──╥──╥──╥──╥───╥──╥──╥──╥───┐[22m
+ [2m│ & ║ / ║ 0 ║ 1 ║ 5 ║ ? ║ I ║ O ║ Z ║ _ ║ ` ║ a║ f║ j║ l║ m ║ r║ t║ u║ | │[22m
+ [2m│[22m𜸚𜸤 [2m║[22m  𜸜[2m║[22m𜸚𜸟𜸤[2m║[22m𜸬𜸦 [2m║[22m𜸛𜸟𜸥[2m║[22m𜸚𜸟𜸤[2m║[22m𜸞𜸠𜸥[2m║[22m𜸚𜸟𜸤[2m║[22m𜸞𜸟𜸧[2m║[22m   [2m║[22m 𜸢 [2m║[22m  [2m║[22m𜸚𜸥[2m║[22m 𜸣[2m║[22m𜸜 [2m║[22m   [2m║[22m  [2m║[22m𜸣 [2m║[22m  [2m║[22m 𜹈 [2m│[22m
+ [2m│[22m𜸮𜸠𜸥[2m║[22m𜸬𜸴𜸻[2m║[22m𜸩𜹋𜸩[2m║[22m 𜸩 [2m║[22m𜸽𜸟𜸤[2m║[22m 𜸚𜹃[2m║[22m 𜸩 [2m║[22m𜸩 𜸩[2m║[22m𜸬𜸴𜸻[2m║[22m   [2m║[22m 𜸫 [2m║[22m𜸞𜸤[2m║[22m𜸺𜸥[2m║[22m 𜸜[2m║[22m𜸩 [2m║[22m𜸛𜸠𜸤[2m║[22m𜸛𜸥[2m║[22m𜸺𜸥[2m║[22m𜸜𜸜[2m║[22m 𜸩 [2m│[22m
+ [2m│[22m𜸾𜹀𜸥[2m║[22m𜸼  [2m║[22m𜸾𜸟𜹃[2m║[22m𜸞𜹀𜸥[2m║[22m𜸞𜸟𜹃[2m║[22m 𜹊 [2m║[22m𜸞𜹀𜸥[2m║[22m𜸾𜸟𜹃[2m║[22m𜸽𜸟𜸥[2m║[22m𜸞𜸟𜸥[2m║[22m   [2m║[22m𜸾𜹄[2m║[22m𜸼 [2m║[22m𜸞𜹃[2m║[22m𜸾𜸥[2m║[22m𜸼𜸼𜸼[2m║[22m𜸼 [2m║[22m𜸾𜸥[2m║[22m𜸾𜹄[2m║[22m 𜹌 [2m│[22m
+ [2m└───╨───╨───╨───╨───╨───╨───╨───╨───╨───╨───╨──╨──╨──╨──╨───╨──╨──╨──╨───┘[22m
+Characters from other alphabets can also be composed using large type pieces:
+ [2m┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌──┐ ┌───┐ ┌───┐ ┌───┐[22m
+ [2m│ ß │ │ Æ │ │ Γ │ │ Σ │ │ π│ │ Љ │ │ Ж │ │ Я │[22m
+ [2m│[22m𜸚𜸟𜸤[2m│ │[22m𜸚𜸠𜸥[2m│ │[22m𜸛𜸟𜸥[2m│ │[22m𜸛𜸟𜸥[2m│ │[22m  [2m│ │[22m𜸛𜸧 [2m│ │[22m𜸜𜸜𜸜[2m│ │[22m𜸚𜸟𜸧[2m│[22m
+ [2m│[22m𜸩𜸞𜸷[2m│ │[22m𜸨𜸺𜸥[2m│ │[22m𜸩  [2m│ │[22m𜸪𜸥 [2m│ │[22m𜸠𜸠[2m│ │[22m𜸩𜸨𜸤[2m│ │[22m𜸪𜸺𜸸[2m│ │[22m𜸮𜸟𜸶[2m│[22m
+ [2m│[22m𜸼𜸞𜹃[2m│ │[22m𜸼𜸽𜸥[2m│ │[22m𜸼  [2m│ │[22m𜸽𜸟𜸥[2m│ │[22m𜸼𜸾[2m│ │[22m𜹃𜸽𜹃[2m│ │[22m𜸼𜸼𜸼[2m│ │[22m𜸼 𜸼[2m│[22m
+ [2m└───┘ └───┘ └───┘ └───┘ └──┘ └───┘ └───┘ └───┘[22m
+Lowercase letters and some symbols can also be further improved if 4 rows are
+used instead of 3, allowing for proper descenders:
+ [2m┌────┐ ┌──┐ ┌──┐ ┌──┐ ┌──┐ ┌──┐[22m
+ [2m│  @ │ │ g│ │ j│ │ p│ │ q│ │ y│[22m
+ [2m│[22m𜸚𜸟𜸟𜸤[2m│ │[22m  [2m│ │[22m 𜸣[2m│ │[22m  [2m│ │[22m  [2m│ │[22m  [2m│[22m
+ [2m│[22m𜸩𜸚𜸧𜸩[2m│ │[22m𜸚𜸧[2m│ │[22m 𜸧[2m│ │[22m𜸛𜸤[2m│ │[22m𜸚𜸧[2m│ │[22m𜸜𜸜[2m│[22m
+ [2m│[22m𜸩𜸾𜹀𜹃[2m│ │[22m𜸾𜸶[2m│ │[22m 𜸩[2m│ │[22m𜸨𜹃[2m│ │[22m𜸾𜸶[2m│ │[22m𜸾𜸶[2m│[22m
+ [2m│[22m𜸾𜸟𜸟𜹃[2m│ │[22m𜸾𜹃[2m│ │[22m𜸾𜹃[2m│ │[22m𜹐 [2m│ │[22m 𜹐[2m│ │[22m𜸾𜹃[2m│[22m
+ [2m└────┘ └──┘ └──┘ └──┘ └──┘ └──┘[22m
+
+
+𜸚𜸟𜸤𜸝𜸢𜸜𜸝𜸢𜸜𜸛𜸟𜸥𜸜 𜸜
+𜸨𜸟𜸶𜸩𜸫𜸹𜸩𜸫𜸹𜸨𜸟 𜸪𜸲𜸸
+𜸼 𜸼𜸼 𜸼𜸼 𜸼𜸽𜸟𜸥𜸼 𜸼
+
+If you need to convert from legacy documentation that describes large
+characters using their corresponding keystrokes on an original HP 2640 Series
+keyboard, here is the conversion table between keys and large type pieces:
+ [2m┌──────────────────────────────────────────────────────────────────────┐[22m
+ [2m│ [3mKey:[23m ␣ ! " # $ % & ' ( ) * + , - . / 0 1 2 3 4 5 6 7 [22;91m8[39;2m 9 : ; < = > ? │[22m
+ [2m│ [3mChr:[23;22m   𜸚 𜸛 𜸜 𜸝 𜸞 𜸟 𜸠 𜸡 𜸢 𜸣 𜸤 𜸥 𜸦 𜸧 𜸨 𜸩 𜸪 𜸫 𜸬 𜸭 𜸮 𜸯 𜸰 [91m𜸫[39m 𜸱 𜸲 𜸳 𜸴 ▚ 𜸵 𜸶 [2m│[22m
+ [2m├──────────────────────────────────────────────────────────────────────┤[22m
+ [2m│ [3mKey:[23m @ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ \ ] ^ _ │[22m
+ [2m│ [3mChr:[23;22m 𜸷 𜸸 𜸹 𜸺 𜸻 𜸼 𜸽 𜸾 𜸿 𜹀 𜹁 𜹂 𜹃 𜹄 𜹅 𜹆 𜹇 𜹈 𜹉 𜹊 𜹋 𜹌 𜹍 𜹎 𜹏 𜹐 ▘ ▝ ▖ ▗ ▀ ▌ [2m│[22m
+ [2m└──────────────────────────────────────────────────────────────────────┘[22m
+ [2;3m(Based on HP 2641A/2645A/2645S Display Station Reference Manual, Figure 2-9)[22;23m
+
+Note that Unicode does not include the character orginally provided by the
+key '8', but it can safely be replaced by 2:[100m𜸫[49m as they are almost identical.
+
+
+[2;3m]8;;http://www.phm.lu/Philippe Majerus]8;;, January-February 2024, last updated March 13, 2025[22;23m
+
