@@ -1,0 +1,662 @@
+[1m[38;5;2m@[0m  [1m[38;5;13mov[38;5;8mloyp[39m [38;5;12mf[38;5;8md4765[39m [38;5;3mjason[39m  [38;5;14m260501 1517[39m [38;5;13mjjt/LOY-231-sentry-logger[39m [38;5;10mdefault@[39m feat(LOY-231): wire SentryLogger to accept ErrorContext[0m
+○  [1m[38;5;5mq[0m[38;5;8mzvlty[39m [1m[38;5;4m4[0m[38;5;8m911bf[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m [38;5;5mjjt/LOY-228-storefront-logger[39m [38;5;2mgit_head()[39m fix(LOY-228): match env template log level value to default 'warn'
+○  [1m[38;5;5mot[0m[38;5;8mkxvs[39m [1m[38;5;4m8b[0m[38;5;8m22df[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m chore: add storefront logger, tests, env var (loy-228)
+○  [1m[38;5;5mn[0m[38;5;8mrspmn[39m [1m[38;5;4m88[0m[38;5;8med37[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m [38;5;5mjjt/LOY-230-error-context[39m fix: tsc in medusa/util/error-context
+○  [1m[38;5;5moq[0m[38;5;8mpwsu[39m [1m[38;5;4m8c[0m[38;5;8m02ba[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m feat(LOY-230): add ErrorContext type and buildErrorContext helper
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ ○  [1m[38;5;5mr[0m[38;5;8mrwkmo[39m [1m[38;5;4m14[0m[38;5;8me409[39m [38;5;3mjason[39m  [38;5;6m260501 1528[39m [38;5;5mjjt/loy-328-stack-pr-skill[39m [38;5;2mloy-328@[39m chore: add stack instructions to pr skill
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+│ ○  [1m[38;5;5mpp[0m[38;5;8mkntu[39m [1m[38;5;4m7[0m[38;5;8m18052[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m edie: remove tool from worktree:list
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+│ ○  [1m[38;5;5mkq[0m[38;5;8mquwr[39m [1m[38;5;4ma[0m[38;5;8m16995[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m [38;5;2m(empty)[39m docs: add LOY-228 storefront logger design spec
+│ ○  [1m[38;5;5mkz[0m[38;5;8mowps[39m [1m[38;5;4me[0m[38;5;8m8530d[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m [38;5;3m(no description set)[39m
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+│ [1m[38;5;1m×[0m  [1m[38;5;5mpk[0m[38;5;8mkltu[39m [1m[38;5;4m15[0m[38;5;8m372f[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m [38;5;5mjjt/oxfmt*[39m [38;5;1m(conflict)[39m remove migrate-oxfmt skill
+│ [1m[38;5;1m×[0m  [1m[38;5;5mkqpl[0m[38;5;8mmv[39m [1m[38;5;4mef7d[0m[38;5;8m00[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m [38;5;1m(conflict)[39m run migrate-oxfmt skill
+│ [1m[38;5;1m×[0m  [1m[38;5;5myvqs[0m[38;5;8msp[39m [1m[38;5;4m8c1a[0m[38;5;8m04[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m [38;5;1m(conflict)[39m run prettier 3.8
+│ [1m[38;5;1m×[0m  [1m[38;5;5mmmv[0m[38;5;8myzr[39m [1m[38;5;4m080e[0m[38;5;8m6e[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m [38;5;1m(conflict)[39m prettier to 3.8
+│ ○  [1m[38;5;5mqszk[0m[38;5;8mvr[39m [1m[38;5;4m6d7f[0m[38;5;8m4d[39m [38;5;3mjason[39m  [38;5;6m260501 1517[39m add migrate-oxfmt skill
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mutwo[0m[38;5;8mpw[39m [1m[38;5;4m341ab[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m260430 2048[39m [38;5;5mv0.1.575[39m fix(edie): resolve when --name is omitted, add portless script (#1679)
+[1m[38;5;14m◆[0m  [1m[38;5;5mmwvss[0m[38;5;8ms[39m [1m[38;5;4ma102[0m[38;5;8m2a[39m [38;5;3mjason[39m  [38;5;6m260430 2048[39m feat(LOY-289): make Edie container filesystems host-visible (#1683)
+[1m[38;5;14m◆[0m  [1m[38;5;5mqxmnz[0m[38;5;8mq[39m [1m[38;5;4m55269[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m260430 2048[39m [38;5;5mv0.1.574[39m edie: add worktree management tasks (#1673)
+[1m[38;5;14m◆[0m  [1m[38;5;5mvvxz[0m[38;5;8mks[39m [1m[38;5;4m0ef6c[0m[38;5;8md[39m [38;5;3mjason[39m  [38;5;6m260429 1640[39m [38;5;5mmegamerge/base[39m [38;5;5mv0.1.573[39m refactor(LOY-302): migrate skills from .claude/skills/ to .agents/skills/ (#1675)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mltwy[0m[38;5;8mnr[39m [1m[38;5;4m7b44[0m[38;5;8m40[39m [38;5;3mjason[39m  [38;5;6m260425 0039[39m [38;5;5mv0.1.569[39m [LOY-301] docs(claude): add edie skill for local dev env orchestration (#1669)
+[1m[38;5;14m◆[0m  [1m[38;5;5msoyy[0m[38;5;8mow[39m [1m[38;5;4md326[0m[38;5;8mbd[39m [38;5;3mjason[39m  [38;5;6m260424 2141[39m [38;5;5mv0.1.568[39m [LOY-266] feat(edie): add local dev environment orchestration (#1667)
+[1m[38;5;14m◆[0m  [1m[38;5;5mktv[0m[38;5;8mtqq[39m [1m[38;5;4mbbbe[0m[38;5;8mf3[39m [38;5;3mjason[39m  [38;5;6m260424 1857[39m [38;5;5mv0.1.567[39m edie: accept Portless host in Clerk azp validation (#1666)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mzpruw[0m[38;5;8mp[39m [1m[38;5;4m032c[0m[38;5;8mcc[39m [38;5;3mjason[39m  [38;5;6m260416 1910[39m [38;5;5mv0.1.563[39m feat(LOY-229): oxlint no-console enforcement (#1626)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mxpqx[0m[38;5;8mqs[39m [1m[38;5;4m6a2e[0m[38;5;8ma1[39m [38;5;3mjason[39m  [38;5;6m260413 1622[39m [38;5;5mv0.1.558[39m feat(edie): add Neon branch creation task (LOY-260) (#1609)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mzmwm[0m[38;5;8mxw[39m [1m[38;5;4m520d[0m[38;5;8mf8[39m [38;5;3mjason[39m  [38;5;6m260410 1623[39m [38;5;5mv0.1.553[39m Add Claude Code hooks for formatting, linting, and pre-commit validation (#1610)
+[1m[38;5;14m◆[0m  [1m[38;5;5mxsk[0m[38;5;8mspt[39m [1m[38;5;4m1fc7[0m[38;5;8m1c[39m [38;5;3mjason[39m  [38;5;6m260409 2258[39m [38;5;5mv0.1.551 v0.1.552[39m feat(mise): add mise config and pnpm cleanup (#1600)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mtkxq[0m[38;5;8msv[39m [1m[38;5;4m28a8[0m[38;5;8m3d[39m [38;5;3mjason[39m  [38;5;6m260408 2120[39m [38;5;5mv0.1.546[39m (chore): update hubspot env template to new sandbox (#1482)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mypwr[0m[38;5;8mrs[39m [1m[38;5;4m0b49[0m[38;5;8m8e[39m [38;5;3mjason[39m  [38;5;6m260406 1615[39m [38;5;5mv0.1.540[39m fix(hubspot): preserve hubspotId in error handler for clinic and employee sync (#1541)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mlwsk[0m[38;5;8mpu[39m [1m[38;5;4m1efab[0m[38;5;8m3[39m [38;5;3mjason[39m  [38;5;6m260403 0055[39m [38;5;5mv0.1.538[39m chore(pnpm): improve supply chain attack security (#1570)
+[1m[38;5;14m◆[0m  [1m[38;5;5moros[0m[38;5;8mqq[39m [1m[38;5;4m627e[0m[38;5;8mb7[39m [38;5;3mjason[39m  [38;5;6m260402 2206[39m [38;5;5mv0.1.537[39m chore: add Claude PR skill and allow .claude dir in repo (#1544)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mnsq[0m[38;5;8mptn[39m [1m[38;5;4m6b44[0m[38;5;8ma9[39m [38;5;3mjason[39m  [38;5;6m260331 2253[39m [38;5;5mv0.1.534[39m (feat:hubspot) sync orders to hubspot (#1517)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mowom[0m[38;5;8mkx[39m [1m[38;5;4m8f0cfe[0m [38;5;3mjason[39m  [38;5;6m260330 2207[39m [38;5;5mv0.1.528[39m fix(checkout): pre-fill payment method nickname to prevent empty name API error (#1516)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mzvsy[0m[38;5;8myt[39m [1m[38;5;4m16f4[0m[38;5;8mae[39m [38;5;3mjason[39m  [38;5;6m260325 2243[39m [38;5;5mv0.1.519[39m fix(hubspot): handle 409 conflict on contact create by falling back to update (#1486)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mtrzz[0m[38;5;8msy[39m [1m[38;5;4m44ec[0m[38;5;8mc8[39m [38;5;3mjason[39m  [38;5;6m260320 2247[39m [38;5;5mv0.1.510[39m feat(hubspot): sync employees to HubSpot as contacts (#1412)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mrzrvw[0m[38;5;8mx[39m [1m[38;5;4m9b663[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m260312 2317[39m [38;5;5mv0.1.495[39m (chore): add native TS compiler `tsgo`, fix invitation workflow type error TS2590 (#1420)
+[1m[38;5;14m◆[0m  [1m[38;5;5mrlpl[0m[38;5;8mmz[39m [1m[38;5;4m4faf[0m[38;5;8m12[39m [38;5;3mjason[39m  [38;5;6m260312 2313[39m [38;5;5mv0.1.494[39m (chore): add explicit HUBSPOT_ENABLED flag (#1436)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mmvxs[0m[38;5;8muv[39m [1m[38;5;4m1fb4[0m[38;5;8mcd[39m [38;5;3mjason[39m  [38;5;6m260306 2321[39m [38;5;5mv0.1.485[39m chore(ci): align pnpm scripts with code-validation ci (#1414)
+[1m[38;5;14m◆[0m  [1m[38;5;5mnqo[0m[38;5;8mvqn[39m [1m[38;5;4ma2b2[0m[38;5;8m4a[39m [38;5;3mjason[39m  [38;5;6m260306 2313[39m [38;5;5mv0.1.484[39m chore(env): fix hubspot sandbox key comment in env.template (#1411)
+[1m[38;5;14m◆[0m  [1m[38;5;5mmvro[0m[38;5;8mzu[39m [1m[38;5;4me3a69[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m260306 2107[39m [38;5;5mv0.1.483[39m scrape alabama vet license data, add docs/data dir (#1410)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mwzxp[0m[38;5;8mkn[39m [1m[38;5;4m0679[0m[38;5;8m55[39m [38;5;3mjason[39m  [38;5;6m260305 2345[39m [38;5;5mv0.1.480[39m fix(seed): add sales tax cert link, addresses on clinics (#1401)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mozpz[0m[38;5;8mtw[39m [1m[38;5;4mf50c[0m[38;5;8m7e[39m [38;5;3mjason[39m  [38;5;6m260305 0151[39m [38;5;5mv0.1.478[39m feat(hubspot): address PR feedback, access token in template, fix upsert (#1400)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mklyz[0m[38;5;8mlr[39m [1m[38;5;4m155d8e[0m [38;5;3mjason[39m  [38;5;6m260227 2121[39m [38;5;5mv0.1.474[39m feat(hubspot): add module, model, and API client (#1373)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5murpq[0m[38;5;8mzr[39m [1m[38;5;4m1571[0m[38;5;8m5a[39m [38;5;3mjason[39m  [38;5;6m260214 0144[39m [38;5;5mv0.1.445[39m (chore): rewrite dev script for multi-instance support (#1280)
+[1m[38;5;14m◆[0m  [1m[38;5;5mvqsx[0m[38;5;8mwv[39m [1m[38;5;4m2309e[0m[38;5;8m3[39m [38;5;3mjason[39m  [38;5;6m260214 0142[39m [38;5;5mv0.1.444[39m feat(seed): add vet license seed data with 4 Arizona vets (#1292)
+[1m[38;5;14m◆[0m  [1m[38;5;5mvlv[0m[38;5;8mlvn[39m [1m[38;5;4mee9a[0m[38;5;8ma1[39m [38;5;3mjason[39m  [38;5;6m260213 0040[39m [38;5;5mv0.1.443[39m chore: fewer comments in medusa/api middlewares (#1119)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mpwrn[0m[38;5;8mlk[39m [1m[38;5;4m702bf[0m[38;5;8mf[39m [38;5;3mjason[39m  [38;5;6m260210 1831[39m [38;5;5mv0.1.435[39m chore(medusa): upgrade @medusajs packages from 2.10.3 to 2.13.1 (#1243)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mpoll[0m[38;5;8myt[39m [1m[38;5;4ma61e[0m[38;5;8m16[39m [38;5;3mjason[39m  [38;5;6m260207 0019[39m [38;5;5mv0.1.433[39m (checkout): replace saved payment methods with inline Stripe card entry (#1237)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mnroz[0m[38;5;8mzt[39m [1m[38;5;4mf119[0m[38;5;8m83[39m [38;5;3mjason[39m  [38;5;6m260206 0043[39m [38;5;5mv0.1.429[39m blur-sm -> blur in event handlers in practice reg (#1240)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mwozx[0m[38;5;8mzo[39m [1m[38;5;4m82105[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m260202 1841[39m [38;5;5mv0.1.422[39m (chore): add dev script to start infra+dev servers (#1203)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mtlyzm[0m[38;5;8mx[39m [1m[38;5;4ma8bf[0m[38;5;8me4[39m [38;5;3mjason[39m  [38;5;6m260119 1902[39m [38;5;5mv0.1.375[39m Create hi-fi public certificate page, redir anon users, fix public cert page API  (#1107)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mxmw[0m[38;5;8mulv[39m [1m[38;5;4m1a08[0m[38;5;8mb7[39m [38;5;3mjason[39m  [38;5;6m260114 0115[39m [38;5;5mv0.1.355[39m fix(ce): pass badge property to certificate cards (#1093)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mulzq[0m[38;5;8mon[39m [1m[38;5;4mc8151[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m260113 0245[39m [38;5;5mv0.1.349[39m chore: update login/signup portal copy (#1080)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mmtwn[0m[38;5;8myl[39m [1m[38;5;4mdcf2[0m[38;5;8m2b[39m [38;5;3mjason[39m  [38;5;6m251212 0945[39m [38;5;5mv0.1.266[39m bump next.js to 15.5.9 to address CVE
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5moyms[0m[38;5;8mtz[39m [1m[38;5;4m041d[0m[38;5;8mfe[39m [38;5;3mjason[39m  [38;5;6m251203 1345[39m [38;5;5mv0.1.243[39m upgrade next from 15.5.4 -> 15.5.7
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mymwy[0m[38;5;8mrl[39m [1m[38;5;4mea96d[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m251201 1722[39m [38;5;5mv0.1.235[39m [38;5;2m(empty)[39m empty to trigger redeployment (#804)
+[1m[38;5;14m◆[0m  [1m[38;5;5mtzy[0m[38;5;8mzuu[39m [1m[38;5;4mda22[0m[38;5;8mfa[39m [38;5;3mjason[39m  [38;5;6m251201 1454[39m Remove storefront/.claude/settings.json (#797)
+[1m[38;5;14m◆[0m  [1m[38;5;5mknqns[0m[38;5;8mu[39m [1m[38;5;4maa65[0m[38;5;8mbb[39m [38;5;3mjason[39m  [38;5;6m251201 1341[39m Bump oxlint 1.14 -> 1.30
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mmznrr[0m[38;5;8mn[39m [1m[38;5;4mf3f4[0m[38;5;8m05[39m [38;5;3mjason[39m  [38;5;6m251201 1121[39m add Icons to storybook
+[1m[38;5;14m◆[0m    [1m[38;5;5msym[0m[38;5;8mxtt[39m [1m[38;5;4m923b[0m[38;5;8m69[39m [38;5;3mjason[39m  [38;5;6m251201 1055[39m [38;5;2m(empty)[39m Merge pull request #780 from Cellular-Longevity/jjt/ce-cert-page
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5motp[0m[38;5;8mszt[39m [1m[38;5;4mbf66[0m[38;5;8mbd[39m [38;5;3mjason[39m  [38;5;6m251128 1602[39m fix instagram icon, make bg felt image
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mzopt[0m[38;5;8msm[39m [1m[38;5;4m16b7[0m[38;5;8mf0[39m [38;5;3mjason[39m  [38;5;6m251128 1602[39m fix copy icon
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqvxq[0m[38;5;8mww[39m [1m[38;5;4m64a1[0m[38;5;8m3f[39m [38;5;3mjason[39m  [38;5;6m251128 1602[39m wrap CertificatePage in PortalSection header and body
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mpwyx[0m[38;5;8mzp[39m [1m[38;5;4m0938a[0m[38;5;8me[39m [38;5;3mjason[39m  [38;5;6m251128 1602[39m render CertificatePage in certificate detail page with example data
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mzzzn[0m[38;5;8mvl[39m [1m[38;5;4m8194[0m[38;5;8m4a[39m [38;5;3mjason[39m  [38;5;6m251128 1602[39m add CertificatePage component with Storybook stories
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mpso[0m[38;5;8mtqq[39m [1m[38;5;4m4e85d[0m[38;5;8m4[39m [38;5;3mjason[39m  [38;5;6m251128 1602[39m temporarily add a certficate detail link to the nav
+[1m[38;5;14m◆[0m │  [1m[38;5;5mxrk[0m[38;5;8mruo[39m [1m[38;5;4m7ce6[0m[38;5;8m4c[39m [38;5;3mjason[39m  [38;5;6m251201 1055[39m [38;5;2m(empty)[39m Merge pull request #782 from Cellular-Longevity/jjt/ce-cert-detail
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mmukk[0m[38;5;8mwo[39m [1m[38;5;4m9214[0m[38;5;8mf7[39m [38;5;3mjason[39m  [38;5;6m251128 1514[39m add Certificate component with storybook stories
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mnwr[0m[38;5;8munq[39m [1m[38;5;4m8b7f3[0m[38;5;8m7[39m [38;5;3mjason[39m  [38;5;6m251128 1514[39m add viewbox to loyal logo icon
+[1m[38;5;14m◆[0m │    [1m[38;5;5mutn[0m[38;5;8mnuk[39m [1m[38;5;4mfa9c[0m[38;5;8m82[39m [38;5;3mjason[39m  [38;5;6m251201 1053[39m [38;5;2m(empty)[39m Merge pull request #787 from Cellular-Longevity/jjt/ce-get-cert-page
+├───╮
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mmlu[0m[38;5;8mxqz[39m [1m[38;5;4m8ab58[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m251128 1721[39m submit to recieve certificate goes to a placeholder cert page
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5msyxu[0m[38;5;8mnn[39m [1m[38;5;4m7caf6[0m[38;5;8mf[39m [38;5;3mjason[39m  [38;5;6m251128 1721[39m add nextjs router mock config to storybook preview
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mzysr[0m[38;5;8mxm[39m [1m[38;5;4m7a2fd[0m[38;5;8md[39m [38;5;3mjason[39m  [38;5;6m251128 1721[39m add Get CE Certificate page
+│ ├─╯
+[1m[38;5;14m◆[0m │    [1m[38;5;5mlwwx[0m[38;5;8mum[39m [1m[38;5;4mbc92[0m[38;5;8mb9[39m [38;5;3mjason[39m  [38;5;6m251201 1053[39m [38;5;2m(empty)[39m Merge pull request #778 from Cellular-Longevity/jjt/ce-certs
+├───╮
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mwxwp[0m[38;5;8mzn[39m [1m[38;5;4madda[0m[38;5;8ma2[39m [38;5;3mjason[39m  [38;5;6m251128 1606[39m prettier
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mlkm[0m[38;5;8mmls[39m [1m[38;5;4mbb00b[0m[38;5;8m8[39m [38;5;3mjason[39m  [38;5;6m251128 1606[39m rename RedeemPins to RedeemPinsCard
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5muqtnq[0m[38;5;8mz[39m [1m[38;5;4m1f51[0m[38;5;8m7c[39m [38;5;3mjason[39m  [38;5;6m251128 1606[39m add CertificatesPage component and integrate into certificates page
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mvqxm[0m[38;5;8mkn[39m [1m[38;5;4m37e6[0m[38;5;8m0b[39m [38;5;3mjason[39m  [38;5;6m251128 1606[39m add min-w-[300px] to GridCardWrapper
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mvwko[0m[38;5;8mlu[39m [1m[38;5;4m2661[0m[38;5;8m6c[39m [38;5;3mjason[39m  [38;5;6m251128 1606[39m add GridCardWrapper for consistent card widths in CertificatesGrid
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mookm[0m[38;5;8mpo[39m [1m[38;5;4md9405[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m251128 1606[39m add CertificatesGrid component with responsive layout
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5molpv[0m[38;5;8mon[39m [1m[38;5;4mb1756[0m[38;5;8m7[39m [38;5;3mjason[39m  [38;5;6m251128 1606[39m add RedeemPins component and storybook story
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mrqor[0m[38;5;8myo[39m [1m[38;5;4m540d[0m[38;5;8m9f[39m [38;5;3mjason[39m  [38;5;6m251128 1606[39m add Storybook story for CertificateCard component
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5msmlq[0m[38;5;8moo[39m [1m[38;5;4md0e0[0m[38;5;8m52[39m [38;5;3mjason[39m  [38;5;6m251128 1606[39m add CertificateCard component with completed/incomplete states
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mnzp[0m[38;5;8mwtr[39m [1m[38;5;4m6dab[0m[38;5;8m6b[39m [38;5;3mjason[39m  [38;5;6m251128 1514[39m add certificates link to nav (temporarily)
+│ ├─╯
+[1m[38;5;14m◆[0m │  [1m[38;5;5muwqtt[0m[38;5;8mw[39m [1m[38;5;4ma09d[0m[38;5;8m7b[39m [38;5;3mjason[39m  [38;5;6m251201 1052[39m copy claude settings from git root to storefront
+[1m[38;5;14m◆[0m │    [1m[38;5;5mkmpm[0m[38;5;8mwx[39m [1m[38;5;4m2ee74[0m[38;5;8me[39m [38;5;3mjason[39m  [38;5;6m251201 0847[39m [38;5;2m(empty)[39m Merge pull request #784 from Cellular-Longevity/jjt/ce-quiz-page
+├───╮
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mlmvx[0m[38;5;8mlz[39m [1m[38;5;4mdfea[0m[38;5;8m79[39m [38;5;3mjason[39m  [38;5;6m251128 1706[39m make submit button navigate to review mode
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5muyym[0m[38;5;8mmr[39m [1m[38;5;4m321c[0m[38;5;8m7f[39m [38;5;3mjason[39m  [38;5;6m251128 1706[39m make back to course and view cert buttons go to placeholder urls
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mtpmvu[0m[38;5;8mt[39m [1m[38;5;4ma95f[0m[38;5;8m8b[39m [38;5;3mjason[39m  [38;5;6m251128 1706[39m add review=true qs to quiz page to see results
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mtxmk[0m[38;5;8mtx[39m [1m[38;5;4m8269[0m[38;5;8m7c[39m [38;5;3mjason[39m  [38;5;6m251128 1514[39m lint
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mylso[0m[38;5;8msy[39m [1m[38;5;4m4889[0m[38;5;8mdf[39m [38;5;3mjason[39m  [38;5;6m251128 1514[39m prettier
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mwsxz[0m[38;5;8mqw[39m [1m[38;5;4mbe0d[0m[38;5;8mf4[39m [38;5;3mjason[39m  [38;5;6m251128 1514[39m add review state to QuizPage with pass/fail results
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mtryuu[0m[38;5;8ms[39m [1m[38;5;4mb64d[0m[38;5;8m8f[39m [38;5;3mjason[39m  [38;5;6m251128 1514[39m add QuizPage component and show in quiz page route
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mplvo[0m[38;5;8mzo[39m [1m[38;5;4m484f[0m[38;5;8m3f[39m [38;5;3mjason[39m  [38;5;6m251128 1514[39m add temporary link to the quiz from the course page
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mtprv[0m[38;5;8mys[39m [1m[38;5;4md79b[0m[38;5;8m51[39m [38;5;3mjason[39m  [38;5;6m251128 1514[39m stub out a course/[courseId]/quiz page
+[1m[38;5;14m◆[0m │ │  [1m[38;5;5msmwx[0m[38;5;8mol[39m [1m[38;5;4mda874[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m251201 0847[39m [38;5;2m(empty)[39m Merge pull request #783 from Cellular-Longevity/jjt/ce-quiz-question-component
+├───╯
+[1m[38;5;14m◆[0m │  [1m[38;5;5mkyku[0m[38;5;8mvv[39m [1m[38;5;4m52be[0m[38;5;8m0e[39m [38;5;3mjason[39m  [38;5;6m251128 1514[39m add quiz question component
+├─╯
+[1m[38;5;14m◆[0m    [1m[38;5;5mxsrv[0m[38;5;8msy[39m [1m[38;5;4m83ca6[0m[38;5;8m9[39m [38;5;3mjason[39m  [38;5;6m251128 0947[39m [38;5;5mv0.1.232[39m [38;5;2m(empty)[39m Merge pull request #781 from Cellular-Longevity/jjt/ce-badges
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mtmv[0m[38;5;8musp[39m [1m[38;5;4m8099[0m[38;5;8me0[39m [38;5;3mjason[39m  [38;5;6m251128 0945[39m move getNavItems to top of nav.tsx
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mrvyou[0m[38;5;8mz[39m [1m[38;5;4m03d3b2[0m [38;5;3mjason[39m  [38;5;6m251128 0945[39m add course badge images
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mvqk[0m[38;5;8mzwo[39m [1m[38;5;4mf0b5[0m[38;5;8m2e[39m [38;5;3mjason[39m  [38;5;6m251126 1706[39m [38;5;5mv0.1.231[39m [38;5;2m(empty)[39m Merge pull request #774 from Cellular-Longevity/sean/add-ce-courses-ui
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mpsty[0m[38;5;8msy[39m [1m[38;5;4m4dc2[0m[38;5;8m14[39m [38;5;3mjason[39m  [38;5;6m251104 1059[39m [38;5;5mv0.1.201[39m [38;5;2m(empty)[39m Merge pull request #669 from Cellular-Longevity/jjt/della-320
+[1m[38;5;14m◆[0m  [1m[38;5;5mzsvn[0m[38;5;8mvt[39m [1m[38;5;4m6747[0m[38;5;8m19[39m [38;5;3mjason[39m  [38;5;6m251104 1059[39m remove errant comment
+[1m[38;5;14m◆[0m  [1m[38;5;5mozyl[0m[38;5;8mvl[39m [1m[38;5;4m398a[0m[38;5;8m0c[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m requireClinicRole() -> requireClinicAuthRole()
+[1m[38;5;14m◆[0m  [1m[38;5;5mumoqz[0m[38;5;8mx[39m [1m[38;5;4m54fb[0m[38;5;8m99[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m permissions-db.ts -> permissions.ts
+[1m[38;5;14m◆[0m  [1m[38;5;5mmwqs[0m[38;5;8mso[39m [1m[38;5;4m43ba6[0m[38;5;8m7[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m prettier
+[1m[38;5;14m◆[0m  [1m[38;5;5mtwruv[0m[38;5;8mo[39m [1m[38;5;4mae13[0m[38;5;8mf6[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m lint
+[1m[38;5;14m◆[0m  [1m[38;5;5mxlkm[0m[38;5;8mpr[39m [1m[38;5;4m606b[0m[38;5;8m23[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m refactor(auth): deprecate Clerk permission functions
+[1m[38;5;14m◆[0m  [1m[38;5;5myyupv[0m[38;5;8ms[39m [1m[38;5;4ma788[0m[38;5;8ma7[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m test: update integration tests to use ClinicEmployee instead of Clerk
+[1m[38;5;14m◆[0m  [1m[38;5;5mnwss[0m[38;5;8mow[39m [1m[38;5;4md056[0m[38;5;8m03[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m refactor(auth): complete migration of all routes to database authorization
+[1m[38;5;14m◆[0m  [1m[38;5;5mwvtn[0m[38;5;8mtk[39m [1m[38;5;4mccc84[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m refactor(auth): migrate employee routes to database authorization
+[1m[38;5;14m◆[0m  [1m[38;5;5mtmtu[0m[38;5;8mwl[39m [1m[38;5;4m2e69[0m[38;5;8md7[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m refactor(auth): migrate clinic routes to database authorization
+[1m[38;5;14m◆[0m  [1m[38;5;5mrruo[0m[38;5;8mll[39m [1m[38;5;4mabb82[0m[38;5;8m7[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m feat(auth): add clinic activation endpoint for active clinic JWT
+[1m[38;5;14m◆[0m  [1m[38;5;5msmnt[0m[38;5;8mzk[39m [1m[38;5;4m2b31[0m[38;5;8mfd[39m [38;5;3mjason[39m  [38;5;6m251104 1024[39m feat(auth): add database-driven authorization middleware
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mvnmo[0m[38;5;8mqz[39m [1m[38;5;4mc534[0m[38;5;8m3f[39m [38;5;3mjason[39m  [38;5;6m251031 1025[39m [38;5;5mv0.1.193[39m eslint disable a line in seed-data
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mxwxs[0m[38;5;8mkn[39m [1m[38;5;4m43f7[0m[38;5;8m8e[39m [38;5;3mjason[39m  [38;5;6m251029 1636[39m [38;5;5mv0.1.185[39m update claude settings tool use format
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mwtry[0m[38;5;8mns[39m [1m[38;5;4mbc615[0m[38;5;8m3[39m [38;5;3mjason[39m  [38;5;6m251028 1443[39m [38;5;5mv0.1.179[39m only run integration cleanup if we run integration tests
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mtyou[0m[38;5;8mqr[39m [1m[38;5;4m2d4d3[0m[38;5;8mb[39m [38;5;3mjason[39m  [38;5;6m251028 1137[39m [38;5;5mv0.1.177[39m Update Claude settings to use new PostToolUse hook format
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m    [1m[38;5;5mypyzm[0m[38;5;8mr[39m [1m[38;5;4me19307[0m [38;5;3mjason[39m  [38;5;6m251027 1633[39m [38;5;5mv0.1.174[39m [38;5;2m(empty)[39m Merge pull request #639 from Cellular-Longevity/jjt/della-339
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mpxup[0m[38;5;8mtl[39m [1m[38;5;4m7cad[0m[38;5;8md8[39m [38;5;3mjason[39m  [38;5;6m251024 0914[39m clerk deorg 1.3 - finish removing orgs from tests
+[1m[38;5;14m◆[0m │  [1m[38;5;5mtmmx[0m[38;5;8mrn[39m [1m[38;5;4mf887[0m[38;5;8m27[39m [38;5;3mjason[39m  [38;5;6m251027 1632[39m [38;5;5mv0.1.173[39m [38;5;2m(empty)[39m Merge pull request #638 from Cellular-Longevity/jjt/della-338
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mkzrul[0m[38;5;8mr[39m [1m[38;5;4mc3ae[0m[38;5;8m92[39m [38;5;3mjason[39m  [38;5;6m251024 0914[39m clerk deorg 1.2 - integration tests
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mpzyv[0m[38;5;8mop[39m [1m[38;5;4m15a7[0m[38;5;8m06[39m [38;5;3mjason[39m  [38;5;6m251022 1029[39m [38;5;5mv0.1.168[39m add commit messages to trigger ci runs (#634)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mpmpuk[0m[38;5;8mk[39m [1m[38;5;4m36b6[0m[38;5;8m4d[39m [38;5;3mjason[39m  [38;5;6m251017 1636[39m [38;5;5mv0.1.163[39m fix claude settings
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5muxwp[0m[38;5;8mru[39m [1m[38;5;4m695f[0m[38;5;8m73[39m [38;5;3mjason[39m  [38;5;6m251017 1535[39m [38;5;5mv0.1.161[39m add claude settings, run lint + format with tool use
+[1m[38;5;14m◆[0m    [1m[38;5;5msxly[0m[38;5;8mtl[39m [1m[38;5;4m292cc[0m[38;5;8m7[39m [38;5;3mjason[39m  [38;5;6m251017 1503[39m [38;5;5mv0.1.160[39m [38;5;2m(empty)[39m Merge pull request #599 from Cellular-Longevity/jjt/default-shipping-address
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqop[0m[38;5;8mzll[39m [1m[38;5;4m4bfc[0m[38;5;8m27[39m [38;5;3mjason[39m  [38;5;6m251017 1048[39m determine default practice shipping address on backend
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mwqtn[0m[38;5;8mtn[39m [1m[38;5;4m23d15[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m251017 1010[39m [38;5;5mv0.1.159[39m allow LOG_LEVELs other than error in integration tests
+[1m[38;5;14m◆[0m  [1m[38;5;5mzomp[0m[38;5;8mqz[39m [1m[38;5;4mb72c[0m[38;5;8me0[39m [38;5;3mjason[39m  [38;5;6m251017 1010[39m remove --silent, --runInBand from medusa pnpm run test scripts
+[1m[38;5;14m◆[0m  [1m[38;5;5mkox[0m[38;5;8mzmk[39m [1m[38;5;4m5a9c[0m[38;5;8m7e[39m [38;5;3mjason[39m  [38;5;6m251017 1008[39m [38;5;5mv0.1.158[39m [38;5;2m(empty)[39m Merge pull request #623 from Cellular-Longevity/jjt/prettier-on-ci
+[1m[38;5;14m◆[0m  [1m[38;5;5mttsv[0m[38;5;8mxp[39m [1m[38;5;4m416c[0m[38;5;8mab[39m [38;5;3mjason[39m  [38;5;6m251017 0944[39m format 2 files
+[1m[38;5;14m◆[0m  [1m[38;5;5momvx[0m[38;5;8mnr[39m [1m[38;5;4m958dc[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m251017 0944[39m add prettier CI workflow
+[1m[38;5;14m◆[0m  [1m[38;5;5mkkzw[0m[38;5;8mwk[39m [1m[38;5;4m51035[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m251017 0944[39m refactor pnpm format jobs
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5muno[0m[38;5;8mpyk[39m [1m[38;5;4m5fd3[0m[38;5;8m37[39m [38;5;3mjason[39m  [38;5;6m251016 1601[39m [38;5;5mv0.1.156[39m gitignore next-env.d.ts files
+[1m[38;5;14m◆[0m  [1m[38;5;5mspkw[0m[38;5;8mnp[39m [1m[38;5;4m2e04b[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m251016 0949[39m [38;5;5mv0.1.155[39m fix pr-size-labeler not ignoring things it should
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mruzo[0m[38;5;8mwz[39m [1m[38;5;4mdaf49[0m[38;5;8m5[39m [38;5;3mjason[39m  [38;5;6m251014 1636[39m [38;5;5mv0.1.153[39m [38;5;2m(empty)[39m Merge pull request #600 from Cellular-Longevity/jjt/bump-react-next
+[1m[38;5;14m◆[0m  [1m[38;5;5mvxpm[0m[38;5;8mtl[39m [1m[38;5;4m854a[0m[38;5;8mbf[39m [38;5;3mjason[39m  [38;5;6m251010 1747[39m react 19.2.0, next 15.5.4
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5moxzq[0m[38;5;8mtk[39m [1m[38;5;4m2125[0m[38;5;8m47[39m [38;5;3mjason[39m  [38;5;6m251003 1813[39m show an empty state if no shippable addresses
+[1m[38;5;14m◆[0m  [1m[38;5;5mwosp[0m[38;5;8mkl[39m [1m[38;5;4mdd39[0m[38;5;8ma8[39m [38;5;3mjason[39m  [38;5;6m251003 1813[39m title case the addresses appropriately
+[1m[38;5;14m◆[0m  [1m[38;5;5msttt[0m[38;5;8mlk[39m [1m[38;5;4m8fd4[0m[38;5;8m0f[39m [38;5;3mjason[39m  [38;5;6m251003 1804[39m set clinic.default_shipping_address to first valid license instead
+[1m[38;5;14m◆[0m  [1m[38;5;5mpytv[0m[38;5;8mwt[39m [1m[38;5;4mac73[0m[38;5;8meb[39m [38;5;3mjason[39m  [38;5;6m251003 1804[39m null clinic.default_shipping_address when can ship to is false
+[1m[38;5;14m◆[0m  [1m[38;5;5mlssl[0m[38;5;8mnu[39m [1m[38;5;4m9755[0m[38;5;8m50[39m [38;5;3mjason[39m  [38;5;6m251003 1804[39m shipping addresses use correct clinic name
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mozun[0m[38;5;8mrn[39m [1m[38;5;4m0c08[0m[38;5;8mde[39m [38;5;3mjason[39m  [38;5;6m251003 1141[39m [38;5;5mv0.1.131[39m [38;5;2m(empty)[39m Merge pull request #578 from Cellular-Longevity/jjt/edit-clinic-address
+[1m[38;5;14m◆[0m  [1m[38;5;5mpoms[0m[38;5;8mmv[39m [1m[38;5;4mbb0a[0m[38;5;8m88[39m [38;5;3mjason[39m  [38;5;6m251003 1139[39m unknown to UNKNOWN_ERROR in storefront clinics API
+[1m[38;5;14m◆[0m  [1m[38;5;5mqlov[0m[38;5;8mst[39m [1m[38;5;4m8237[0m[38;5;8mf2[39m [38;5;3mjason[39m  [38;5;6m251003 1037[39m handle errors, update clinic storefront api routes to new error format
+[1m[38;5;14m◆[0m  [1m[38;5;5mznou[0m[38;5;8mor[39m [1m[38;5;4mb218[0m[38;5;8m78[39m [38;5;3mjason[39m  [38;5;6m251003 1037[39m setting default address works now
+[1m[38;5;14m◆[0m  [1m[38;5;5mxwq[0m[38;5;8mvzz[39m [1m[38;5;4md4bee[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m251003 1037[39m refactor db calls in employees route into helpers file
+[1m[38;5;14m◆[0m  [1m[38;5;5mpzuv[0m[38;5;8mqm[39m [1m[38;5;4meae1[0m[38;5;8m64[39m [38;5;3mjason[39m  [38;5;6m251003 1037[39m refactor react query and checkbox/badge code
+[1m[38;5;14m◆[0m  [1m[38;5;5mplvw[0m[38;5;8muv[39m [1m[38;5;4m4459af[0m [38;5;3mjason[39m  [38;5;6m251003 1037[39m add react query (any|all)(Success|Pending|Error) helper fns
+[1m[38;5;14m◆[0m  [1m[38;5;5mqpypn[0m[38;5;8mv[39m [1m[38;5;4m4d310[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m251003 1037[39m add default_shipping_address field to medusa update workflow
+[1m[38;5;14m◆[0m  [1m[38;5;5myorq[0m[38;5;8mwn[39m [1m[38;5;4mf1a9[0m[38;5;8m01[39m [38;5;3mjason[39m  [38;5;6m251003 1037[39m use clinic.default_shipping_address to show the default
+[1m[38;5;14m◆[0m  [1m[38;5;5mlnpn[0m[38;5;8mqp[39m [1m[38;5;4mde1fb[0m[38;5;8m3[39m [38;5;3mjason[39m  [38;5;6m251003 1037[39m add default_shipping_address fields to clinic query
+[1m[38;5;14m◆[0m  [1m[38;5;5mpmpuy[0m[38;5;8mp[39m [1m[38;5;4m7024[0m[38;5;8m3c[39m [38;5;3mjason[39m  [38;5;6m251003 1037[39m add default_shipping_address to clinic
+[1m[38;5;14m◆[0m  [1m[38;5;5mwqsq[0m[38;5;8msn[39m [1m[38;5;4m2b8ab[0m[38;5;8m4[39m [38;5;3mjason[39m  [38;5;6m251002 1515[39m basic UI controls for edit info default shipping
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mmyoy[0m[38;5;8mpk[39m [1m[38;5;4mb18[0m[38;5;8mbfe[39m [38;5;3mjason[39m  [38;5;6m250916 1427[39m [38;5;5mv0.1.112[39m refactor Tooltip component
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mrpvx[0m[38;5;8mzp[39m [1m[38;5;4m1a4e[0m[38;5;8m69[39m [38;5;3mjason[39m  [38;5;6m250916 1341[39m [38;5;5mv0.1.110[39m refactor Tooltip to use Ark-UI instead of Radix
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5myur[0m[38;5;8mpzm[39m [1m[38;5;4m5e759[0m[38;5;8m6[39m [38;5;3mjason[39m  [38;5;6m250915 1618[39m [38;5;5mv0.1.107[39m refactor 3 ___Button components into single Button
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5morok[0m[38;5;8mll[39m [1m[38;5;4mcf79e[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m250912 1429[39m [38;5;5mv0.1.103[39m remove some dummy data from clinic information page
+[1m[38;5;14m◆[0m  [1m[38;5;5mrsq[0m[38;5;8mvou[39m [1m[38;5;4m73ef3[0m[38;5;8m6[39m [38;5;3mjason[39m  [38;5;6m250912 1429[39m use vet_license addresses to show licenses on clinic information page
+[1m[38;5;14m◆[0m  [1m[38;5;5mlrunw[0m[38;5;8mk[39m [1m[38;5;4m32908[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250912 1429[39m remove view LOA button from shipping addresses
+[1m[38;5;14m◆[0m  [1m[38;5;5mpll[0m[38;5;8musw[39m [1m[38;5;4m65272[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m250912 1429[39m move ClinicInformationSection to top of file
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mtzkr[0m[38;5;8mlp[39m [1m[38;5;4m0fc0[0m[38;5;8ma6[39m [38;5;3mjason[39m  [38;5;6m250911 0946[39m [38;5;5mv0.1.100[39m add note to not set SENTRY_DSN in .env.templates
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mlnsy[0m[38;5;8mol[39m [1m[38;5;4mc0e2c[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m250908 1628[39m [38;5;5mv0.1.94[39m replace clerk user settings dropdown with custom
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mkluq[0m[38;5;8mlv[39m [1m[38;5;4m2229[0m[38;5;8mcc[39m [38;5;3mjason[39m  [38;5;6m250904 1425[39m [38;5;5mv0.1.88[39m Revert "remove storefront cart calls for now" (#478)
+[1m[38;5;14m◆[0m  [1m[38;5;5mttr[0m[38;5;8mtxk[39m [1m[38;5;4maeb4[0m[38;5;8md2[39m [38;5;3mjason[39m  [38;5;6m250904 1406[39m [38;5;5mv0.1.87[39m fail lint CI workflow if warning
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5muzuw[0m[38;5;8mvy[39m [1m[38;5;4m5be7[0m[38;5;8mf2[39m [38;5;3mjason[39m  [38;5;6m250828 1104[39m add default tax provider to seed data
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mzmuur[0m[38;5;8mu[39m [1m[38;5;4m1e11d[0m[38;5;8mb[39m [38;5;3mjason[39m  [38;5;6m250828 1104[39m update medusa to 2.9.1-snapshot-20250815175644
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m    [1m[38;5;5mrmly[0m[38;5;8mzk[39m [1m[38;5;4md1f7[0m[38;5;8m3a[39m [38;5;3mjason[39m  [38;5;6m250826 1826[39m [38;5;5mv0.1.82[39m [38;5;2m(empty)[39m Merge pull request #481 from Cellular-Longevity/jjt/viewlicenseonuserpage
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvxoz[0m[38;5;8mql[39m [1m[38;5;4md86e[0m[38;5;8m72[39m [38;5;3mjason[39m  [38;5;6m250826 1749[39m remove country-codes-list package
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mpnns[0m[38;5;8mpy[39m [1m[38;5;4m6d28[0m[38;5;8m75[39m [38;5;3mjason[39m  [38;5;6m250826 1719[39m fix medusa pnpm lockfile
+│ [1m[38;5;14m◆[0m  [1m[38;5;5monn[0m[38;5;8mlon[39m [1m[38;5;4m4746[0m[38;5;8m4b[39m [38;5;3mjason[39m  [38;5;6m250826 1714[39m wire up new fields to UI
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mlxqp[0m[38;5;8mqv[39m [1m[38;5;4m3cfb[0m[38;5;8maf[39m [38;5;3mjason[39m  [38;5;6m250826 1714[39m add new vet license fields to api schema
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mrvsl[0m[38;5;8mns[39m [1m[38;5;4mdcfa[0m[38;5;8mf3[39m [38;5;3mjason[39m  [38;5;6m250826 1714[39m transformKeys handles dates properly
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqlsl[0m[38;5;8myr[39m [1m[38;5;4mb70a[0m[38;5;8m62[39m [38;5;3mjason[39m  [38;5;6m250826 1714[39m add shippable, expiry, address fields to vet_license; migrations
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mnqx[0m[38;5;8mlpl[39m [1m[38;5;4m96fa[0m[38;5;8m61[39m [38;5;3mjason[39m  [38;5;6m250826 1714[39m add country-codes-list package, countryCodes.ts
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mrsk[0m[38;5;8mqox[39m [1m[38;5;4m9bffb[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m250826 1714[39m handle all vet license states in UI
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mlqosw[0m[38;5;8ml[39m [1m[38;5;4mfc99[0m[38;5;8me5[39m [38;5;3mjason[39m  [38;5;6m250826 1714[39m add "missing" and "expired" to vet license schema, badge helpers
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mkkzz[0m[38;5;8mos[39m [1m[38;5;4m1e19[0m[38;5;8m0e[39m [38;5;3mjason[39m  [38;5;6m250826 1714[39m add vet license info relations on employees/me api route
+│ [1m[38;5;14m◆[0m    [1m[38;5;5mpumrv[0m[38;5;8mt[39m [1m[38;5;4ma298[0m[38;5;8m75[39m [38;5;3mjason[39m  [38;5;6m250826 1714[39m add license information section and header
+│ ├─╮
+│ [38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+│ │ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m │ │  [1m[38;5;5mnsz[0m[38;5;8mskl[39m [1m[38;5;4m91a18[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250826 1715[39m [38;5;5mv0.1.81[39m practice info delete links to contact support page
+[1m[38;5;14m◆[0m │ │  [1m[38;5;5mwvxl[0m[38;5;8mzr[39m [1m[38;5;4m863a3[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m250826 1714[39m [38;5;5mv0.1.80[39m [38;5;2m(empty)[39m update @clerk/types to 4.75.0
+[1m[38;5;14m◆[0m │ │    [1m[38;5;5mnmpv[0m[38;5;8mys[39m [1m[38;5;4m4ee2[0m[38;5;8md9[39m [38;5;3mjason[39m  [38;5;6m250825 1642[39m update @clerk/types to 4.75.0
+├─────╮
+[38;5;8m~[39m │ │ │  [38;5;8m(elided revisions)[39m
+├─╯ │ │
+│   │ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│   ├─╯
+│   [1m[38;5;14m◆[0m  [1m[38;5;5mkvsu[0m[38;5;8mkp[39m [1m[38;5;4mb80c[0m[38;5;8m96[39m [38;5;3mjason[39m  [38;5;6m250821 1712[39m remove a few errant console.logs
+[1m[38;5;14m◆[0m   │  [1m[38;5;5mzmsx[0m[38;5;8mpt[39m [1m[38;5;4meb0e[0m[38;5;8mae[39m [38;5;3mjason[39m  [38;5;6m250821 1803[39m [38;5;5mv0.1.73[39m remove storefront cart calls for now
+├───╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mszmx[0m[38;5;8mpn[39m [1m[38;5;4m447a[0m[38;5;8m90[39m [38;5;3mjason[39m  [38;5;6m250821 1547[39m [38;5;5mv0.1.72[39m add structure to clinic information page
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mwury[0m[38;5;8mwl[39m [1m[38;5;4m22705[0m[38;5;8me[39m [38;5;3mjason[39m  [38;5;6m250820 1325[39m [38;5;5mv0.1.69[39m rename Pill component to Badge, add "type" prop
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5msws[0m[38;5;8mnuy[39m [1m[38;5;4me47bca[0m [38;5;3mjason[39m  [38;5;6m250818 1628[39m [38;5;5mv0.1.64[39m fix clinic selector links for feature flagged users
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mtonl[0m[38;5;8mwt[39m [1m[38;5;4mc922f[0m[38;5;8m9[39m [38;5;3mjason[39m  [38;5;6m250815 1542[39m [38;5;5mv0.1.59[39m clinic selector handles org address as object or string (#461)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mxyrz[0m[38;5;8mxw[39m [1m[38;5;4ma241[0m[38;5;8m37[39m [38;5;3mjason[39m  [38;5;6m250814 1556[39m [38;5;5mv0.1.57[39m add script to check for missing env vars
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mrrup[0m[38;5;8mup[39m [1m[38;5;4m9044[0m[38;5;8ma0[39m [38;5;3mjason[39m  [38;5;6m250813 0912[39m [38;5;5mv0.1.54[39m cleanup-test-resources accepts "y" (#450)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mttnz[0m[38;5;8mxv[39m [1m[38;5;4mfcec[0m[38;5;8m2d[39m [38;5;3mjason[39m  [38;5;6m250801 1555[39m clinic image is object-fit: contain
+[1m[38;5;14m◆[0m  [1m[38;5;5mtwzs[0m[38;5;8mzu[39m [1m[38;5;4m65d152[0m [38;5;3mjason[39m  [38;5;6m250801 1539[39m [38;5;5mv0.1.40[39m fix page titles (#437)
+[1m[38;5;14m◆[0m  [1m[38;5;5mruln[0m[38;5;8mpu[39m [1m[38;5;4mb9163[0m[38;5;8md[39m [38;5;3mjason[39m  [38;5;6m250801 1538[39m [38;5;5mv0.1.39[39m [38;5;2m(empty)[39m Merge pull request #434 from Cellular-Longevity/jjt/hog-defends-the-portal
+[1m[38;5;14m◆[0m  [1m[38;5;5mqkpr[0m[38;5;8mtz[39m [1m[38;5;4mdad3[0m[38;5;8me8[39m [38;5;3mjason[39m  [38;5;6m250731 1346[39m check for posthog api host env var
+[1m[38;5;14m◆[0m  [1m[38;5;5mstlxo[0m[38;5;8mq[39m [1m[38;5;4m5e80[0m[38;5;8m06[39m [38;5;3mjason[39m  [38;5;6m250731 1227[39m add posthog ff check to e2e tests, refactor posthog-middlewares
+[1m[38;5;14m◆[0m  [1m[38;5;5moksn[0m[38;5;8mou[39m [1m[38;5;4mae38[0m[38;5;8m08[39m [38;5;3mjason[39m  [38;5;6m250731 1227[39m rename CI posthog env vars
+[1m[38;5;14m◆[0m  [1m[38;5;5mmxrs[0m[38;5;8mkq[39m [1m[38;5;4md60b[0m[38;5;8mf7[39m [38;5;3mjason[39m  [38;5;6m250731 0923[39m feature flag portal access
+[1m[38;5;14m◆[0m  [1m[38;5;5mzuo[0m[38;5;8mtyz[39m [1m[38;5;4m0fbf[0m[38;5;8ma8[39m [38;5;3mjason[39m  [38;5;6m250730 1704[39m PostHogConfig isn't a default export
+[1m[38;5;14m◆[0m  [1m[38;5;5mspkp[0m[38;5;8msp[39m [1m[38;5;4m02c0[0m[38;5;8m2a[39m [38;5;3mjason[39m  [38;5;6m250730 1704[39m add posthog api env var, posthog reverse proxy
+[1m[38;5;14m◆[0m    [1m[38;5;5muyys[0m[38;5;8mpx[39m [1m[38;5;4md1c3[0m[38;5;8m75[39m [38;5;3mjason[39m  [38;5;6m250730 1518[39m [38;5;5mv0.1.35[39m [38;5;2m(empty)[39m Merge pull request #431 from Cellular-Longevity/jjt/e2eeeeeee
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5muuulw[0m[38;5;8my[39m [1m[38;5;4mda5[0m[38;5;8m47b[39m [38;5;3mjason[39m  [38;5;6m250730 1322[39m fix clerk setup for both USER_CAN_ACCESS_PORTAL env var values
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mkytn[0m[38;5;8mnm[39m [1m[38;5;4m1844[0m[38;5;8mcd[39m [38;5;3mjason[39m  [38;5;6m250730 1153[39m USER_CAN_ACCESS_PORTAL must be "true", not non-null
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m │  [1m[38;5;5mtlsy[0m[38;5;8mtn[39m [1m[38;5;4m8f8d[0m[38;5;8m31[39m [38;5;3mjason[39m  [38;5;6m250730 1104[39m [38;5;5mv0.1.34[39m bump storefront next.js to 15.4.5
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5msvkw[0m[38;5;8mrv[39m [1m[38;5;4m88bc4[0m[38;5;8md[39m [38;5;3mjason[39m  [38;5;6m250729 1432[39m [38;5;5mv0.1.30[39m registration complete has register practice link
+[1m[38;5;14m◆[0m  [1m[38;5;5muqrp[0m[38;5;8mvm[39m [1m[38;5;4mcdc3[0m[38;5;8m2e[39m [38;5;3mjason[39m  [38;5;6m250729 1432[39m [38;5;5mv0.1.29[39m [38;5;2m(empty)[39m Merge pull request #427 from Cellular-Longevity/jjt/DELLA-179
+[1m[38;5;14m◆[0m  [1m[38;5;5msmpz[0m[38;5;8mox[39m [1m[38;5;4ma3ad[0m[38;5;8m98[39m [38;5;3mjason[39m  [38;5;6m250729 1343[39m skip all e2e portal tests if USER_CAN_ACCESS_PORTAL not set
+[1m[38;5;14m◆[0m  [1m[38;5;5mulxon[0m[38;5;8mr[39m [1m[38;5;4maee9[0m[38;5;8m45[39m [38;5;3mjason[39m  [38;5;6m250729 1343[39m move e2e register test out of e2e-tests/portal
+[1m[38;5;14m◆[0m  [1m[38;5;5mzmuut[0m[38;5;8mr[39m [1m[38;5;4mf86a[0m[38;5;8m34[39m [38;5;3mjason[39m  [38;5;6m250729 0914[39m switch clerk e2e setup to check for practice reg complete
+[1m[38;5;14m◆[0m  [1m[38;5;5mlomvq[0m[38;5;8mt[39m [1m[38;5;4m56ca[0m[38;5;8m43[39m [38;5;3mjason[39m  [38;5;6m250728 1722[39m redir users from /us/portal/clinics/* to reg thank you
+[1m[38;5;14m◆[0m  [1m[38;5;5muvtp[0m[38;5;8mmm[39m [1m[38;5;4me825[0m[38;5;8m14[39m [38;5;3mjason[39m  [38;5;6m250728 1711[39m move portal/register/ to /register
+[1m[38;5;14m◆[0m  [1m[38;5;5mlkos[0m[38;5;8mzo[39m [1m[38;5;4m73165[0m[38;5;8m5[39m [38;5;3mjason[39m  [38;5;6m250728 1711[39m move /portal/tell-us to /tell-us
+[1m[38;5;14m◆[0m  [1m[38;5;5mtnvz[0m[38;5;8mwz[39m [1m[38;5;4md13a[0m[38;5;8mca[39m [38;5;3mjason[39m  [38;5;6m250725 1652[39m [38;5;5mv0.1.24[39m refactor DogLayout to align with design intents
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mpnq[0m[38;5;8mrnu[39m [1m[38;5;4m8cdc3[0m[38;5;8m7[39m [38;5;3mjason[39m  [38;5;6m250725 0907[39m [38;5;5mv0.1.22[39m fix dog layout again
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mwnls[0m[38;5;8mpp[39m [1m[38;5;4m5a484[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m250724 0914[39m [38;5;5mv0.1.20[39m [38;5;2m(empty)[39m Merge pull request #419 from Cellular-Longevity/jjt/dog-layout-sequel
+[1m[38;5;14m◆[0m  [1m[38;5;5mzzx[0m[38;5;8mxrq[39m [1m[38;5;4m00ae4[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250723 1700[39m responsive behaviour for DogLayout content
+[1m[38;5;14m◆[0m  [1m[38;5;5mryyx[0m[38;5;8mwq[39m [1m[38;5;4mfd88b[0m[38;5;8m7[39m [38;5;3mjason[39m  [38;5;6m250723 1115[39m [38;5;5mv0.1.17[39m [38;5;2m(empty)[39m Merge pull request #417 from Cellular-Longevity/jjt/dog-alignment
+[1m[38;5;14m◆[0m  [1m[38;5;5moqyk[0m[38;5;8muk[39m [1m[38;5;4mb5e[0m[38;5;8mfaa[39m [38;5;3mjason[39m  [38;5;6m250723 1101[39m allow vertical scrolling dog layout content area
+[1m[38;5;14m◆[0m  [1m[38;5;5musqm[0m[38;5;8msk[39m [1m[38;5;4m0230[0m[38;5;8m2f[39m [38;5;3mjason[39m  [38;5;6m250723 1101[39m center dog image in available space
+[1m[38;5;14m◆[0m  [1m[38;5;5mmvou[0m[38;5;8muz[39m [1m[38;5;4m3719[0m[38;5;8mbb[39m [38;5;3mjason[39m  [38;5;6m250722 1358[39m refactor DogLayout.Content styles
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mvoqsw[0m[38;5;8mx[39m [1m[38;5;4m0e1c[0m[38;5;8m82[39m [38;5;3mjason[39m  [38;5;6m250708 1134[39m [38;5;5mv0.1.2[39m [38;5;2m(empty)[39m Merge pull request #396 from Cellular-Longevity/jjt/practice-chooser-routing
+[1m[38;5;14m◆[0m  [1m[38;5;5mqwww[0m[38;5;8mnt[39m [1m[38;5;4m555e[0m[38;5;8m21[39m [38;5;3mjason[39m  [38;5;6m250704 1624[39m don't redir user to clinic if only one clinic
+[1m[38;5;14m◆[0m  [1m[38;5;5mnvnp[0m[38;5;8mtu[39m [1m[38;5;4m1339[0m[38;5;8m38[39m [38;5;3mjason[39m  [38;5;6m250704 1624[39m don't stringify the response body when adding employee
+[1m[38;5;14m◆[0m  [1m[38;5;5mxors[0m[38;5;8mxs[39m [1m[38;5;4m2086[0m[38;5;8m55[39m [38;5;3mjason[39m  [38;5;6m250704 1623[39m redir from / to /portal/clinics
+[1m[38;5;14m◆[0m  [1m[38;5;5mztuv[0m[38;5;8mmo[39m [1m[38;5;4m38ee6[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m250704 1623[39m clinic selector page works when NODE_ENV=development
+[1m[38;5;14m◆[0m  [1m[38;5;5mlkoy[0m[38;5;8mqv[39m [1m[38;5;4m726836[0m [38;5;3mjason[39m  [38;5;6m250703 1617[39m [38;5;5mv0.0.148[39m add new API response types and utilties
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mytvy[0m[38;5;8myt[39m [1m[38;5;4m02cd[0m[38;5;8mf1[39m [38;5;3mjason[39m  [38;5;6m250626 1004[39m [38;5;5mv0.0.140[39m fix missing title in 0006-updated-api-response-structure.md
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mkkqz[0m[38;5;8mwz[39m [1m[38;5;4ma359[0m[38;5;8m06[39m [38;5;3mjason[39m  [38;5;6m250625 1356[39m [38;5;5mv0.0.136[39m bump oxlint to v1.3.0
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mrqv[0m[38;5;8mqmk[39m [1m[38;5;4mc377[0m[38;5;8mc3[39m [38;5;3mjason[39m  [38;5;6m250624 1209[39m [38;5;5mv0.0.131[39m 0006-updated-api-response-structure.md
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m    [1m[38;5;5muyzz[0m[38;5;8mxu[39m [1m[38;5;4m2ab8[0m[38;5;8m96[39m [38;5;3mjason[39m  [38;5;6m250623 1152[39m [38;5;5mv0.0.127[39m [38;5;2m(empty)[39m Merge pull request #372 from Cellular-Longevity/jjt/reg-page-update
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqzmw[0m[38;5;8mss[39m [1m[38;5;4m4d82[0m[38;5;8mbb[39m [38;5;3mjason[39m  [38;5;6m250619 1514[39m update register practice landing page
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m │  [1m[38;5;5mvwym[0m[38;5;8mvn[39m [1m[38;5;4mf067[0m[38;5;8m60[39m [38;5;3mjason[39m  [38;5;6m250623 0922[39m [38;5;5mv0.0.126[39m [38;5;2m(empty)[39m Merge pull request #374 from Cellular-Longevity/jjt/no-zelevity
+[1m[38;5;14m◆[0m │  [1m[38;5;5mmzql[0m[38;5;8mmn[39m [1m[38;5;4me5eac[0m[38;5;8m3[39m [38;5;3mjason[39m  [38;5;6m250620 1528[39m Rename actual image files in filesystem
+[1m[38;5;14m◆[0m │  [1m[38;5;5mkxv[0m[38;5;8mzlt[39m [1m[38;5;4m6fd40[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m250620 1528[39m Update image references: zelevity-ca1.png → loy-002.png
+[1m[38;5;14m◆[0m │  [1m[38;5;5mlyxkq[0m[38;5;8mp[39m [1m[38;5;4m7358[0m[38;5;8mb6[39m [38;5;3mjason[39m  [38;5;6m250620 1528[39m Update user-facing text: Zelevity-CA1 → LOY-002
+[1m[38;5;14m◆[0m │  [1m[38;5;5mnyqx[0m[38;5;8mqy[39m [1m[38;5;4mdd249[0m[38;5;8m4[39m [38;5;3mjason[39m  [38;5;6m250620 1528[39m Update nav component props: zelevitySlug → loy002Slug
+[1m[38;5;14m◆[0m │  [1m[38;5;5mtrwuu[0m[38;5;8ml[39m [1m[38;5;4m490b3c[0m [38;5;3mjason[39m  [38;5;6m250620 1528[39m Update navigation URLs: zelevity-ca1 → loy-002
+[1m[38;5;14m◆[0m │  [1m[38;5;5mwtnlw[0m[38;5;8mu[39m [1m[38;5;4m9a0e[0m[38;5;8m20[39m [38;5;3mjason[39m  [38;5;6m250620 1528[39m Update product queries: zelevity-ca1 → loy-002
+[1m[38;5;14m◆[0m │  [1m[38;5;5mosz[0m[38;5;8mqkm[39m [1m[38;5;4m05ff[0m[38;5;8m48[39m [38;5;3mjason[39m  [38;5;6m250620 1528[39m Update Next.js config redirect: zelevity-ca1 → loy-002
+[1m[38;5;14m◆[0m │  [1m[38;5;5mmnzw[0m[38;5;8moy[39m [1m[38;5;4madb5[0m[38;5;8m63[39m [38;5;3mjason[39m  [38;5;6m250620 1528[39m Update storefront mock API: zelevity-ca1 → loy-002
+[1m[38;5;14m◆[0m │  [1m[38;5;5mytlu[0m[38;5;8mqu[39m [1m[38;5;4m81070[0m[38;5;8m5[39m [38;5;3mjason[39m  [38;5;6m250620 1528[39m Update backend seed data: zelevity-ca1 → loy-002
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m    [1m[38;5;5mynz[0m[38;5;8munp[39m [1m[38;5;4m5f26[0m[38;5;8m91[39m [38;5;3mjason[39m  [38;5;6m250611 1233[39m [38;5;5mv0.0.120[39m [38;5;2m(empty)[39m Merge pull request #365 from Cellular-Longevity/jjt/payment-method-delete-modal
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqmro[0m[38;5;8mwk[39m [1m[38;5;4m1edde[0m[38;5;8m5[39m [38;5;3mjason[39m  [38;5;6m250611 1221[39m format
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mypmy[0m[38;5;8mzz[39m [1m[38;5;4me6e1[0m[38;5;8m1f[39m [38;5;3mjason[39m  [38;5;6m250611 1219[39m fix failing test: correctly assert aria-busy attribute on delete button
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvnorv[0m[38;5;8my[39m [1m[38;5;4mbef00[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250611 1205[39m turn modal form into a div
+│ [1m[38;5;14m◆[0m  [1m[38;5;5moko[0m[38;5;8mzxu[39m [1m[38;5;4mcb3e[0m[38;5;8m04[39m [38;5;3mjason[39m  [38;5;6m250611 1157[39m fix unit/integration tests
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvptq[0m[38;5;8msz[39m [1m[38;5;4m455f5[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m250611 1104[39m wire up delete modal functionality
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvtz[0m[38;5;8mvnv[39m [1m[38;5;4mbbd1[0m[38;5;8m2c[39m [38;5;3mjason[39m  [38;5;6m250611 1104[39m add PaymentDeleteModal, wire up to PaymentMethodDetails
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mpsmm[0m[38;5;8mvx[39m [1m[38;5;4m954f[0m[38;5;8m86[39m [38;5;3mjason[39m  [38;5;6m250611 1104[39m add DangerButton, red-0.5 tailwind color
+├─╯
+[1m[38;5;14m◆[0m    [1m[38;5;5mzyns[0m[38;5;8mmo[39m [1m[38;5;4m1c480[0m[38;5;8m5[39m [38;5;3mjason[39m  [38;5;6m250609 1727[39m [38;5;5mv0.0.119[39m [38;5;2m(empty)[39m Merge pull request #357 from Cellular-Longevity/jjt/payment-methods-improve-e2e-test
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mlytz[0m[38;5;8mpz[39m [1m[38;5;4m9d85[0m[38;5;8m85[39m [38;5;3mjason[39m  [38;5;6m250609 1713[39m add and delete card test
+│ [1m[38;5;14m◆[0m  [1m[38;5;5muurm[0m[38;5;8mxm[39m [1m[38;5;4mb121[0m[38;5;8m39[39m [38;5;3mjason[39m  [38;5;6m250609 1411[39m abstract stripe form shenanigans into function
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mymyn[0m[38;5;8mqr[39m [1m[38;5;4m9b2d[0m[38;5;8m27[39m [38;5;3mjason[39m  [38;5;6m250609 1411[39m add testid to payment method modal
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mwmtst[0m[38;5;8mw[39m [1m[38;5;4m6c4e[0m[38;5;8m7e[39m [38;5;3mjason[39m  [38;5;6m250609 1411[39m test adding a visa card
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mxltx[0m[38;5;8mpq[39m [1m[38;5;4m4e852[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m250609 1411[39m add ids to stripe elements in payment-methods/
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ │ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ ├─╯
+[1m[38;5;14m◆[0m │  [1m[38;5;5myltr[0m[38;5;8muo[39m [1m[38;5;4mc27b[0m[38;5;8m26[39m [38;5;3mjason[39m  [38;5;6m250609 1452[39m [38;5;5mv0.0.118[39m remove card-input-icon.test, low value test
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+├─╯
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m    [1m[38;5;5mkmzo[0m[38;5;8mrz[39m [1m[38;5;4mb8bd[0m[38;5;8m41[39m [38;5;3mjason[39m  [38;5;6m250606 1321[39m [38;5;5mv0.0.116[39m [38;5;2m(empty)[39m Merge pull request #354 from Cellular-Longevity/jjt/payment-methods-ui-integration-tests
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5momln[0m[38;5;8mwy[39m [1m[38;5;4mc90e1[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for PaymentMethodForm component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqroq[0m[38;5;8mrp[39m [1m[38;5;4mc8d0[0m[38;5;8mf4[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for PaymentMethodEditForm component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvsno[0m[38;5;8mon[39m [1m[38;5;4m7c16[0m[38;5;8m8c[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for PaymentMethodsList component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mxlux[0m[38;5;8mrq[39m [1m[38;5;4ma06e[0m[38;5;8m43[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for PaymentMethodDetails component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqxxq[0m[38;5;8mpo[39m [1m[38;5;4m3764[0m[38;5;8m85[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for PaymentMethodDisplay component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5msosq[0m[38;5;8mxv[39m [1m[38;5;4m1856[0m[38;5;8me3[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for PaymentMethodsEmptyState component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5myoky[0m[38;5;8mzm[39m [1m[38;5;4m8ddc[0m[38;5;8maf[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for PaymentMethodButton component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mtwou[0m[38;5;8mpx[39m [1m[38;5;4m677ae[0m[38;5;8m8[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for CreditCard component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mwsxn[0m[38;5;8mly[39m [1m[38;5;4m69e15[0m[38;5;8md[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for CardInputIcon component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mylvzu[0m[38;5;8mx[39m [1m[38;5;4m4f0e[0m[38;5;8m91[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for BankCard component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mottk[0m[38;5;8mtp[39m [1m[38;5;4m3fb5[0m[38;5;8m2d[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add tests for AddPaymentMethodButton component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvvvxq[0m[38;5;8mu[39m [1m[38;5;4mf32b[0m[38;5;8m82[39m [38;5;3mjason[39m  [38;5;6m250605 1655[39m add vitest setup file, @testing-library/jest-dom/vitest
+[1m[38;5;14m◆[0m │  [1m[38;5;5mkvuy[0m[38;5;8moy[39m [1m[38;5;4m8d3b4[0m[38;5;8mf[39m [38;5;3mjason[39m  [38;5;6m250606 1307[39m [38;5;5mv0.0.115[39m fix dashboard e2e test
+├─╯
+[1m[38;5;14m◆[0m    [1m[38;5;5mwxqw[0m[38;5;8muk[39m [1m[38;5;4mf6bb[0m[38;5;8m71[39m [38;5;3mjason[39m  [38;5;6m250605 1651[39m [38;5;5mv0.0.114[39m [38;5;2m(empty)[39m Merge pull request #353 from Cellular-Longevity/jjt/payment-methods
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mmxyw[0m[38;5;8mnn[39m [1m[38;5;4mc55e[0m[38;5;8m26[39m [38;5;3mjason[39m  [38;5;6m250604 1511[39m check for org image in nav practice selector
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mkxuq[0m[38;5;8mst[39m [1m[38;5;4m225c[0m[38;5;8m0d[39m [38;5;3mjason[39m  [38;5;6m250604 1511[39m Refactor PaymentMethodsSection into smaller components
+├─╯
+[1m[38;5;14m◆[0m    [1m[38;5;5mzprun[0m[38;5;8ml[39m [1m[38;5;4m4b8c[0m[38;5;8ma7[39m [38;5;3mjason[39m  [38;5;6m250604 1335[39m [38;5;5mv0.0.113[39m [38;5;2m(empty)[39m Merge pull request #352 from Cellular-Longevity/jjt/reg-complete
+├─╮
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mtrnx[0m[38;5;8mvu[39m [1m[38;5;4m2714[0m[38;5;8m22[39m [38;5;3mjason[39m  [38;5;6m250603 1216[39m update clinic selector e2e test
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mmwoq[0m[38;5;8mxv[39m [1m[38;5;4m0171[0m[38;5;8m10[39m [38;5;3mjason[39m  [38;5;6m250603 1216[39m clinic switcher links to registration complete page
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mzwml[0m[38;5;8mxl[39m [1m[38;5;4mf274[0m[38;5;8mce[39m [38;5;3mjason[39m  [38;5;6m250603 1216[39m add registration complete page
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m │  [1m[38;5;5mtkps[0m[38;5;8msr[39m [1m[38;5;4mbc11[0m[38;5;8m23[39m [38;5;3mjason[39m  [38;5;6m250603 1624[39m [38;5;5mv0.0.111[39m update autogenerated next-env.d.ts
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5muxtvl[0m[38;5;8mw[39m [1m[38;5;4m0503[0m[38;5;8m2a[39m [38;5;3mjason[39m  [38;5;6m250530 1132[39m [38;5;5mv0.0.106[39m add medusa/migrations to prettier ignore
+[1m[38;5;14m◆[0m  [1m[38;5;5mnkkt[0m[38;5;8mmq[39m [1m[38;5;4m72ce[0m[38;5;8mca[39m [38;5;3mjason[39m  [38;5;6m250530 1026[39m [38;5;5mv0.0.105[39m [38;5;2m(empty)[39m Merge pull request #325 from Cellular-Longevity/jjt/basic-e2e-tests
+[1m[38;5;14m◆[0m  [1m[38;5;5mrqyx[0m[38;5;8mzs[39m [1m[38;5;4m244c[0m[38;5;8m4c[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m format E2E-PRE-REG-ACCEPTANCE-CRITERIA.md
+[1m[38;5;14m◆[0m  [1m[38;5;5msupx[0m[38;5;8mnq[39m [1m[38;5;4m66e1[0m[38;5;8m96[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m update stripe account_id dev env var in template
+[1m[38;5;14m◆[0m  [1m[38;5;5muqun[0m[38;5;8mtp[39m [1m[38;5;4m5094[0m[38;5;8m77[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m add e2e tests for unauthenticated portal routes
+[1m[38;5;14m◆[0m  [1m[38;5;5mtmr[0m[38;5;8mlps[39m [1m[38;5;4m4536[0m[38;5;8m2f[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m add e2e test for payment methods portal route
+[1m[38;5;14m◆[0m  [1m[38;5;5moyvky[0m[38;5;8ml[39m [1m[38;5;4me50e1[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m add e2e test for clinic orders portal route
+[1m[38;5;14m◆[0m  [1m[38;5;5mnpktp[0m[38;5;8mr[39m [1m[38;5;4m756bc[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m add e2e test for user settings portal route
+[1m[38;5;14m◆[0m  [1m[38;5;5mutzk[0m[38;5;8mnq[39m [1m[38;5;4md0ea[0m[38;5;8m80[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m add e2e test for portal help and support page
+[1m[38;5;14m◆[0m  [1m[38;5;5mlsrl[0m[38;5;8mtz[39m [1m[38;5;4m614a[0m[38;5;8m91[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m add e2e test for clinic staff page
+[1m[38;5;14m◆[0m  [1m[38;5;5movyx[0m[38;5;8mzu[39m [1m[38;5;4mf9c44[0m[38;5;8m4[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m add e2e test for clinic information page
+[1m[38;5;14m◆[0m  [1m[38;5;5mzwpn[0m[38;5;8msq[39m [1m[38;5;4m2a3e[0m[38;5;8m49[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m add e2e test for clinic dashboard portal route
+[1m[38;5;14m◆[0m  [1m[38;5;5mnpsl[0m[38;5;8mlu[39m [1m[38;5;4m8030[0m[38;5;8mfb[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m add e2e test for portal clinics listing page
+[1m[38;5;14m◆[0m  [1m[38;5;5mtzlv[0m[38;5;8mut[39m [1m[38;5;4me034[0m[38;5;8m96[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m make main portal <main>, not <div>
+[1m[38;5;14m◆[0m  [1m[38;5;5muml[0m[38;5;8muno[39m [1m[38;5;4m0a945[0m[38;5;8me[39m [38;5;3mjason[39m  [38;5;6m250530 1017[39m add data-testid="clinicsSelctorHeader" to reg and clinics routes for clerk setup
+[1m[38;5;14m◆[0m  [1m[38;5;5mtpts[0m[38;5;8mzp[39m [1m[38;5;4m7156[0m[38;5;8mcb[39m [38;5;3mjason[39m  [38;5;6m250529 1745[39m don't open playwright html reporter by default
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5muurt[0m[38;5;8mmt[39m [1m[38;5;4m4b46[0m[38;5;8m82[39m [38;5;3mjason[39m  [38;5;6m250526 1607[39m [38;5;5mv0.0.97[39m add E2E-PRE-REG-ACCEPTANCE-CRITERIA.md to e2e-tests/
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m    [1m[38;5;5mlltv[0m[38;5;8mpn[39m [1m[38;5;4m5ff6[0m[38;5;8m3d[39m [38;5;3mjason[39m  [38;5;6m250512 1517[39m [38;5;5mv0.0.89[39m [38;5;2m(empty)[39m Merge pull request #295 from Cellular-Longevity/jjt/migrate-to-app-router
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvsom[0m[38;5;8msl[39m [1m[38;5;4m31ed[0m[38;5;8mad[39m [38;5;3mjason[39m  [38;5;6m250508 1710[39m fix clerk.setup.ts e2e errors
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mkopu[0m[38;5;8mvp[39m [1m[38;5;4m5b092[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m250508 1631[39m remove pages router
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mxnxo[0m[38;5;8mzn[39m [1m[38;5;4m96bc[0m[38;5;8me8[39m [38;5;3mjason[39m  [38;5;6m250508 1631[39m add help and support page
+│ [1m[38;5;14m◆[0m  [1m[38;5;5myyqv[0m[38;5;8mly[39m [1m[38;5;4m21b3[0m[38;5;8md3[39m [38;5;3mjason[39m  [38;5;6m250508 1631[39m add clinic information page
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mwwtzr[0m[38;5;8mx[39m [1m[38;5;4mfd45[0m[38;5;8m8c[39m [38;5;3mjason[39m  [38;5;6m250508 1631[39m migrate registrations routes to app router
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mnqpu[0m[38;5;8mys[39m [1m[38;5;4mbc6ae[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250508 1631[39m migrate /register to app router
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqlzt[0m[38;5;8mou[39m [1m[38;5;4m5b50[0m[38;5;8m2c[39m [38;5;3mjason[39m  [38;5;6m250508 1631[39m migrate /clinics to app router
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mrkuv[0m[38;5;8mvr[39m [1m[38;5;4m29bb[0m[38;5;8m62[39m [38;5;3mjason[39m  [38;5;6m250508 1101[39m migrate /tell-us to app router
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mqrlq[0m[38;5;8mtw[39m [1m[38;5;4m1ebe9[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m250508 1045[39m [38;5;5mv0.0.88[39m add vitest to medusa, migrate existing tests
+[1m[38;5;14m◆[0m  [1m[38;5;5myvnr[0m[38;5;8mnz[39m [1m[38;5;4mcc96[0m[38;5;8m99[39m [38;5;3mjason[39m  [38;5;6m250508 0918[39m [38;5;5mv0.0.87[39m chore: add type-fest to storefront dev deps
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mlzq[0m[38;5;8mzpn[39m [1m[38;5;4me5ca[0m[38;5;8med[39m [38;5;3mjason[39m  [38;5;6m250502 1700[39m [38;5;5mv0.0.82[39m chore: remove medusa/.env.test, add sample, update README
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mswvq[0m[38;5;8mtp[39m [1m[38;5;4mf6af[0m[38;5;8me4[39m [38;5;3mjason[39m  [38;5;6m250501 1430[39m [38;5;5mv0.0.77[39m chore: format some files that escaped prettier somehow
+[1m[38;5;14m◆[0m    [1m[38;5;5myqlp[0m[38;5;8mox[39m [1m[38;5;4md3f12[0m[38;5;8m7[39m [38;5;3mjason[39m  [38;5;6m250501 1233[39m [38;5;5mv0.0.76[39m [38;5;2m(empty)[39m Merge pull request #274 from Cellular-Longevity/jjt/vitest
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mruwt[0m[38;5;8mwx[39m [1m[38;5;4m55c93[0m[38;5;8mf[39m [38;5;3mjason[39m  [38;5;6m250430 1737[39m add vitest CI action
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mwoqok[0m[38;5;8ml[39m [1m[38;5;4mf72fe[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m250430 1731[39m add test for components/select.tsx
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mztwo[0m[38;5;8mxz[39m [1m[38;5;4mfaca[0m[38;5;8m8b[39m [38;5;3mjason[39m  [38;5;6m250429 1743[39m add vitest, react testing lib packages, config
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5myzru[0m[38;5;8myl[39m [1m[38;5;4mc36c[0m[38;5;8mdf[39m [38;5;3mjason[39m  [38;5;6m250429 1624[39m [38;5;5mv0.0.75[39m chore: enable oxlint pr job on any base branch
+[1m[38;5;14m◆[0m  [1m[38;5;5mplok[0m[38;5;8mvs[39m [1m[38;5;4m90a1[0m[38;5;8ma6[39m [38;5;3mjason[39m  [38;5;6m250429 1624[39m chore: disable oxlint on pushes
+[1m[38;5;14m◆[0m  [1m[38;5;5mstql[0m[38;5;8mty[39m [1m[38;5;4mcb354[0m[38;5;8m9[39m [38;5;3mjason[39m  [38;5;6m250429 1323[39m [38;5;5mv0.0.74[39m [38;5;2m(empty)[39m Merge pull request #263 from Cellular-Longevity/jjt/oxlint
+[1m[38;5;14m◆[0m  [1m[38;5;5mrstol[0m[38;5;8mq[39m [1m[38;5;4ma77d[0m[38;5;8md8[39m [38;5;3mjason[39m  [38;5;6m250429 0959[39m run prettier on medusa-config.ts
+[1m[38;5;14m◆[0m  [1m[38;5;5mrmkr[0m[38;5;8mqv[39m [1m[38;5;4m31fc8[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m250429 0959[39m manually fix lint errors
+[1m[38;5;14m◆[0m  [1m[38;5;5mlpyk[0m[38;5;8mtv[39m [1m[38;5;4md917[0m[38;5;8ma7[39m [38;5;3mjason[39m  [38;5;6m250429 0959[39m run oxlint --fix on codebase
+[1m[38;5;14m◆[0m  [1m[38;5;5mtvnw[0m[38;5;8mpo[39m [1m[38;5;4meb28f[0m[38;5;8m6[39m [38;5;3mjason[39m  [38;5;6m250429 0959[39m add lint:changed, husky pre-push hook
+[1m[38;5;14m◆[0m  [1m[38;5;5mxqss[0m[38;5;8msk[39m [1m[38;5;4mc52f9[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m250429 0959[39m add oxlint gh workflow
+[1m[38;5;14m◆[0m  [1m[38;5;5muzmm[0m[38;5;8mzu[39m [1m[38;5;4m027a2[0m[38;5;8mb[39m [38;5;3mjason[39m  [38;5;6m250429 0959[39m move oxlint, .oxlintrc.json to gitroot
+[1m[38;5;14m◆[0m  [1m[38;5;5myqol[0m[38;5;8mlr[39m [1m[38;5;4mbac6b[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250429 0959[39m chmod +x .husky/pre-push
+[1m[38;5;14m◆[0m  [1m[38;5;5mtoqp[0m[38;5;8mpv[39m [1m[38;5;4m93be[0m[38;5;8m64[39m [38;5;3mjason[39m  [38;5;6m250428 1720[39m add oxlintrc
+[1m[38;5;14m◆[0m    [1m[38;5;5mnxpw[0m[38;5;8mvv[39m [1m[38;5;4mff37[0m[38;5;8m5f[39m [38;5;3mjason[39m  [38;5;6m250428 1647[39m [38;5;5mv0.0.72[39m [38;5;2m(empty)[39m Merge pull request #262 from Cellular-Longevity/jjt/e2e-timeout
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5muwtz[0m[38;5;8mlr[39m [1m[38;5;4m88f8[0m[38;5;8m02[39m [38;5;3mjason[39m  [38;5;6m250428 1614[39m bump playwright timeout to 10s, for clerk auth
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mprvst[0m[38;5;8mv[39m [1m[38;5;4m063a[0m[38;5;8m93[39m [38;5;3mjason[39m  [38;5;6m250428 1614[39m update CI paths for e2e
+[1m[38;5;14m◆[0m │  [1m[38;5;5mruoq[0m[38;5;8mxz[39m [1m[38;5;4m4ad5[0m[38;5;8m0c[39m [38;5;3mjason[39m  [38;5;6m250428 1645[39m [38;5;5mv0.0.71[39m chore: add more info to e2e README
+[1m[38;5;14m◆[0m │  [1m[38;5;5msrnk[0m[38;5;8mqv[39m [1m[38;5;4mbe4d[0m[38;5;8m4e[39m [38;5;3mjason[39m  [38;5;6m250428 1638[39m [38;5;5mv0.0.70[39m chore: add e2e README
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mvxoy[0m[38;5;8mru[39m [1m[38;5;4mc2e61[0m[38;5;8m8[39m [38;5;3mjason[39m  [38;5;6m250428 1505[39m [38;5;5mv0.0.69[39m chore: add linter ADR
+[1m[38;5;14m◆[0m  [1m[38;5;5mwqvq[0m[38;5;8mqq[39m [1m[38;5;4m92c0[0m[38;5;8m6f[39m [38;5;3mjason[39m  [38;5;6m250428 1050[39m [38;5;5mv0.0.68[39m [38;5;2m(empty)[39m Merge pull request #245 from Cellular-Longevity/jjt/pw-auth
+[1m[38;5;14m◆[0m  [1m[38;5;5mrpx[0m[38;5;8mqwz[39m [1m[38;5;4m326e[0m[38;5;8md9[39m [38;5;3mjason[39m  [38;5;6m250424 2214[39m add clerk env vars to CI
+[1m[38;5;14m◆[0m  [1m[38;5;5mqtnk[0m[38;5;8mkl[39m [1m[38;5;4m0fd5[0m[38;5;8mb9[39m [38;5;3mjason[39m  [38;5;6m250424 1800[39m add logged in clinicSelector test
+[1m[38;5;14m◆[0m  [1m[38;5;5mmvwo[0m[38;5;8mpp[39m [1m[38;5;4m40b1ba[0m [38;5;3mjason[39m  [38;5;6m250424 1800[39m refactor login test to use clerk creds from env var
+[1m[38;5;14m◆[0m  [1m[38;5;5mvvsq[0m[38;5;8mlp[39m [1m[38;5;4mcab45[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m250424 1800[39m add clerk global test setup, env vars
+[1m[38;5;14m◆[0m  [1m[38;5;5mttqwt[0m[38;5;8mz[39m [1m[38;5;4m8be9[0m[38;5;8m15[39m [38;5;3mjason[39m  [38;5;6m250424 1800[39m move playwright artifacts to playwright/
+[1m[38;5;14m◆[0m  [1m[38;5;5muvl[0m[38;5;8mpsm[39m [1m[38;5;4mad43[0m[38;5;8m47[39m [38;5;3mjason[39m  [38;5;6m250424 1723[39m add clerk/testing package
+[1m[38;5;14m◆[0m  [1m[38;5;5mwow[0m[38;5;8mrsk[39m [1m[38;5;4m6369[0m[38;5;8m10[39m [38;5;3mjason[39m  [38;5;6m250421 1007[39m [38;5;5mv0.0.62[39m add playwright and basic registration test, GH workflow
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m    [1m[38;5;5mxvlo[0m[38;5;8mll[39m [1m[38;5;4mb08d[0m[38;5;8m95[39m [38;5;3mjason[39m  [38;5;6m250417 1726[39m [38;5;2m(empty)[39m Merge pull request #224 from Cellular-Longevity/jjt/medusa-2.7.0
+├─╮
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mwtklx[0m[38;5;8mq[39m [1m[38;5;4m4c675[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m250417 1702[39m add @medusajs/dashboard to deps
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mnnw[0m[38;5;8mzvs[39m [1m[38;5;4m88866[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m250416 1429[39m bump medusa to 2.7.0
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m │    [1m[38;5;5mnsmx[0m[38;5;8mkn[39m [1m[38;5;4m3491[0m[38;5;8me5[39m [38;5;3mjason[39m  [38;5;6m250416 1329[39m [38;5;2m(empty)[39m Merge pull request #189 from Cellular-Longevity/jjt/hifi-checkout
+├───╮
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mnllo[0m[38;5;8myq[39m [1m[38;5;4m7ba5d[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m remove the WIP medusa setup-payment-intent route
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mlwqq[0m[38;5;8mot[39m [1m[38;5;4m1a13[0m[38;5;8mef[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m use aria-expanded on payment method selection
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mytwz[0m[38;5;8mls[39m [1m[38;5;4m1cef[0m[38;5;8mcf[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m more padding on checkout summary
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mqlns[0m[38;5;8mwl[39m [1m[38;5;4m2dcf8[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m fix checkout full height
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5msskk[0m[38;5;8myy[39m [1m[38;5;4m9ee8[0m[38;5;8mf3[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m use fill=currentColor for verified.tsx
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mlurn[0m[38;5;8mml[39m [1m[38;5;4ma54e[0m[38;5;8m62[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m move shipping methods into own file
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mwurnl[0m[38;5;8mn[39m [1m[38;5;4mf15d[0m[38;5;8m19[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m add new checkout page, layout, and content
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mrzx[0m[38;5;8mmok[39m [1m[38;5;4m9d2c[0m[38;5;8m1e[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m add initiatePaymentSessionCustom cart lib fn
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mssrky[0m[38;5;8mw[39m [1m[38;5;4md036[0m[38;5;8m60[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m add payment session initiation route and functions
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mwss[0m[38;5;8mpxr[39m [1m[38;5;4m1a20b[0m[38;5;8m8[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m add order-confirmed post checkout page
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5msoox[0m[38;5;8mwk[39m [1m[38;5;4mf1e2[0m[38;5;8m90[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m add shipping methods TSQ stuff
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mnwzt[0m[38;5;8mum[39m [1m[38;5;4m3f60[0m[38;5;8mbe[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m add storefront clinics api locationsQuery TSQ
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mrtok[0m[38;5;8mul[39m [1m[38;5;4m8a306[0m[38;5;8me[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m move NMST checkout to /checkout-nmst
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mwxnr[0m[38;5;8mtw[39m [1m[38;5;4m5630[0m[38;5;8mad[39m [38;5;3mjason[39m  [38;5;6m250416 1321[39m add 'dev:debug' to storefront scripts
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mttm[0m[38;5;8mnlt[39m [1m[38;5;4m2ed59[0m[38;5;8md[39m [38;5;3mjason[39m  [38;5;6m250416 1320[39m move NMST checkout to /us/checkout-nmst
+│ │ [1m[38;5;14m◆[0m  [1m[38;5;5mknon[0m[38;5;8mls[39m [1m[38;5;4mdd90[0m[38;5;8ma6[39m [38;5;3mjason[39m  [38;5;6m250416 1320[39m add basic global-error.tsx
+├───╯
+[1m[38;5;14m◆[0m │  [1m[38;5;5muvtv[0m[38;5;8mun[39m [1m[38;5;4m3e2b[0m[38;5;8md0[39m [38;5;3mjason[39m  [38;5;6m250415 1507[39m [38;5;2m(empty)[39m Merge pull request #218 from Cellular-Longevity/jjt/pw3
+[1m[38;5;14m◆[0m │  [1m[38;5;5moto[0m[38;5;8mqom[39m [1m[38;5;4mc437f[0m[38;5;8mb[39m [38;5;3mjason[39m  [38;5;6m250408 1407[39m add basic reg test
+[1m[38;5;14m◆[0m │  [1m[38;5;5mqprz[0m[38;5;8mxv[39m [1m[38;5;4m2402[0m[38;5;8m70[39m [38;5;3mjason[39m  [38;5;6m250408 1349[39m add dotenv, update playwright config, add npm script
+[1m[38;5;14m◆[0m │  [1m[38;5;5mzvso[0m[38;5;8mqn[39m [1m[38;5;4m8cfc0[0m[38;5;8m9[39m [38;5;3mjason[39m  [38;5;6m250408 1348[39m sort package.json scripts alphabetically
+[1m[38;5;14m◆[0m │  [1m[38;5;5muosq[0m[38;5;8mlk[39m [1m[38;5;4m4e16d[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m250408 1348[39m remove default tests from playwright init
+[1m[38;5;14m◆[0m │  [1m[38;5;5myrxrr[0m[38;5;8mq[39m [1m[38;5;4mb1ac[0m[38;5;8mcd[39m [38;5;3mjason[39m  [38;5;6m250408 1348[39m initial playwright setup
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mpwmq[0m[38;5;8mvn[39m [1m[38;5;4me155[0m[38;5;8m68[39m [38;5;3mjason[39m  [38;5;6m250403 1121[39m [38;5;5mv0.0.46[39m fix: medusa seed file for default shipping methods
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m    [1m[38;5;5mztpt[0m[38;5;8mor[39m [1m[38;5;4m1ab84[0m[38;5;8m9[39m [38;5;3mjason[39m  [38;5;6m250328 1118[39m [38;5;5mv0.0.43[39m [38;5;2m(empty)[39m Merge pull request #143 from Cellular-Longevity/jjt/hifi-side-cart
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5muqlk[0m[38;5;8mrv[39m [1m[38;5;4m836f[0m[38;5;8mbb[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m add disabled opacity mask when in flight cart reqs
+│ [1m[38;5;14m◆[0m  [1m[38;5;5movrw[0m[38;5;8mmw[39m [1m[38;5;4mbb9b[0m[38;5;8m50[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m empty cart state
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mkqsm[0m[38;5;8mlz[39m [1m[38;5;4m70b11[0m[38;5;8mf[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m [38;5;2m(empty)[39m hide dosing guide by default on PDP
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mxqswv[0m[38;5;8mw[39m [1m[38;5;4m7724[0m[38;5;8m93[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m remove crufty comment
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mttst[0m[38;5;8mux[39m [1m[38;5;4m46317[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m open cart from PDP ATC action
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mmoqt[0m[38;5;8mtn[39m [1m[38;5;4m43f2a[0m[38;5;8m6[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m sidecart tweaks
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mzmsp[0m[38;5;8mzn[39m [1m[38;5;4mcece[0m[38;5;8m15[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m add minus icon, modify plus icon to accept width/height
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mlpus[0m[38;5;8mlv[39m [1m[38;5;4m61007[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m checkout button works
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mzpms[0m[38;5;8mtw[39m [1m[38;5;4m0562e[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m wire up sidecart remove button
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mynx[0m[38;5;8mptw[39m [1m[38;5;4m77ae9[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m add deleteLineItem TRQ (mutation, fetch, etc)
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mltwl[0m[38;5;8mrn[39m [1m[38;5;4m8c196[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m add api/cart/lineItem/lineItemId api route
+│ [1m[38;5;14m◆[0m  [1m[38;5;5myqnz[0m[38;5;8mun[39m [1m[38;5;4m927bb4[0m [38;5;3mjason[39m  [38;5;6m250328 1110[39m refactor addLineItems from route to cart-route-functions
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqyllw[0m[38;5;8mn[39m [1m[38;5;4m31616[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m sidecart lineitems
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mpzwqk[0m[38;5;8mo[39m [1m[38;5;4m45a7[0m[38;5;8m57[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m copy tablet icon into icons dir
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mrqys[0m[38;5;8mor[39m [1m[38;5;4m3584[0m[38;5;8m49[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m refactor the filtered cart items to have better types
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqtym[0m[38;5;8mzr[39m [1m[38;5;4m7e8956[0m [38;5;3mjason[39m  [38;5;6m250328 1110[39m rename some sidecart components
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mtpkzq[0m[38;5;8my[39m [1m[38;5;4mf0f8[0m[38;5;8mc2[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m add CTA section
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvqrpy[0m[38;5;8mp[39m [1m[38;5;4m53c1[0m[38;5;8mf0[39m [38;5;3mjason[39m  [38;5;6m250328 1110[39m add arrow-right icon
+│ [1m[38;5;14m◆[0m  [1m[38;5;5myssy[0m[38;5;8mzx[39m [1m[38;5;4me60bb[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m250326 1520[39m create flex hierarchy, stub in line items and CTA/subtotal
+│ [1m[38;5;14m◆[0m  [1m[38;5;5murmm[0m[38;5;8mtp[39m [1m[38;5;4mf2eb[0m[38;5;8m0b[39m [38;5;3mjason[39m  [38;5;6m250326 1520[39m add free shipping component
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mrtlp[0m[38;5;8mqw[39m [1m[38;5;4m3cee[0m[38;5;8m96[39m [38;5;3mjason[39m  [38;5;6m250326 1520[39m throw error in tanstack cart fetch
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mtqyz[0m[38;5;8mqk[39m [1m[38;5;4m946d[0m[38;5;8m90[39m [38;5;3mjason[39m  [38;5;6m250326 1520[39m comment out old cart code, refactor stubbed cart component heiararchy
+│ [1m[38;5;14m◆[0m  [1m[38;5;5myvxp[0m[38;5;8mql[39m [1m[38;5;4mf50f8[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m250326 1518[39m add Close icon
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mktoz[0m[38;5;8mvn[39m [1m[38;5;4md155[0m[38;5;8mb4[39m [38;5;3mjason[39m  [38;5;6m250326 1518[39m [38;5;2m(empty)[39m chore: clean pnpm packages, update react-jwt, add @medusajs/icons
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5muuzn[0m[38;5;8mwq[39m [1m[38;5;4m44ed0[0m[38;5;8m1[39m [38;5;3mjason[39m  [38;5;6m250326 1327[39m [38;5;5mv0.0.42[39m chore: clean pnpm packages, update react-jwt, add @medusajs/icons
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mwots[0m[38;5;8mmu[39m [1m[38;5;4mb96a[0m[38;5;8m84[39m [38;5;3mjason[39m  [38;5;6m250326 1119[39m [38;5;5mv0.0.40[39m chore: clean up some missed yarn files from the pnpm migration
+[1m[38;5;14m◆[0m  [1m[38;5;5mxxt[0m[38;5;8moot[39m [1m[38;5;4md49d[0m[38;5;8m43[39m [38;5;3mjason[39m  [38;5;6m250325 1701[39m [38;5;5mv0.0.39[39m [38;5;2m(empty)[39m Merge pull request #134 from Cellular-Longevity/jjt/dosing-guide-tweaks
+[1m[38;5;14m◆[0m  [1m[38;5;5msmv[0m[38;5;8mmtv[39m [1m[38;5;4m103a[0m[38;5;8m01[39m [38;5;3mjason[39m  [38;5;6m250325 1435[39m add error states to dosing guide
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mtrps[0m[38;5;8mku[39m [1m[38;5;4me64968[0m [38;5;3mjason[39m  [38;5;6m250325 0919[39m [38;5;5mv0.0.35[39m chore: add accepted 0004-automated-testing ADR
+[1m[38;5;14m◆[0m  [1m[38;5;5mnxzm[0m[38;5;8mqm[39m [1m[38;5;4m39f7[0m[38;5;8mb7[39m [38;5;3mjason[39m  [38;5;6m250324 0958[39m [38;5;5mv0.0.34[39m upgrade next.js to 15.2.3 (CVE-2025-29927)
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mkyqv[0m[38;5;8mvu[39m [1m[38;5;4mc38e[0m[38;5;8m21[39m [38;5;3mjason[39m  [38;5;6m250320 1051[39m [38;5;5mv0.0.30[39m fix: throw error in getClinics
+[1m[38;5;14m◆[0m  [1m[38;5;5mmyot[0m[38;5;8mnn[39m [1m[38;5;4m956a[0m[38;5;8mcb[39m [38;5;3mjason[39m  [38;5;6m250320 1005[39m [38;5;5mv0.0.29[39m fix: fix typo in clinic_payment_method link
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mtwxr[0m[38;5;8mzl[39m [1m[38;5;4m089f[0m[38;5;8m34[39m [38;5;3mjason[39m  [38;5;6m250317 1414[39m [38;5;5mv0.0.25[39m chore: only http basic auth if env var set
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m    [1m[38;5;5molsy[0m[38;5;8mrl[39m [1m[38;5;4m7c71[0m[38;5;8mb8[39m [38;5;3mjason[39m  [38;5;6m250313 1500[39m [38;5;2m(empty)[39m Merge pull request #123 from Cellular-Longevity/jjt/medusa-2.6.1
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvztu[0m[38;5;8mly[39m [1m[38;5;4me1b4[0m[38;5;8mc8[39m [38;5;3mjason[39m  [38;5;6m250313 1246[39m remove ArrowUpRightMini icon from not found page
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mplmv[0m[38;5;8myo[39m [1m[38;5;4m003ee9[0m [38;5;3mjason[39m  [38;5;6m250313 1204[39m allow "sharp" pnpm post-install script
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqxkzu[0m[38;5;8mv[39m [1m[38;5;4m1a24[0m[38;5;8m74[39m [38;5;3mjason[39m  [38;5;6m250313 1048[39m ts-expect-error some things
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mytzp[0m[38;5;8mlk[39m [1m[38;5;4md328903[0m [38;5;3mjason[39m  [38;5;6m250313 1048[39m add type-fest package
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mlvw[0m[38;5;8muyu[39m [1m[38;5;4m8ddd[0m[38;5;8m05[39m [38;5;3mjason[39m  [38;5;6m250313 1048[39m rename PaymentMethod model to ClinicPaymentMethod
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqmlq[0m[38;5;8mtw[39m [1m[38;5;4m0a521[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m250313 0951[39m upgrade mikro-orm to 6.x.x
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mrult[0m[38;5;8mln[39m [1m[38;5;4m875aa[0m[38;5;8md[39m [38;5;3mjason[39m  [38;5;6m250313 0951[39m upgrade medusa + mikro-orm
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mtztm[0m[38;5;8mkn[39m [1m[38;5;4m69dd[0m[38;5;8md2[39m [38;5;3mjason[39m  [38;5;6m250313 0937[39m [38;5;2m(empty)[39m Merge pull request #120 from Cellular-Longevity/jjt/pnpm
+[1m[38;5;14m◆[0m  [1m[38;5;5mnlz[0m[38;5;8mytv[39m [1m[38;5;4m46ee[0m[38;5;8m3e[39m [38;5;3mjason[39m  [38;5;6m250312 1443[39m remove medusa/.node-version and .nvmrc
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mnwxz[0m[38;5;8moy[39m [1m[38;5;4m10e0[0m[38;5;8m4a[39m [38;5;3mjason[39m  [38;5;6m250312 1443[39m remove yarn references from .gitignores
+[1m[38;5;14m◆[0m  [1m[38;5;5msyox[0m[38;5;8mtv[39m [1m[38;5;4me2e7f[0m[38;5;8md[39m [38;5;3mjason[39m  [38;5;6m250312 1422[39m convert GH and docker from yarn to pnpm
+[1m[38;5;14m◆[0m  [1m[38;5;5moxtv[0m[38;5;8mrq[39m [1m[38;5;4m87c7d[0m[38;5;8m5[39m [38;5;3mjason[39m  [38;5;6m250312 1422[39m node version to 22, move from package.json to .node-version
+[1m[38;5;14m◆[0m  [1m[38;5;5mrvxv[0m[38;5;8mrn[39m [1m[38;5;4ma887[0m[38;5;8md9[39m [38;5;3mjason[39m  [38;5;6m250312 1422[39m convert medusa yarn to pnpm
+[1m[38;5;14m◆[0m  [1m[38;5;5mlomvk[0m[38;5;8mt[39m [1m[38;5;4m7763[0m[38;5;8m72[39m [38;5;3mjason[39m  [38;5;6m250312 1422[39m convert storefront yarn to pnpm
+[1m[38;5;14m◆[0m  [1m[38;5;5mzxuu[0m[38;5;8mrn[39m [1m[38;5;4m14d69[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250312 1422[39m convert root yarn to pnpm
+[1m[38;5;14m◆[0m    [1m[38;5;5mkotx[0m[38;5;8muw[39m [1m[38;5;4m1027d[0m[38;5;8m7[39m [38;5;3mjason[39m  [38;5;6m250312 1422[39m add .node-version to repo root
+├─╮
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvztw[0m[38;5;8mtv[39m [1m[38;5;4ma850[0m[38;5;8m21[39m [38;5;3mjason[39m  [38;5;6m250311 1421[39m chore: remove .mise.toml
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m │  [1m[38;5;5mxmz[0m[38;5;8mtvn[39m [1m[38;5;4m2b959[0m[38;5;8me[39m [38;5;3mjason[39m  [38;5;6m250311 1529[39m chore: add adr template name to adr readme
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mzttm[0m[38;5;8mqu[39m [1m[38;5;4m8255[0m[38;5;8mf3[39m [38;5;3mjason[39m  [38;5;6m250307 1607[39m [38;5;2m(empty)[39m Merge pull request #111 from Cellular-Longevity/jjt/sidecart
+[1m[38;5;14m◆[0m  [1m[38;5;5myssw[0m[38;5;8mow[39m [1m[38;5;4m62b6[0m[38;5;8m14[39m [38;5;3mjason[39m  [38;5;6m250307 1514[39m add Sidecart skeleton, rename Sidecart file
+[1m[38;5;14m◆[0m  [1m[38;5;5mvyyy[0m[38;5;8mws[39m [1m[38;5;4m5dbf[0m[38;5;8mf2[39m [38;5;3mjason[39m  [38;5;6m250307 1514[39m add cart button to header
+[1m[38;5;14m◆[0m  [1m[38;5;5mmnpmq[0m[38;5;8mm[39m [1m[38;5;4me3661[0m[38;5;8m8[39m [38;5;3mjason[39m  [38;5;6m250307 1514[39m add cart toggle icon
+[1m[38;5;14m◆[0m  [1m[38;5;5mmqkz[0m[38;5;8mkk[39m [1m[38;5;4m2a6d[0m[38;5;8mc4[39m [38;5;3mjason[39m  [38;5;6m250307 1514[39m add zustand and initial UI store
+[1m[38;5;14m◆[0m  [1m[38;5;5mwosx[0m[38;5;8mrs[39m [1m[38;5;4m0ae7[0m[38;5;8mb3[39m [38;5;3mjason[39m  [38;5;6m250307 1456[39m chore: tweak buy box and dosage guide heights
+[1m[38;5;14m◆[0m  [1m[38;5;5mwwpl[0m[38;5;8mwz[39m [1m[38;5;4m2152[0m[38;5;8m58[39m [38;5;3mjason[39m  [38;5;6m250307 1455[39m [38;5;2m(empty)[39m Merge pull request #108 from Cellular-Longevity/jjt/responsive-nav
+[1m[38;5;14m◆[0m  [1m[38;5;5mzmk[0m[38;5;8mnus[39m [1m[38;5;4mbfee5[0m[38;5;8m7[39m [38;5;3mjason[39m  [38;5;6m250306 1716[39m feat: add responsive nav, button, and style to layout
+[1m[38;5;14m◆[0m  [1m[38;5;5mzzkk[0m[38;5;8mwp[39m [1m[38;5;4m4acf[0m[38;5;8m87[39m [38;5;3mjason[39m  [38;5;6m250306 1716[39m feat: add ResponsiveNav component
+[1m[38;5;14m◆[0m  [1m[38;5;5mkkzu[0m[38;5;8mxo[39m [1m[38;5;4m9dc9[0m[38;5;8mfe[39m [38;5;3mjason[39m  [38;5;6m250306 1716[39m chore: add hamburger nav menu icon
+[1m[38;5;14m◆[0m    [1m[38;5;5mpttp[0m[38;5;8mvw[39m [1m[38;5;4mf6da[0m[38;5;8mf5[39m [38;5;3mjason[39m  [38;5;6m250306 1716[39m chore: add radix-ui
+├─╮
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+│ [38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mtwxk[0m[38;5;8mkk[39m [1m[38;5;4m576d3[0m[38;5;8m9[39m [38;5;3mjason[39m  [38;5;6m250305 1632[39m chore: remove text-gray-0 from classNames
+[1m[38;5;14m◆[0m │  [1m[38;5;5mktuu[0m[38;5;8mpo[39m [1m[38;5;4m65d5[0m[38;5;8m3e[39m [38;5;3mjason[39m  [38;5;6m250306 1040[39m chore: add Headless UI Library ADR
+├─╯
+[1m[38;5;14m◆[0m    [1m[38;5;5mpolo[0m[38;5;8myt[39m [1m[38;5;4m1abfc[0m[38;5;8me[39m [38;5;3mjason[39m  [38;5;6m250305 0934[39m [38;5;2m(empty)[39m Merge pull request #103 from Cellular-Longevity/jjt/new-pdp-3
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mwyqp[0m[38;5;8mqy[39m [1m[38;5;4mc5e32[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250305 0812[39m feat: implement dosing guide
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mwptl[0m[38;5;8mnv[39m [1m[38;5;4m893b2[0m[38;5;8mf[39m [38;5;3mjason[39m  [38;5;6m250304 1744[39m feat: add tablet icon
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mwyuu[0m[38;5;8mqp[39m [1m[38;5;4mabcb[0m[38;5;8m64[39m [38;5;3mjason[39m  [38;5;6m250304 1646[39m chore: add default text color to body
+[1m[38;5;14m◆[0m │  [1m[38;5;5mwqnx[0m[38;5;8mvu[39m [1m[38;5;4m940e[0m[38;5;8m21[39m [38;5;3mjason[39m  [38;5;6m250305 0918[39m fix: refactor arg "s" to "subtitle"
+[38;5;8m~[39m │  [38;5;8m(elided revisions)[39m
+├─╯
+[1m[38;5;14m◆[0m    [1m[38;5;5msmlo[0m[38;5;8muv[39m [1m[38;5;4mdbc5[0m[38;5;8m4d[39m [38;5;3mjason[39m  [38;5;6m250304 1634[39m [38;5;2m(empty)[39m Merge pull request #100 from Cellular-Longevity/jjt/new-pdp-2
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvmvp[0m[38;5;8mlq[39m [1m[38;5;4mc6b3[0m[38;5;8mfc[39m [38;5;3mjason[39m  [38;5;6m250304 1630[39m feat: visually disable the whole buy box in flight
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mkrzx[0m[38;5;8mnu[39m [1m[38;5;4mb07d9[0m[38;5;8ma[39m [38;5;3mjason[39m  [38;5;6m250304 1630[39m feat: wire up ATC button
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mnzoq[0m[38;5;8mlp[39m [1m[38;5;4m97924[0m[38;5;8m5[39m [38;5;3mjason[39m  [38;5;6m250304 1630[39m feat: add quantity functionality to PDP
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvpsw[0m[38;5;8mqn[39m [1m[38;5;4m6ba92[0m[38;5;8md[39m [38;5;3mjason[39m  [38;5;6m250304 1630[39m chore: set default tailwind animation to 150ms
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5mkmyq[0m[38;5;8mrz[39m [1m[38;5;4m5b72[0m[38;5;8m91[39m [38;5;3mjason[39m  [38;5;6m250304 1628[39m [38;5;2m(empty)[39m Merge pull request #99 from Cellular-Longevity/jjt/new-pdp
+[1m[38;5;14m◆[0m  [1m[38;5;5mvwru[0m[38;5;8mrs[39m [1m[38;5;4m8d51[0m[38;5;8m54[39m [38;5;3mjason[39m  [38;5;6m250227 1550[39m chore: refactor nav to support products/ redir
+[1m[38;5;14m◆[0m  [1m[38;5;5mwxou[0m[38;5;8mkx[39m [1m[38;5;4m0237[0m[38;5;8m57[39m [38;5;3mjason[39m  [38;5;6m250227 1550[39m chore: finish pdp buy box styling
+[1m[38;5;14m◆[0m  [1m[38;5;5mpmwl[0m[38;5;8myn[39m [1m[38;5;4m82db[0m[38;5;8mc8[39m [38;5;3mjason[39m  [38;5;6m250227 1550[39m chore: buy box static html mostly done
+[1m[38;5;14m◆[0m  [1m[38;5;5mzltm[0m[38;5;8msw[39m [1m[38;5;4m4e112[0m[38;5;8mc[39m [38;5;3mjason[39m  [38;5;6m250227 1550[39m chore: add old buy box designs
+[1m[38;5;14m◆[0m  [1m[38;5;5mrqsk[0m[38;5;8mrs[39m [1m[38;5;4m25e67[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m250227 1550[39m chore: add PortalSection.Body and use on clinic dashboard
+[1m[38;5;14m◆[0m  [1m[38;5;5mnrtm[0m[38;5;8mkw[39m [1m[38;5;4me507[0m[38;5;8m55[39m [38;5;3mjason[39m  [38;5;6m250227 1550[39m chore: add product page skeleton
+[1m[38;5;14m◆[0m  [1m[38;5;5mmsy[0m[38;5;8molp[39m [1m[38;5;4m7a6d[0m[38;5;8m2e[39m [38;5;3mjason[39m  [38;5;6m250227 1550[39m chore: use PortalSection for clinic dashboard
+[1m[38;5;14m◆[0m  [1m[38;5;5mwvzyk[0m[38;5;8mx[39m [1m[38;5;4me833[0m[38;5;8mbc[39m [38;5;3mjason[39m  [38;5;6m250227 1550[39m chore: add PortalSection component
+[1m[38;5;14m◆[0m  [1m[38;5;5mrpoq[0m[38;5;8mkz[39m [1m[38;5;4m49868[0m[38;5;8m0[39m [38;5;3mjason[39m  [38;5;6m250227 1550[39m chore: throw error in products fetch
+[1m[38;5;14m◆[0m  [1m[38;5;5mylpt[0m[38;5;8mkw[39m [1m[38;5;4m61fc1[0m[38;5;8m3[39m [38;5;3mjason[39m  [38;5;6m250227 1545[39m chore: new app router products route, stub, renamed old one
+[1m[38;5;14m◆[0m    [1m[38;5;5mmllo[0m[38;5;8mvp[39m [1m[38;5;4mf1a3[0m[38;5;8me2[39m [38;5;3mjason[39m  [38;5;6m250227 1545[39m [38;5;2m(empty)[39m Merge pull request #97 from Cellular-Longevity/jjt/stvrc-layout
+├─╮
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mszlvr[0m[38;5;8mz[39m [1m[38;5;4mbac4[0m[38;5;8m88[39m [38;5;3mjason[39m  [38;5;6m250226 1530[39m chore: add clinic selector stub
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mvwtn[0m[38;5;8mqo[39m [1m[38;5;4md4bef[0m[38;5;8m2[39m [38;5;3mjason[39m  [38;5;6m250226 1530[39m chore: redir products/ to products/zelevity-ca1
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mqssuw[0m[38;5;8mp[39m [1m[38;5;4m0af8[0m[38;5;8mea[39m [38;5;3mjason[39m  [38;5;6m250226 1353[39m chore: style nav items, add logo
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mkzyo[0m[38;5;8mvm[39m [1m[38;5;4m79d2[0m[38;5;8m5e[39m [38;5;3mjason[39m  [38;5;6m250226 1342[39m chore: get menu and main content areas in place
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mlsww[0m[38;5;8mxs[39m [1m[38;5;4m220d[0m[38;5;8mda[39m [38;5;3mjason[39m  [38;5;6m250226 1342[39m chore: remove unnecessary import in tailwind config
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mztul[0m[38;5;8mvv[39m [1m[38;5;4mc1b9[0m[38;5;8ma7[39m [38;5;3mjason[39m  [38;5;6m250226 1342[39m chore: make nav
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mrxkv[0m[38;5;8mow[39m [1m[38;5;4m235c[0m[38;5;8mf3[39m [38;5;3mjason[39m  [38;5;6m250226 1037[39m chore: add nav icons
+│ [1m[38;5;14m◆[0m  [1m[38;5;5morrz[0m[38;5;8mrs[39m [1m[38;5;4md873[0m[38;5;8mde[39m [38;5;3mjason[39m  [38;5;6m250226 1037[39m chore: move clinic dashboard to app router
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mpxkz[0m[38;5;8mtl[39m [1m[38;5;4m9bd3f[0m[38;5;8mf[39m [38;5;3mjason[39m  [38;5;6m250226 1037[39m chore: create app router tanstack provider and portal layout
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mntxo[0m[38;5;8msn[39m [1m[38;5;4ma650[0m[38;5;8mdd[39m [38;5;3mjason[39m  [38;5;6m250226 1037[39m chore: remove <main> from base layout
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mzvtvl[0m[38;5;8mv[39m [1m[38;5;4md2f3[0m[38;5;8m54[39m [38;5;3mjason[39m  [38;5;6m250226 1037[39m chore: remove legacy responsive padding hooks
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mnrpn[0m[38;5;8mwl[39m [1m[38;5;4ma276[0m[38;5;8m7a[39m [38;5;3mjason[39m  [38;5;6m250224 1025[39m chore: use defined tailwind colors in jsx
+│ [1m[38;5;14m◆[0m  [1m[38;5;5mpoly[0m[38;5;8mom[39m [1m[38;5;4m6ea0[0m[38;5;8m23[39m [38;5;3mjason[39m  [38;5;6m250220 1402[39m chore: start with clean TW config
+[1m[38;5;14m◆[0m │  [1m[38;5;5mpxkr[0m[38;5;8mrq[39m [1m[38;5;4mad1b[0m[38;5;8m7e[39m [38;5;3mjason[39m  [38;5;6m250226 1112[39m chore: migrate adrs into repo from wiki
+├─╯
+[1m[38;5;14m◆[0m  [1m[38;5;5myrn[0m[38;5;8mlnr[39m [1m[38;5;4me70d[0m[38;5;8m50[39m [38;5;3mjason[39m  [38;5;6m250220 1322[39m [38;5;2m(empty)[39m Merge pull request #94 from Cellular-Longevity/jjt/fix-hydration-error
+[1m[38;5;14m◆[0m  [1m[38;5;5mzllv[0m[38;5;8myn[39m [1m[38;5;4md8a1[0m[38;5;8mf3[39m [38;5;3mjason[39m  [38;5;6m250220 0951[39m fix: use userLocale to format dates to avoid hydration error
+[1m[38;5;14m◆[0m  [1m[38;5;5mqwvw[0m[38;5;8mkm[39m [1m[38;5;4mf9d5[0m[38;5;8m08[39m [38;5;3mjason[39m  [38;5;6m250220 0951[39m feat: add userLocale fn
+[1m[38;5;14m◆[0m  [1m[38;5;5mvpw[0m[38;5;8myqo[39m [1m[38;5;4m1bf0d[0m[38;5;8me[39m [38;5;3mjason[39m  [38;5;6m250220 0951[39m chore: install accept-language-parser
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mpult[0m[38;5;8mxz[39m [1m[38;5;4m8c78[0m[38;5;8m58[39m [38;5;3mjason[39m  [38;5;6m250121 1641[39m [38;5;5mv0.0.17[39m chore: restore production medusa start cmd for deploys
+[1m[38;5;14m◆[0m  [1m[38;5;5mlrunx[0m[38;5;8ms[39m [1m[38;5;4mfe1b[0m[38;5;8me1[39m [38;5;3mjason[39m  [38;5;6m250121 1458[39m [38;5;5mv0.0.16[39m fix: use relative imports instead of src/ absolute
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5myzz[0m[38;5;8mtsv[39m [1m[38;5;4ma2eb[0m[38;5;8m84[39m [38;5;3mjason[39m  [38;5;6m250121 1027[39m [38;5;2m(empty)[39m Merge pull request #74 from Cellular-Longevity/sean/change-order
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[1m[38;5;14m◆[0m  [1m[38;5;5mknxm[0m[38;5;8moq[39m [1m[38;5;4m7f8d[0m[38;5;8me3[39m [38;5;3mjason[39m  [38;5;6m241216 1059[39m [38;5;2m(empty)[39m Merge pull request #57 from Cellular-Longevity/sean/add-get-one-location-and-license
+│
+~
