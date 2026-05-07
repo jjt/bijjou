@@ -1,6 +1,7 @@
 use std::io::{self, IsTerminal, Read, Write};
 
-const DASH: &str = "\u{2504}"; // ┄ BOX DRAWINGS LIGHT TRIPLE DASH HORIZONTAL
+// const DASH: &str = "\u{2504}"; // ┄ BOX DRAWINGS LIGHT TRIPLE DASH HORIZONTAL
+const DASH: &str = "━"; // ┄ BOX DRAWINGS LIGHT TRIPLE DASH HORIZONTAL
 const DIM_ON: &[u8] = b"\x1b[38;5;8m";
 const DIM_OFF: &[u8] = b"\x1b[39m";
 const EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
@@ -138,9 +139,9 @@ fn is_node_char(cp: u32) -> bool {
 // Replace jj's commit-node glyphs with Nerd Font icons.
 fn map_node_char(cp: u32) -> Option<&'static str> {
     match cp {
-        0x40 => Some("󰛿"), // @ → working copy
-        0x25CB => Some("\u{25C9}"), // ○ → ◉ regular (mutable)
-        0x25C6 => Some(""), // ◆ → immutable
+        0x40 => Some("󰋘"),   // @ → working copy
+        0x25CB => Some(""), // ○ → regular (mutable)
+        0x25C6 => Some("◆"), // ◆ → immutable
         0xD7 => Some(""),   // × → conflicted
         0x25CF => Some(""), // ● → alternate
         _ => None,
@@ -151,17 +152,18 @@ fn map_node_char(cp: u32) -> Option<&'static str> {
 // (U+1CE1A..U+1CE50). Single-cell visual equivalents.
 fn map_graph_char(cp: u32) -> Option<&'static str> {
     match cp {
-        0x2500 | 0x2504 | 0x2508 => Some("\u{1CE1F}"), // ─ ┄ ┈ → 𜸟
-        0x2502 => Some("\u{1CE29}"),                   // │ → 𜸩
-        0x250C | 0x256D => Some("\u{1CE1A}"),          // ┌ ╭ → 𜸚
-        0x2510 | 0x256E => Some("\u{1CE24}"),          // ┐ ╮ → 𜸤
-        0x2514 | 0x2570 => Some("\u{1CE3E}"),          // └ ╰ → 𜸾
-        0x2518 | 0x256F => Some("\u{1CE43}"),          // ┘ ╯ → 𜹃
-        0x251C => Some("\u{1CE28}"),                   // ├ → 𜸨
-        0x2524 => Some("\u{1CE37}"),                   // ┤ → 𜸷
-        0x252C => Some("\u{1CE20}"),                   // ┬ → 𜸠
-        0x2534 => Some("\u{1CE40}"),                   // ┴ → 𜹀
-        0x253C => Some("\u{1CE3A}"),                   // ┼ → 𜸺
+        0x2500 | 0x2504 | 0x2508 => Some("𜸟"), // ─ ┄ ┈
+        0x2502 => Some("𜸩"),                   // │
+        0x250C | 0x256D => Some("𜸚"),          // ┌ ╭
+        0x2510 | 0x256E => Some("𜸤"),          // ┐ ╮
+        0x2514 | 0x2570 => Some("𜸾"),          // └ ╰
+        0x2518 | 0x256F => Some("𜹃"),          // ┘ ╯
+        0x251C => Some("𜸨"),                   // ├
+        0x2524 => Some("𜸶"),                   // ┤
+        0x252C => Some("𜸠"),                   // ┬
+        0x2534 => Some("𜹀"),                   // ┴
+        0x253C => Some("𜸺"),                   // ┼
+        0x7E => Some("⌇"),                     // ~
         _ => None,
     }
 }
