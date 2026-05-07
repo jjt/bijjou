@@ -3,7 +3,7 @@ use std::io::{self, IsTerminal, Read, Write};
 const DASH: &str = "\u{2504}"; // ┄ BOX DRAWINGS LIGHT TRIPLE DASH HORIZONTAL
 const DIM_ON: &[u8] = b"\x1b[38;5;8m";
 const DIM_OFF: &[u8] = b"\x1b[39m";
-const EDGE_DIM_ON: &[u8] = b"\x1b[2;38;5;236m";
+const EDGE_DIM_ON: &[u8] = b"\x1b[2;38;5;245m";
 const EDGE_DIM_OFF: &[u8] = b"\x1b[22;39m";
 
 struct Parsed {
@@ -136,8 +136,8 @@ fn is_node_char(cp: u32) -> bool {
 // Replace jj's commit-node glyphs with Nerd Font icons.
 fn map_node_char(cp: u32) -> Option<&'static str> {
     match cp {
-        0x40 => Some("󰛿"),   // @ → working copy
-        0x25CB => Some(""), // ○ → regular (mutable)
+        0x40 => Some("󰛿"), // @ → working copy
+        // 0x25CB => Some(""), // ○ → regular (mutable)
         0x25C6 => Some(""), // ◆ → immutable
         0xD7 => Some(""),   // × → conflicted
         0x25CF => Some(""), // ● → alternate
@@ -410,16 +410,14 @@ fn try_pager(buf: &[u8]) -> io::Result<Option<()>> {
     use std::process::{Command, Stdio};
 
     let pager_env = std::env::var("PAGER").ok().filter(|s| !s.trim().is_empty());
-    let (cmd, args): (String, Vec<String>) = match pager_env {
-        Some(s) => {
-            let mut parts = s.split_whitespace().map(|s| s.to_string());
-            let Some(c) = parts.next() else {
-                return Ok(None);
-            };
-            (c, parts.collect())
-        }
-        None => ("less".to_string(), vec!["-R".to_string()]),
+    let Some(s) = pager_env else {
+        return Ok(None);
     };
+    let mut parts = s.split_whitespace().map(|s| s.to_string());
+    let Some(cmd) = parts.next() else {
+        return Ok(None);
+    };
+    let args: Vec<String> = parts.collect();
 
     let mut child = match Command::new(&cmd).args(&args).stdin(Stdio::piped()).spawn() {
         Ok(c) => c,
