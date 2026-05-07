@@ -3,8 +3,10 @@ use std::io::{self, IsTerminal, Read, Write};
 const DASH: &str = "\u{2504}"; // ┄ BOX DRAWINGS LIGHT TRIPLE DASH HORIZONTAL
 const DIM_ON: &[u8] = b"\x1b[38;5;8m";
 const DIM_OFF: &[u8] = b"\x1b[39m";
-const EDGE_DIM_ON: &[u8] = b"\x1b[2;38;5;245m";
-const EDGE_DIM_OFF: &[u8] = b"\x1b[22;39m";
+const EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
+const EDGE_DIM_OFF: &[u8] = b"\x1b[39m";
+const MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
+const MUTABLE_NODE_OFF: &[u8] = b"\x1b[39m";
 
 struct Parsed {
     graph_end: usize,
@@ -137,7 +139,7 @@ fn is_node_char(cp: u32) -> bool {
 fn map_node_char(cp: u32) -> Option<&'static str> {
     match cp {
         0x40 => Some("󰛿"), // @ → working copy
-        // 0x25CB => Some(""), // ○ → regular (mutable)
+        0x25CB => Some("\u{25C9}"), // ○ → ◉ regular (mutable)
         0x25C6 => Some(""), // ◆ → immutable
         0xD7 => Some(""),   // × → conflicted
         0x25CF => Some(""), // ● → alternate
@@ -217,11 +219,21 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
 
         let (cp, len) = decode_utf8(bytes, i);
         if is_node_char(cp) {
-            // Preserve jj's original ANSI; swap glyph for Nerd Font icon.
-            out.extend_from_slice(ansi_bytes);
+            // Mutable (○) gets a darker color override; other nodes preserve
+            // jj's original ANSI verbatim.
+            let darken_mutable = cp == 0x25CB;
+            if darken_mutable {
+                emit_filtered_ansi(ansi_bytes, out, is_fg_color_sgr);
+                out.extend_from_slice(MUTABLE_NODE_COLOR);
+            } else {
+                out.extend_from_slice(ansi_bytes);
+            }
             match map_node_char(cp) {
                 Some(replacement) => out.extend_from_slice(replacement.as_bytes()),
                 None => out.extend_from_slice(&bytes[i..i + len]),
+            }
+            if darken_mutable {
+                out.extend_from_slice(MUTABLE_NODE_OFF);
             }
         } else {
             emit_filtered_ansi(ansi_bytes, out, is_fg_color_sgr);
