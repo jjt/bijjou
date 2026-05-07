@@ -3,8 +3,8 @@ use std::io::{self, IsTerminal, Read, Write};
 const DASH: &str = "\u{2504}"; // ┄ BOX DRAWINGS LIGHT TRIPLE DASH HORIZONTAL
 const DIM_ON: &[u8] = b"\x1b[38;5;8m";
 const DIM_OFF: &[u8] = b"\x1b[39m";
-const EDGE_DIM_ON: &[u8] = b"\x1b[38;5;236m";
-const EDGE_DIM_OFF: &[u8] = b"\x1b[39m";
+const EDGE_DIM_ON: &[u8] = b"\x1b[2;38;5;236m";
+const EDGE_DIM_OFF: &[u8] = b"\x1b[22;39m";
 
 struct Parsed {
     graph_end: usize,
