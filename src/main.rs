@@ -1,3 +1,25 @@
+// 2026-05-08 Notes on combinations of revision state:
+//
+// Forbidden pairs:
+//   - hidden + working copy — WC always visible (it @, reachable)
+//   - hidden + divergent — divergent need ≥2 visible commits same change_id
+//
+//   All other combos legal. So:
+//
+//   - conflicted, empty, working copy — orthogonal. Mix any subset freely.
+//   - hidden — combine w/ conflicted, empty only.
+//   - divergent — combine w/ conflicted, empty, working copy (one of divergent pair can be @).
+//
+//   Examples valid:
+//   - empty working copy (default jj new)
+//   - conflicted working copy (rebase conflict in @)
+//   - divergent conflicted empty working copy (all four except hidden)
+//   - hidden conflicted empty (abandoned dead end)
+//
+//   Examples invalid:
+//   - hidden working copy
+//   - hidden divergent (anything)
+
 use std::io::{self, IsTerminal, Read, Write};
 
 // const DASH: &str = "\u{2504}"; // ┄ BOX DRAWINGS LIGHT TRIPLE DASH HORIZONTAL
@@ -8,7 +30,7 @@ const EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
 const EDGE_DIM_OFF: &[u8] = b"\x1b[39m";
 const MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
 const MUTABLE_NODE_OFF: &[u8] = b"\x1b[39m";
-const EMPTY_ICON: &str = "\u{F0666}";
+const EMPTY_ICON: &str = "\u{F28d}";
 const WC_EMPTY_ICON: &str = "\u{E667}";
 const EMPTY_MARKER: u32 = 0x1D640; // 𝙀
 const EMPTY_MARKER_BYTES: &[u8] = b"\xf0\x9d\x99\x80";
@@ -145,7 +167,7 @@ fn map_node_char(cp: u32) -> Option<&'static str> {
     match cp {
         0x40 => Some("󰋘"),   // @ → working copy
         0x25CB => Some(""), // ○ → regular (mutable)
-        0x25C6 => Some("◆"), // ◆ → immutable
+        0x25C6 => Some(""), // ◆ → immutable
         0xD7 => Some(""),   // × → conflicted
         0x25CF => Some(""), // ● → alternate
         _ => None,
@@ -240,7 +262,11 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool) {
                 out.extend_from_slice(ansi_bytes);
             }
             if is_empty {
-                let icon = if cp == 0x40 { WC_EMPTY_ICON } else { EMPTY_ICON };
+                let icon = if cp == 0x40 {
+                    WC_EMPTY_ICON
+                } else {
+                    EMPTY_ICON
+                };
                 out.extend_from_slice(icon.as_bytes());
             } else {
                 match map_node_char(cp) {
