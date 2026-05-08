@@ -8,6 +8,10 @@ const EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
 const EDGE_DIM_OFF: &[u8] = b"\x1b[39m";
 const MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
 const MUTABLE_NODE_OFF: &[u8] = b"\x1b[39m";
+const EMPTY_ICON: &str = "\u{F0666}";
+const WC_EMPTY_ICON: &str = "\u{E667}";
+const EMPTY_MARKER: u32 = 0x1D640; // 𝙀
+const EMPTY_MARKER_BYTES: &[u8] = b"\xf0\x9d\x99\x80";
 
 struct Parsed {
     graph_end: usize,
@@ -151,19 +155,19 @@ fn map_node_char(cp: u32) -> Option<&'static str> {
 // Map jj box-drawing graph chars to Unicode 16.0 Large Type Pieces
 // (U+1CE1A..U+1CE50). Single-cell visual equivalents.
 fn map_graph_char(cp: u32) -> Option<&'static str> {
-    match cp {
-        0x2500 | 0x2504 | 0x2508 => Some("𜸟"), // ─ ┄ ┈
-        0x2502 => Some("𜸩"),                   // │
-        0x250C | 0x256D => Some("𜸚"),          // ┌ ╭
-        0x2510 | 0x256E => Some("𜸤"),          // ┐ ╮
-        0x2514 | 0x2570 => Some("𜸾"),          // └ ╰
-        0x2518 | 0x256F => Some("𜹃"),          // ┘ ╯
-        0x251C => Some("𜸨"),                   // ├
-        0x2524 => Some("𜸶"),                   // ┤
-        0x252C => Some("𜸠"),                   // ┬
-        0x2534 => Some("𜹀"),                   // ┴
-        0x253C => Some("𜸺"),                   // ┼
-        0x7E => Some("⌇"),                     // ~
+    match char::from_u32(cp)? {
+        '─' | '┄' | '┈' => Some("𜸟"),
+        '│' => Some("𜸩"),
+        '┌' | '╭' => Some("𜸚"),
+        '┐' | '╮' => Some("𜸤"),
+        '└' | '╰' => Some("𜸾"),
+        '┘' | '╯' => Some("𜹃"),
+        '├' => Some("𜸨"),
+        '┤' => Some("𜸶"),
+        '┬' => Some("𜸠"),
+        '┴' => Some("𜹀"),
+        '┼' => Some("𜸺"),
+        '~' => Some("⌇"),
         _ => None,
     }
 }
@@ -198,7 +202,7 @@ fn emit_filtered_ansi(bytes: &[u8], out: &mut Vec<u8>, filter: impl Fn(&str) -> 
 // Emit bytes with all visible non-space chars wrapped in dim SGR, except
 // commit-node chars (○ ● ◆ @ ×) which pass through with normal intensity.
 // Strips jj's fg-color codes; preserves other ANSI sequences.
-fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
+fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool) {
     let mut i = 0;
     while i < bytes.len() {
         let ansi_start = i;
@@ -220,6 +224,11 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
         }
 
         let (cp, len) = decode_utf8(bytes, i);
+        if cp == EMPTY_MARKER {
+            emit_filtered_ansi(ansi_bytes, out, is_fg_color_sgr);
+            i += len;
+            continue;
+        }
         if is_node_char(cp) {
             // Mutable (○) gets a darker color override; other nodes preserve
             // jj's original ANSI verbatim.
@@ -230,9 +239,14 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
             } else {
                 out.extend_from_slice(ansi_bytes);
             }
-            match map_node_char(cp) {
-                Some(replacement) => out.extend_from_slice(replacement.as_bytes()),
-                None => out.extend_from_slice(&bytes[i..i + len]),
+            if is_empty {
+                let icon = if cp == 0x40 { WC_EMPTY_ICON } else { EMPTY_ICON };
+                out.extend_from_slice(icon.as_bytes());
+            } else {
+                match map_node_char(cp) {
+                    Some(replacement) => out.extend_from_slice(replacement.as_bytes()),
+                    None => out.extend_from_slice(&bytes[i..i + len]),
+                }
             }
             if darken_mutable {
                 out.extend_from_slice(MUTABLE_NODE_OFF);
@@ -247,6 +261,34 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
             out.extend_from_slice(EDGE_DIM_OFF);
         }
         i += len;
+    }
+}
+
+fn line_is_empty(body: &[u8]) -> bool {
+    let mut i = 0;
+    while i < body.len() {
+        if let Some(after) = skip_csi(body, i) {
+            i = after;
+            continue;
+        }
+        let (cp, len) = decode_utf8(body, i);
+        if cp == EMPTY_MARKER {
+            return true;
+        }
+        i += len;
+    }
+    false
+}
+
+fn write_stripping_marker(content: &[u8], out: &mut Vec<u8>) {
+    let mut i = 0;
+    while i < content.len() {
+        if content[i..].starts_with(EMPTY_MARKER_BYTES) {
+            i += EMPTY_MARKER_BYTES.len();
+            continue;
+        }
+        out.push(content[i]);
+        i += 1;
     }
 }
 
@@ -321,12 +363,13 @@ fn run() -> io::Result<()> {
             *line
         };
 
+        let is_empty = line_is_empty(body);
         match p {
             Some(p) => {
                 let graph = &body[..p.graph_end];
                 let content = &body[p.content_start..];
 
-                emit_dim_graph(graph, &mut out);
+                emit_dim_graph(graph, &mut out, is_empty);
 
                 let gap = target_col - p.graph_col;
                 let mut peek = p.content_start;
@@ -351,10 +394,10 @@ fn run() -> io::Result<()> {
                     }
                 }
 
-                out.write_all(content)?;
+                write_stripping_marker(content, &mut out);
             }
             None => {
-                emit_dim_graph(body, &mut out);
+                emit_dim_graph(body, &mut out, is_empty);
             }
         }
 
