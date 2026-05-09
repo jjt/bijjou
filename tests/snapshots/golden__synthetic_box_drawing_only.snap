@@ -1,0 +1,5 @@
+---
+source: tests/golden.rs
+expression: visualize(&output)
+---
+\e[38;5;240m𜸩\e[39m \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m

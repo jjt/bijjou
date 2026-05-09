@@ -1,0 +1,4 @@
+[1m[38;5;2m@[0m  [1m[38;5;13mzt[38;5;8mtznl[39m [38;5;12mb[38;5;8mb06f5[39m [38;2;255;199;83mME[39m [38;5;14m260509·1007[39m add unit tests for byte-level rendering helpers[0m
+○  [1m[38;5;5mwn[0m[38;5;8mlmpu[39m [1m[38;5;4m9[0m[38;5;8m6b17d[39m [38;2;255;199;83mME[39m [38;5;6m260509·0958[39m color immutable nodes the same gray as mutable
+[38;5;8m~[39m  [38;5;8m(elided revisions)[39m
+[0m[39m◆[0m  [1m[38;5;5mzz[0m[38;5;8mzzzz[39m [38;5;2mroot()[39m [1m[38;5;4m000[0m[38;5;8m000[39m
