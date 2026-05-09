@@ -266,10 +266,10 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immutable:
             continue;
         }
         if is_node_char(cp) {
-            // Mutable (○) gets a darker color override; other nodes preserve
-            // jj's original ANSI verbatim.
-            let darken_mutable = cp == 0x25CB;
-            if darken_mutable {
+            // Mutable (○) and immutable (◆, or @ rendered as immutable) share
+            // the darker color override; other nodes preserve jj's original ANSI.
+            let darken = cp == 0x25CB || cp == 0x25C6 || (cp == 0x40 && is_immutable);
+            if darken {
                 emit_filtered_ansi(ansi_bytes, out, is_fg_color_sgr);
                 out.extend_from_slice(MUTABLE_NODE_COLOR);
             } else {
@@ -291,7 +291,7 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immutable:
                     None => out.extend_from_slice(&bytes[i..i + len]),
                 }
             }
-            if darken_mutable {
+            if darken {
                 out.extend_from_slice(MUTABLE_NODE_OFF);
             }
         } else {
