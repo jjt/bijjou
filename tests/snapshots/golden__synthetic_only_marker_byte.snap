@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: "Empty marker on its own line — must strip to bare \\n."
 expression: visualize(&output)
 ---
 

@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: "Stack of 𝙀𝙄 markers — all stripped, no doubled spacing."
 expression: visualize(&output)
 ---
 \e[38;5;245m\e[39m  abc desc

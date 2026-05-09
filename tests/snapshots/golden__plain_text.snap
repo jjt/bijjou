@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: Input with no graph chars — must passthrough unchanged.
 expression: visualize(&output)
 ---
 \e[38;5;240mM\e[39m \e[38;5;240ms\e[39m\e[38;5;240mr\e[39m\e[38;5;240mc\e[39m\e[38;5;240m/\e[39m\e[38;5;240mm\e[39m\e[38;5;240ma\e[39m\e[38;5;240mi\e[39m\e[38;5;240mn\e[39m\e[38;5;240m.\e[39m\e[38;5;240mr\e[39m\e[38;5;240ms\e[39m

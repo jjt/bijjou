@@ -39,10 +39,12 @@ fn run_bijjou_with_config(input: &[u8], config: &str) -> Vec<u8> {
         .clone()
 }
 
-fn snapshot_with_config(input_name: &str, config: &str, snap_name: &str) {
+fn snapshot_with_config(input_name: &str, config: &str, snap_name: &str, desc: &str) {
     let input = read_fixture(input_name);
     let output = run_bijjou_with_config(&input, config);
-    insta::assert_snapshot!(snap_name, visualize(&output));
+    insta::with_settings!({description => desc}, {
+        insta::assert_snapshot!(snap_name, visualize(&output));
+    });
 }
 
 // Render bytes for snapshots. CSI escapes appear as \e[...X so the params and
@@ -111,55 +113,85 @@ fn visualize(bytes: &[u8]) -> String {
     out
 }
 
-fn snapshot(name: &str) {
+fn snapshot(name: &str, desc: &str) {
     let input = read_fixture(name);
     let output = run_bijjou(&input);
-    insta::assert_snapshot!(name, visualize(&output));
+    insta::with_settings!({description => desc}, {
+        insta::assert_snapshot!(name, visualize(&output));
+    });
+}
+
+fn snap_bytes(name: &str, input: &[u8], desc: &str) {
+    let output = run_bijjou(input);
+    insta::with_settings!({description => desc}, {
+        insta::assert_snapshot!(name, visualize(&output));
+    });
 }
 
 #[test]
 fn empty_input() {
-    snapshot("empty");
+    snapshot("empty", "Empty stdin → empty stdout.");
 }
 
 #[test]
 fn single_working_copy() {
-    snapshot("single_wc");
+    snapshot("single_wc", "One working-copy commit; minimal graph.");
 }
 
 #[test]
 fn single_working_copy_no_graph() {
-    snapshot("single_wc_no_graph");
+    snapshot(
+        "single_wc_no_graph",
+        "Single line of input with no graph column at all.",
+    );
 }
 
 #[test]
 fn linear_chain() {
-    snapshot("linear_chain");
+    snapshot(
+        "linear_chain",
+        "Straight chain of commits — baseline for vertical edge rendering.",
+    );
 }
 
 #[test]
 fn root_immutable() {
-    snapshot("root_immutable");
+    snapshot(
+        "root_immutable",
+        "Root() commit — exercises immutable ◆ glyph and lock icon.",
+    );
 }
 
 #[test]
 fn mixed_with_elision() {
-    snapshot("mixed_with_elision");
+    snapshot(
+        "mixed_with_elision",
+        "Graph that includes a `~` elision marker for collapsed history.",
+    );
 }
 
 #[test]
 fn plain_text_passthrough() {
-    snapshot("plain_text");
+    snapshot(
+        "plain_text",
+        "Input with no graph chars — must passthrough unchanged.",
+    );
 }
 
 #[test]
 fn branching_graph() {
-    snapshot("branching");
+    snapshot(
+        "branching",
+        "Diverging branches — exercises tee + corner glyph mapping.",
+    );
 }
 
 #[test]
 fn merge_graph() {
-    snapshot("merge_graph");
+    snapshot(
+        "merge_graph",
+        "Two-parent merge — covers tee_up and bottom-corner edges.",
+    );
 }
 
 // --- Real-state fixtures: bookmarks, conflicts, hidden, divergent, workspaces,
@@ -167,64 +199,84 @@ fn merge_graph() {
 
 #[test]
 fn bookmarks() {
-    snapshot("bookmarks");
+    snapshot("bookmarks", "jj log with bookmarks attached to commits.");
 }
 
 #[test]
 fn conflicted() {
-    snapshot("conflicted");
+    snapshot(
+        "conflicted",
+        "Conflicted commit — × glyph with bold red color preserved.",
+    );
 }
 
 #[test]
 fn hidden_revisions() {
-    snapshot("hidden");
+    snapshot("hidden", "Hidden (abandoned) revisions in the log.");
 }
 
 #[test]
 fn divergent() {
-    snapshot("divergent");
+    snapshot(
+        "divergent",
+        "Two visible commits sharing a change_id (divergent state).",
+    );
 }
 
 #[test]
 fn workspaces() {
-    snapshot("workspaces");
+    snapshot(
+        "workspaces",
+        "Multi-workspace log: multiple @ markers across workspaces.",
+    );
 }
 
 #[test]
 fn megamerge() {
-    snapshot("megamerge");
+    snapshot(
+        "megamerge",
+        "Octopus merge with many parents converging at one node.",
+    );
 }
 
 #[test]
 fn combo_conflicted_working_copy() {
-    snapshot("combo_conflicted_wc");
+    snapshot(
+        "combo_conflicted_wc",
+        "Working copy on a conflicted commit — × node and bold-red color combo.",
+    );
 }
 
 #[test]
 fn combo_megamerge_conflict() {
-    snapshot("combo_megamerge_conflict");
+    snapshot(
+        "combo_megamerge_conflict",
+        "Megamerge where one parent is conflicted.",
+    );
 }
 
 #[test]
 fn combo_kitchen_sink() {
-    // Single capture exercising bookmarks, hidden, divergent, conflict on
-    // working copy, multi-workspace markers, octopus megamerge, and immutable
-    // root all in one log output.
-    snapshot("combo_kitchen_sink");
+    snapshot(
+        "combo_kitchen_sink",
+        "Single capture exercising every node type: bookmarks, hidden, divergent, conflicted WC, multi-workspace, octopus megamerge, immutable root.",
+    );
 }
 
 #[test]
 fn diff_authors() {
-    // Mix of single-name, multi-word, CJK, and emoji authors — exercises how
-    // jj's truncate/pad on the author cell shapes a variable-width column.
-    snapshot("diff_authors");
+    snapshot(
+        "diff_authors",
+        "Author column variety: single-name, multi-word, CJK, emoji — exercises jj's truncate/pad on a variable-width column.",
+    );
 }
 
 #[test]
 fn remote_bookmarks() {
-    // Local main ahead of origin: shows `main*` (locally-modified marker) and
-    // `main@origin` (remote-tracking bookmark) on different commits.
-    snapshot("remote_bookmarks");
+    snapshot(
+        "remote_bookmarks",
+        "Local main ahead of origin: `main*` (locally-modified) and `main@origin` (remote-tracking) on different commits.",
+    );
 }
 
 // Synthetic fixtures: hand-crafted bytes that exercise specific paths
@@ -232,87 +284,102 @@ fn remote_bookmarks() {
 
 #[test]
 fn synthetic_only_marker_byte() {
-    // Empty marker on its own line — bijjou should strip it and emit just \n.
     let input = b"\xf0\x9d\x99\x80\n";
-    let output = run_bijjou(input);
-    insta::assert_snapshot!("synthetic_only_marker_byte", visualize(&output));
+    snap_bytes(
+        "synthetic_only_marker_byte",
+        input,
+        "Empty marker on its own line — must strip to bare \\n.",
+    );
 }
 
 #[test]
 fn synthetic_immutable_diamond_no_color() {
-    // Immutable ◆ with no surrounding color; bijjou should darken it and
-    // replace glyph with the lock icon.
     let input = "\u{25C6}  zzzzz root() 000000\n".as_bytes();
-    let output = run_bijjou(input);
-    insta::assert_snapshot!("synthetic_immutable_diamond_no_color", visualize(&output));
+    snap_bytes(
+        "synthetic_immutable_diamond_no_color",
+        input,
+        "◆ with no surrounding color — must darken and swap glyph to lock.",
+    );
 }
 
 #[test]
 fn synthetic_mutable_circle_no_color() {
-    // Mutable ○ with no color — gets darkened.
     let input = "\u{25CB}  abcde 12345 desc\n".as_bytes();
-    let output = run_bijjou(input);
-    insta::assert_snapshot!("synthetic_mutable_circle_no_color", visualize(&output));
+    snap_bytes(
+        "synthetic_mutable_circle_no_color",
+        input,
+        "○ alone, no color — must darken (override of jj's default fg).",
+    );
 }
 
 #[test]
 fn synthetic_wc_immutable_lock() {
-    // @ on a line that carries the immutable marker: glyph becomes the lock,
-    // node is darkened (lock wins over WC visuals).
     let input = "@  abc \u{1D644}desc\n".as_bytes();
-    let output = run_bijjou(input);
-    insta::assert_snapshot!("synthetic_wc_immutable_lock", visualize(&output));
+    snap_bytes(
+        "synthetic_wc_immutable_lock",
+        input,
+        "@ on a line carrying the immutable marker — lock icon wins over WC visuals.",
+    );
 }
 
 #[test]
 fn synthetic_wc_empty() {
-    // @ on an empty line: WC_EMPTY_ICON.
     let input = "@  abc \u{1D640}desc\n".as_bytes();
-    let output = run_bijjou(input);
-    insta::assert_snapshot!("synthetic_wc_empty", visualize(&output));
+    snap_bytes(
+        "synthetic_wc_empty",
+        input,
+        "@ on an empty line — uses WC_EMPTY_ICON.",
+    );
 }
 
 #[test]
 fn synthetic_immutable_empty_diamond() {
-    // ◆ + empty marker: EMPTY_IMMUTABLE_ICON.
     let input = "\u{25C6}  abc \u{1D640}\u{1D644}desc\n".as_bytes();
-    let output = run_bijjou(input);
-    insta::assert_snapshot!("synthetic_immutable_empty_diamond", visualize(&output));
+    snap_bytes(
+        "synthetic_immutable_empty_diamond",
+        input,
+        "◆ + empty + immutable markers — uses EMPTY_IMMUTABLE_ICON.",
+    );
 }
 
 #[test]
 fn synthetic_conflict_node() {
-    // × → conflict icon, fg color preserved (no darken).
     let input = "\u{00D7}  abc desc\n".as_bytes();
-    let output = run_bijjou(input);
-    insta::assert_snapshot!("synthetic_conflict_node", visualize(&output));
+    snap_bytes(
+        "synthetic_conflict_node",
+        input,
+        "× alone — conflict icon; fg color preserved (no darken).",
+    );
 }
 
 #[test]
 fn synthetic_box_drawing_only() {
-    // Pure graph segment with no node — should still emit edge dim color.
     let input = "│ ├─╯\n".as_bytes();
-    let output = run_bijjou(input);
-    insta::assert_snapshot!("synthetic_box_drawing_only", visualize(&output));
+    snap_bytes(
+        "synthetic_box_drawing_only",
+        input,
+        "Pure graph segment with no node — must still emit edge-dim color.",
+    );
 }
 
 #[test]
 fn synthetic_alignment_dash_filler() {
-    // When graph_col is short relative to max graph width, bijjou should
-    // pad to align and (for short-side, change-id-looking content) emit
-    // dash filler. Two lines: one tall graph, one short.
     let input = b"\xe2\x94\x82 \xe2\x94\x82 \xe2\x97\x8b  abcde 12345\n\xe2\x97\x8b  fghij 67890\n";
-    let output = run_bijjou(input);
-    insta::assert_snapshot!("synthetic_alignment_dash_filler", visualize(&output));
+    snap_bytes(
+        "synthetic_alignment_dash_filler",
+        input,
+        "Tall + short graph rows — short row pads with dash filler when content begins with a change-id.",
+    );
 }
 
 #[test]
 fn synthetic_marker_inside_csi_segment() {
-    // Marker bytes wrapped in jj's color envelope — bijjou should strip the
-    // marker but the (now empty) color codes shouldn't introduce extra spacing.
     let input = b"@  abc \x1b[38;5;10m\xf0\x9d\x99\x80\x1b[39mdesc\n";
-    let output = run_bijjou(input);
-    insta::assert_snapshot!("synthetic_marker_inside_csi_segment", visualize(&output));
+    snap_bytes(
+        "synthetic_marker_inside_csi_segment",
+        input,
+        "Marker bytes wrapped in jj's color envelope — marker stripped without extra spacing from the now-empty SGR pair.",
+    );
 }
 
 // --- Degenerate inputs --------------------------------------------------
@@ -320,17 +387,12 @@ fn synthetic_marker_inside_csi_segment() {
 // that real jj output usually wouldn't produce. Behavior should be
 // deterministic and never panic.
 
-fn snap_bytes(name: &str, input: &[u8]) {
-    let output = run_bijjou(input);
-    insta::assert_snapshot!(name, visualize(&output));
-}
-
 #[test]
 fn degenerate_author_column_missing() {
-    // Realistic format minus the author cell.
     snap_bytes(
         "degenerate_author_column_missing",
         b"@  abcde 12345 260509\xc2\xb70958 desc\n",
+        "Realistic format minus the author cell — boundary detection still works.",
     );
 }
 
@@ -339,31 +401,44 @@ fn degenerate_timestamp_missing() {
     snap_bytes(
         "degenerate_timestamp_missing",
         b"@  abcde 12345 ME desc-without-timestamp\n",
+        "Header row without timestamp — no panic.",
     );
 }
 
 #[test]
 fn degenerate_no_description() {
-    // Bare graph + change/commit IDs only.
-    snap_bytes("degenerate_no_description", b"\xe2\x97\x8b  abcde 12345\n");
+    snap_bytes(
+        "degenerate_no_description",
+        b"\xe2\x97\x8b  abcde 12345\n",
+        "Bare graph + change/commit IDs only, no description text.",
+    );
 }
 
 #[test]
 fn degenerate_only_newlines() {
-    snap_bytes("degenerate_only_newlines", b"\n\n\n");
+    snap_bytes(
+        "degenerate_only_newlines",
+        b"\n\n\n",
+        "Three blank lines, no graph and no content.",
+    );
 }
 
 #[test]
 fn degenerate_only_csi_no_text() {
-    // Pure escape sequences with no visible characters.
-    snap_bytes("degenerate_only_csi_no_text", b"\x1b[31m\x1b[39m\n");
+    snap_bytes(
+        "degenerate_only_csi_no_text",
+        b"\x1b[31m\x1b[39m\n",
+        "Pure escape sequences, zero visible chars.",
+    );
 }
 
 #[test]
 fn degenerate_unterminated_csi() {
-    // CSI cut off without final byte (no terminator). bijjou should not panic;
-    // it consumes to end-of-buffer.
-    snap_bytes("degenerate_unterminated_csi", b"@  abc\x1b[38;5;");
+    snap_bytes(
+        "degenerate_unterminated_csi",
+        b"@  abc\x1b[38;5;",
+        "CSI cut off without final byte — parser must consume to EOF without panic.",
+    );
 }
 
 #[test]
@@ -371,19 +446,23 @@ fn degenerate_no_trailing_newline() {
     snap_bytes(
         "degenerate_no_trailing_newline",
         b"\xe2\x97\x8b  abcde 12345 desc",
+        "Final line missing trailing \\n — output must still flush correctly.",
     );
 }
 
 #[test]
 fn degenerate_many_consecutive_markers() {
-    // Stack of markers (𝙀𝙄𝙀𝙄) — all should be stripped, no doubled spacing.
     let mut buf = b"@  abc ".to_vec();
     for _ in 0..4 {
         buf.extend_from_slice(b"\xf0\x9d\x99\x80"); // 𝙀
         buf.extend_from_slice(b"\xf0\x9d\x99\x84"); // 𝙄
     }
     buf.extend_from_slice(b"desc\n");
-    snap_bytes("degenerate_many_consecutive_markers", &buf);
+    snap_bytes(
+        "degenerate_many_consecutive_markers",
+        &buf,
+        "Stack of 𝙀𝙄 markers — all stripped, no doubled spacing.",
+    );
 }
 
 #[test]
@@ -391,16 +470,16 @@ fn degenerate_marker_at_line_start() {
     snap_bytes(
         "degenerate_marker_at_line_start",
         b"\xf0\x9d\x99\x80@  abcde desc\n",
+        "Empty marker before the @ glyph — must strip cleanly.",
     );
 }
 
 #[test]
 fn degenerate_invalid_utf8_byte() {
-    // Stray 0x80 (continuation byte) in the middle of content. bijjou's UTF-8
-    // decoder treats it as a 1-byte char; output should pass through.
     snap_bytes(
         "degenerate_invalid_utf8_byte",
         b"@  abcde \x80 strange desc\n",
+        "Stray 0x80 continuation byte — UTF-8 decoder treats as 1-byte char, no crash.",
     );
 }
 
@@ -409,55 +488,64 @@ fn degenerate_tab_in_content() {
     snap_bytes(
         "degenerate_tab_in_content",
         b"@  abcde 12345 ME 260509 desc\twith\ttabs\n",
+        "Tabs inside the description column — pass through unchanged.",
     );
 }
 
 #[test]
 fn degenerate_blank_graph_line_between() {
-    // Mid-graph blank line (jj doesn't normally emit this).
     snap_bytes(
         "degenerate_blank_graph_line_between",
         b"\xe2\x97\x8b  abcde 12345\n\n\xe2\x97\x8b  fghij 67890\n",
+        "Mid-graph blank line — must not crash or merge into next row.",
     );
 }
 
 #[test]
 fn degenerate_graph_only_no_content() {
-    // Lines with graph chars but no content after.
     snap_bytes(
         "degenerate_graph_only_no_content",
         b"\xe2\x94\x82\n\xe2\x94\x9c\xe2\x94\x80\xe2\x95\xaf\n",
+        "Lines with graph chars but no commit content after.",
     );
 }
 
 #[test]
 fn degenerate_long_line_no_graph() {
-    // 500-byte plain text line; emit_dim_graph wraps each non-space char
-    // individually — make sure that scales.
     let body: Vec<u8> = std::iter::repeat(b'x').take(500).collect();
     let mut buf = body.clone();
     buf.push(b'\n');
-    snap_bytes("degenerate_long_line_no_graph", &buf);
+    snap_bytes(
+        "degenerate_long_line_no_graph",
+        &buf,
+        "500-byte plain text line — emit_dim_graph wraps each char individually; checks scaling.",
+    );
 }
 
 #[test]
 fn degenerate_csi_then_newline() {
-    // CSI with newline immediately after.
-    snap_bytes("degenerate_csi_then_newline", b"\x1b[1m\n");
+    snap_bytes(
+        "degenerate_csi_then_newline",
+        b"\x1b[1m\n",
+        "CSI immediately followed by newline; no visible content.",
+    );
 }
 
 #[test]
 fn degenerate_solo_marker_byte_no_newline() {
-    // Empty marker as the only input, no trailing newline.
-    snap_bytes("degenerate_solo_marker_byte_no_newline", b"\xf0\x9d\x99\x80");
+    snap_bytes(
+        "degenerate_solo_marker_byte_no_newline",
+        b"\xf0\x9d\x99\x80",
+        "Empty marker as the entire input, no newline — stripped to empty output.",
+    );
 }
 
 #[test]
 fn degenerate_marker_after_graph_only() {
-    // Graph + marker but no content. The marker should still be stripped.
     snap_bytes(
         "degenerate_marker_after_graph_only",
         b"\xe2\x97\x8b  \xf0\x9d\x99\x80\n",
+        "Graph + marker but no commit content; marker still stripped.",
     );
 }
 
@@ -468,17 +556,32 @@ fn degenerate_marker_after_graph_only() {
 
 #[test]
 fn config_ascii_linear_chain() {
-    snapshot_with_config("linear_chain", "ascii", "config_ascii_linear_chain");
+    snapshot_with_config(
+        "linear_chain",
+        "ascii",
+        "config_ascii_linear_chain",
+        "Linear chain rendered with ascii.toml — verifies icon and dash overrides on a simple shape.",
+    );
 }
 
 #[test]
 fn config_ascii_branching() {
-    snapshot_with_config("branching", "ascii", "config_ascii_branching");
+    snapshot_with_config(
+        "branching",
+        "ascii",
+        "config_ascii_branching",
+        "Branching shape with ascii.toml — exercises ASCII fallback for graph chars and tees.",
+    );
 }
 
 #[test]
 fn config_ascii_workspaces() {
-    snapshot_with_config("workspaces", "ascii", "config_ascii_workspaces");
+    snapshot_with_config(
+        "workspaces",
+        "ascii",
+        "config_ascii_workspaces",
+        "Workspaces (state-rich) input with ascii.toml — full ASCII fallback across all node types.",
+    );
 }
 
 #[test]
@@ -487,6 +590,7 @@ fn config_hex_colors_workspaces() {
         "workspaces",
         "hex_colors",
         "config_hex_colors_workspaces",
+        "workspaces with hex_colors.toml — exercises the #rrggbb path emitting 24-bit truecolor SGR (38;2;r;g;b).",
     );
 }
 
@@ -496,17 +600,16 @@ fn config_dash_only_workspaces() {
         "workspaces",
         "dash_only",
         "config_dash_only_workspaces",
+        "workspaces with dash_only.toml — only the alignment dash glyph is overridden; other defaults remain.",
     );
 }
 
 #[test]
 fn config_alt_nodes_kitchen_sink() {
-    // Kitchen-sink fixture exercises every node type (@, ○, ◆, ×, ●,
-    // empty, immutable @, empty-immutable). Renders them via a non-default
-    // BMP-only icon set so the override applies across all branches.
     snapshot_with_config(
         "combo_kitchen_sink",
         "alt_nodes",
         "config_alt_nodes_kitchen_sink",
+        "combo_kitchen_sink with alt_nodes.toml swapping every node icon to BMP fallbacks (★ ◉ ⬢ ⊗ ✦ ○ ☆ ⬡).",
     );
 }

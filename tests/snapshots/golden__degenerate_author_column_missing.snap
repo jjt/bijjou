@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: Realistic format minus the author cell — boundary detection still works.
 expression: visualize(&output)
 ---
 󰋘  abcde 12345 260509·0958 desc

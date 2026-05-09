@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: "Local main ahead of origin: `main*` (locally-modified) and `main@origin` (remote-tracking) on different commits."
 expression: visualize(&output)
 ---
 \e[38;5;245m\e[39m \e[38;5;8m━━\e[39m \e[1m\e[38;5;5my\e[0m\e[38;5;8mkklqv\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m2a58d\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1455\e[39m \e[38;5;5mmain*\e[39m local-only commit on main

@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: Two-parent merge — covers tee_up and bottom-corner edges.
 expression: visualize(&output)
 ---
 \e[1m\e[38;5;2m\e[0m \e[38;5;8m━━\e[39m \e[1m\e[38;5;13mx\e[38;5;8mrmrzn\e[39m \e[38;5;12m77\e[38;5;8me2c2\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;14m260509·1007\e[39m \e[38;5;10m\e[39mmerge two heads\e[0m

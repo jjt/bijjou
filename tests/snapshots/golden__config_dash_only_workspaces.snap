@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: workspaces with dash_only.toml — only the alignment dash glyph is overridden; other defaults remain.
 expression: visualize(&output)
 ---
 \e[1m\e[38;5;2m󰋘\e[0m \e[38;5;8m··\e[39m \e[1m\e[38;5;13mm\e[38;5;8mpzqvy\e[38;5;13m/1\e[39m \e[38;5;12m7\e[38;5;8mc0177\e[39m \e[38;5;3mTU\e[39m \e[38;5;14m260509·1438\e[39m \e[38;5;13m𝘿\e[39m \e[38;5;10mdefault@\e[39m version B\e[0m

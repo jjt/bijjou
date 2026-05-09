@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: "Graph that includes a `~` elision marker for collapsed history."
 expression: visualize(&output)
 ---
 \e[1m\e[38;5;2m󰋘\e[0m  \e[1m\e[38;5;13mzt\e[38;5;8mtznl\e[39m \e[38;5;12mb\e[38;5;8mb06f5\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;14m260509·1007\e[39m add unit tests for byte-level rendering helpers\e[0m

@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: "Empty marker as the entire input, no newline — stripped to empty output."
 expression: visualize(&output)
 ---
 

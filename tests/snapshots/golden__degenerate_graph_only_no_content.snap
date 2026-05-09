@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: Lines with graph chars but no commit content after.
 expression: visualize(&output)
 ---
 \e[38;5;240m𜸩\e[39m

@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: CSI immediately followed by newline; no visible content.
 expression: visualize(&output)
 ---
 \e[1m

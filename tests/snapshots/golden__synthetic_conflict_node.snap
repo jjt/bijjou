@@ -1,5 +1,6 @@
 ---
 source: tests/golden.rs
+description: × alone — conflict icon; fg color preserved (no darken).
 expression: visualize(&output)
 ---
   abc desc
