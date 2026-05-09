@@ -138,6 +138,57 @@ fn merge_graph() {
     snapshot("merge_graph");
 }
 
+// --- Real-state fixtures: bookmarks, conflicts, hidden, divergent, workspaces,
+// --- megamerges, and combinations.
+
+#[test]
+fn bookmarks() {
+    snapshot("bookmarks");
+}
+
+#[test]
+fn conflicted() {
+    snapshot("conflicted");
+}
+
+#[test]
+fn hidden_revisions() {
+    snapshot("hidden");
+}
+
+#[test]
+fn divergent() {
+    snapshot("divergent");
+}
+
+#[test]
+fn workspaces() {
+    snapshot("workspaces");
+}
+
+#[test]
+fn megamerge() {
+    snapshot("megamerge");
+}
+
+#[test]
+fn combo_conflicted_working_copy() {
+    snapshot("combo_conflicted_wc");
+}
+
+#[test]
+fn combo_megamerge_conflict() {
+    snapshot("combo_megamerge_conflict");
+}
+
+#[test]
+fn combo_kitchen_sink() {
+    // Single capture exercising bookmarks, hidden, divergent, conflict on
+    // working copy, multi-workspace markers, octopus megamerge, and immutable
+    // root all in one log output.
+    snapshot("combo_kitchen_sink");
+}
+
 // Synthetic fixtures: hand-crafted bytes that exercise specific paths
 // without depending on a captured jj session.
 
