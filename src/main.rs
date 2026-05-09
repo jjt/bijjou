@@ -542,3 +542,443 @@ fn try_pager(buf: &[u8]) -> io::Result<Option<()>> {
     let _ = child.wait();
     Ok(Some(()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- skip_csi -----------------------------------------------------------
+
+    #[test]
+    fn skip_csi_basic_sgr() {
+        assert_eq!(skip_csi(b"\x1b[31mfoo", 0), Some(5));
+    }
+
+    #[test]
+    fn skip_csi_no_escape_returns_none() {
+        assert_eq!(skip_csi(b"foo", 0), None);
+    }
+
+    #[test]
+    fn skip_csi_with_multi_param_sgr() {
+        assert_eq!(skip_csi(b"\x1b[38;5;245mX", 0), Some(11));
+    }
+
+    #[test]
+    fn skip_csi_unterminated_returns_buffer_end() {
+        assert_eq!(skip_csi(b"\x1b[38;5", 0), Some(6));
+    }
+
+    #[test]
+    fn skip_csi_at_offset() {
+        // Skip past the 'X', start at the CSI.
+        assert_eq!(skip_csi(b"X\x1b[1m", 1), Some(5));
+    }
+
+    // --- decode_utf8 --------------------------------------------------------
+
+    #[test]
+    fn decode_utf8_ascii() {
+        assert_eq!(decode_utf8(b"A", 0), (0x41, 1));
+    }
+
+    #[test]
+    fn decode_utf8_two_byte() {
+        // U+00A3 £
+        assert_eq!(decode_utf8(b"\xc2\xa3", 0), (0xa3, 2));
+    }
+
+    #[test]
+    fn decode_utf8_three_byte_circle() {
+        // U+25CB ○
+        assert_eq!(decode_utf8(b"\xe2\x97\x8b", 0), (0x25CB, 3));
+    }
+
+    #[test]
+    fn decode_utf8_three_byte_diamond() {
+        // U+25C6 ◆
+        assert_eq!(decode_utf8(b"\xe2\x97\x86", 0), (0x25C6, 3));
+    }
+
+    #[test]
+    fn decode_utf8_four_byte_empty_marker() {
+        assert_eq!(decode_utf8(EMPTY_MARKER_BYTES, 0), (EMPTY_MARKER, 4));
+    }
+
+    #[test]
+    fn decode_utf8_four_byte_immutable_marker() {
+        assert_eq!(decode_utf8(IMMUTABLE_MARKER_BYTES, 0), (IMMUTABLE_MARKER, 4));
+    }
+
+    // --- char classifiers ---------------------------------------------------
+
+    #[test]
+    fn is_node_char_recognizes_all_nodes() {
+        for &cp in &[0x40u32, 0x25CB, 0x25CF, 0x25C6, 0xD7] {
+            assert!(is_node_char(cp), "cp={:#x} should be node char", cp);
+        }
+    }
+
+    #[test]
+    fn is_node_char_rejects_non_nodes() {
+        for &cp in &[0x2502u32, 0x2500, 0x41, 0x20] {
+            assert!(!is_node_char(cp), "cp={:#x} should not be node char", cp);
+        }
+    }
+
+    #[test]
+    fn is_graph_char_includes_box_drawing() {
+        assert!(is_graph_char(0x2500)); // ─
+        assert!(is_graph_char(0x2502)); // │
+        assert!(is_graph_char(0x256D)); // ╭
+        assert!(is_graph_char(0x257F)); // upper bound
+    }
+
+    #[test]
+    fn is_graph_char_includes_node_chars() {
+        assert!(is_graph_char(0x40));
+        assert!(is_graph_char(0x25CB));
+        assert!(is_graph_char(0x25C6));
+        assert!(is_graph_char(0xD7));
+        assert!(is_graph_char(0x7E)); // ~ elided marker
+    }
+
+    #[test]
+    fn is_graph_char_rejects_letters() {
+        assert!(!is_graph_char(0x41));
+        assert!(!is_graph_char(0x61));
+    }
+
+    // --- node/graph icon mapping --------------------------------------------
+
+    #[test]
+    fn map_node_char_covers_each_node() {
+        assert_eq!(map_node_char(0x40), Some(WC_ICON));
+        assert_eq!(map_node_char(0x25CB), Some(MUTABLE_ICON));
+        assert_eq!(map_node_char(0x25C6), Some(IMMUTABLE_ICON));
+        assert_eq!(map_node_char(0xD7), Some(CONFLICT_ICON));
+        assert_eq!(map_node_char(0x25CF), Some(ALTERNATE_ICON));
+    }
+
+    #[test]
+    fn map_node_char_returns_none_for_other() {
+        assert_eq!(map_node_char(0x41), None);
+        assert_eq!(map_node_char(0x2502), None);
+    }
+
+    #[test]
+    fn map_graph_char_box_drawings() {
+        assert!(map_graph_char(0x2500).is_some()); // ─
+        assert!(map_graph_char(0x2502).is_some()); // │
+        assert!(map_graph_char(0x256D).is_some()); // ╭
+        assert!(map_graph_char(0x2570).is_some()); // ╰
+        assert!(map_graph_char(0x251C).is_some()); // ├
+        assert!(map_graph_char(0x253C).is_some()); // ┼
+        assert!(map_graph_char(0x7E).is_some());   // ~
+    }
+
+    #[test]
+    fn map_graph_char_unknown_returns_none() {
+        assert!(map_graph_char(0x41).is_none());
+    }
+
+    // --- is_fg_color_sgr ----------------------------------------------------
+
+    #[test]
+    fn fg_color_basic_30s() {
+        for code in 30u16..=37 {
+            assert!(is_fg_color_sgr(&code.to_string()));
+        }
+        assert!(is_fg_color_sgr("39")); // default fg
+    }
+
+    #[test]
+    fn fg_color_bright_90s() {
+        for code in 90u16..=97 {
+            assert!(is_fg_color_sgr(&code.to_string()));
+        }
+    }
+
+    #[test]
+    fn fg_color_extended_256_and_truecolor() {
+        assert!(is_fg_color_sgr("38;5;245"));
+        assert!(is_fg_color_sgr("38;2;255;199;83"));
+    }
+
+    #[test]
+    fn fg_color_rejects_bg_and_attrs() {
+        assert!(!is_fg_color_sgr("0"));      // reset
+        assert!(!is_fg_color_sgr("1"));      // bold
+        assert!(!is_fg_color_sgr("3"));      // italic
+        assert!(!is_fg_color_sgr("40"));     // bg color
+        assert!(!is_fg_color_sgr("49"));     // default bg
+        assert!(!is_fg_color_sgr("48;5;1")); // 256-color bg
+    }
+
+    #[test]
+    fn fg_color_handles_empty_and_garbage() {
+        assert!(!is_fg_color_sgr(""));
+        assert!(!is_fg_color_sgr("xyz"));
+    }
+
+    // --- line_flags ---------------------------------------------------------
+
+    #[test]
+    fn line_flags_plain_line() {
+        assert_eq!(line_flags(b"hello world"), (false, false));
+    }
+
+    #[test]
+    fn line_flags_detects_empty_marker() {
+        let mut buf = b"prefix ".to_vec();
+        buf.extend_from_slice(EMPTY_MARKER_BYTES);
+        buf.extend_from_slice(b" suffix");
+        assert_eq!(line_flags(&buf), (true, false));
+    }
+
+    #[test]
+    fn line_flags_detects_immutable_marker() {
+        let mut buf = b"x".to_vec();
+        buf.extend_from_slice(IMMUTABLE_MARKER_BYTES);
+        assert_eq!(line_flags(&buf), (false, true));
+    }
+
+    #[test]
+    fn line_flags_detects_both() {
+        let mut buf = Vec::new();
+        buf.extend_from_slice(EMPTY_MARKER_BYTES);
+        buf.extend_from_slice(b" ");
+        buf.extend_from_slice(IMMUTABLE_MARKER_BYTES);
+        assert_eq!(line_flags(&buf), (true, true));
+    }
+
+    #[test]
+    fn line_flags_skips_csi_sequences() {
+        // CSI bytes must not be misread as content.
+        let buf = b"\x1b[38;5;10m\x1b[39m";
+        assert_eq!(line_flags(buf), (false, false));
+    }
+
+    #[test]
+    fn line_flags_finds_marker_inside_colored_segment() {
+        let mut buf = b"\x1b[38;5;10m".to_vec();
+        buf.extend_from_slice(EMPTY_MARKER_BYTES);
+        buf.extend_from_slice(b"\x1b[39m");
+        assert_eq!(line_flags(&buf), (true, false));
+    }
+
+    // --- write_stripping_marker --------------------------------------------
+
+    #[test]
+    fn strip_no_markers_passthrough() {
+        let mut out = Vec::new();
+        write_stripping_marker(b"hello world", &mut out);
+        assert_eq!(out, b"hello world");
+    }
+
+    #[test]
+    fn strip_empty_marker_only() {
+        let mut buf = b"a".to_vec();
+        buf.extend_from_slice(EMPTY_MARKER_BYTES);
+        buf.extend_from_slice(b"b");
+        let mut out = Vec::new();
+        write_stripping_marker(&buf, &mut out);
+        assert_eq!(out, b"ab");
+    }
+
+    #[test]
+    fn strip_immutable_marker_only() {
+        let mut buf = IMMUTABLE_MARKER_BYTES.to_vec();
+        buf.extend_from_slice(b"x");
+        let mut out = Vec::new();
+        write_stripping_marker(&buf, &mut out);
+        assert_eq!(out, b"x");
+    }
+
+    #[test]
+    fn strip_both_markers_in_one_pass() {
+        let mut buf = b"start".to_vec();
+        buf.extend_from_slice(EMPTY_MARKER_BYTES);
+        buf.extend_from_slice(b"mid");
+        buf.extend_from_slice(IMMUTABLE_MARKER_BYTES);
+        buf.extend_from_slice(b"end");
+        let mut out = Vec::new();
+        write_stripping_marker(&buf, &mut out);
+        assert_eq!(out, b"startmidend");
+    }
+
+    #[test]
+    fn strip_preserves_ansi_around_markers() {
+        let mut buf = b"\x1b[38;5;10m".to_vec();
+        buf.extend_from_slice(EMPTY_MARKER_BYTES);
+        buf.extend_from_slice(b"\x1b[39m");
+        let mut out = Vec::new();
+        write_stripping_marker(&buf, &mut out);
+        assert_eq!(out, b"\x1b[38;5;10m\x1b[39m");
+    }
+
+    // --- emit_filtered_ansi -------------------------------------------------
+
+    #[test]
+    fn filtered_ansi_drops_fg_keeps_attrs_and_text() {
+        let mut out = Vec::new();
+        emit_filtered_ansi(
+            b"\x1b[1m\x1b[31mhello\x1b[39m\x1b[0m",
+            &mut out,
+            is_fg_color_sgr,
+        );
+        assert_eq!(out, b"\x1b[1mhello\x1b[0m");
+    }
+
+    #[test]
+    fn filtered_ansi_passthrough_plain_text() {
+        let mut out = Vec::new();
+        emit_filtered_ansi(b"plain", &mut out, is_fg_color_sgr);
+        assert_eq!(out, b"plain");
+    }
+
+    #[test]
+    fn filtered_ansi_drops_truecolor_fg() {
+        let mut out = Vec::new();
+        emit_filtered_ansi(
+            b"\x1b[38;2;255;199;83mtext\x1b[39m",
+            &mut out,
+            is_fg_color_sgr,
+        );
+        assert_eq!(out, b"text");
+    }
+
+    // --- find_boundary ------------------------------------------------------
+
+    #[test]
+    fn boundary_single_node_then_content() {
+        let line = b"\xe2\x97\x8b  abc"; // ○  abc
+        let p = find_boundary(line).expect("expected boundary");
+        assert_eq!(p.graph_col, 1);
+        assert_eq!(p.graph_end, 3);
+        assert_eq!(p.content_start, 5);
+    }
+
+    #[test]
+    fn boundary_returns_none_when_no_graph() {
+        assert!(find_boundary(b"plain text").is_none());
+    }
+
+    #[test]
+    fn boundary_skips_csi_around_graph() {
+        let line = b"\x1b[31m\xe2\x97\x8b\x1b[39m  abc";
+        let p = find_boundary(line).expect("expected boundary");
+        assert_eq!(p.graph_col, 1);
+    }
+
+    #[test]
+    fn boundary_multi_graph_columns() {
+        // │ │ ○  abc — two leading │ separated by spaces, then ○, then content.
+        let line = b"\xe2\x94\x82 \xe2\x94\x82 \xe2\x97\x8b  abc";
+        let p = find_boundary(line).expect("expected boundary");
+        assert_eq!(p.graph_col, 5);
+    }
+
+    #[test]
+    fn boundary_requires_at_least_one_graph_char() {
+        // Spaces with no graph char before content: returns None.
+        assert!(find_boundary(b"   abc").is_none());
+    }
+
+    // --- emit_dim_graph -----------------------------------------------------
+
+    fn run_emit(graph: &[u8], is_empty: bool, is_immutable: bool) -> Vec<u8> {
+        let mut out = Vec::new();
+        emit_dim_graph(graph, &mut out, is_empty, is_immutable);
+        out
+    }
+
+    fn darken(body: &[u8]) -> Vec<u8> {
+        let mut v = MUTABLE_NODE_COLOR.to_vec();
+        v.extend_from_slice(body);
+        v.extend_from_slice(MUTABLE_NODE_OFF);
+        v
+    }
+
+    #[test]
+    fn dim_mutable_circle_gets_darken_and_icon() {
+        let out = run_emit(b"\xe2\x97\x8b", false, false);
+        assert_eq!(out, darken(MUTABLE_ICON.as_bytes()));
+    }
+
+    #[test]
+    fn dim_immutable_diamond_gets_darken_and_lock() {
+        let out = run_emit(b"\xe2\x97\x86", false, true);
+        assert_eq!(out, darken(IMMUTABLE_ICON.as_bytes()));
+    }
+
+    #[test]
+    fn dim_immutable_diamond_darkens_even_without_flag() {
+        // ◆ should darken regardless of is_immutable line flag.
+        let out = run_emit(b"\xe2\x97\x86", false, false);
+        assert_eq!(out, darken(IMMUTABLE_ICON.as_bytes()));
+    }
+
+    #[test]
+    fn dim_mutable_wc_preserves_jj_color() {
+        // Mutable @ keeps jj's bold green; just swaps glyph for WC_ICON.
+        let input = b"\x1b[1m\x1b[38;5;2m@\x1b[0m";
+        let out = run_emit(input, false, false);
+        let mut expected = b"\x1b[1m\x1b[38;5;2m".to_vec();
+        expected.extend_from_slice(WC_ICON.as_bytes());
+        expected.extend_from_slice(b"\x1b[0m");
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn dim_empty_wc_uses_empty_icon() {
+        let out = run_emit(b"@", true, false);
+        assert_eq!(out, WC_EMPTY_ICON.as_bytes());
+    }
+
+    #[test]
+    fn dim_immutable_wc_darkens_and_uses_lock() {
+        // @ on an immutable line renders as IMMUTABLE_ICON (lock takes precedence).
+        let out = run_emit(b"@", false, true);
+        assert_eq!(out, darken(IMMUTABLE_ICON.as_bytes()));
+    }
+
+    #[test]
+    fn dim_immutable_diamond_empty_uses_empty_immutable_icon() {
+        let out = run_emit(b"\xe2\x97\x86", true, true);
+        assert_eq!(out, darken(EMPTY_IMMUTABLE_ICON.as_bytes()));
+    }
+
+    #[test]
+    fn dim_strips_empty_marker() {
+        assert_eq!(run_emit(EMPTY_MARKER_BYTES, false, false), b"");
+    }
+
+    #[test]
+    fn dim_strips_immutable_marker() {
+        assert_eq!(run_emit(IMMUTABLE_MARKER_BYTES, false, false), b"");
+    }
+
+    #[test]
+    fn dim_box_drawing_gets_edge_dim() {
+        let out = run_emit(b"\xe2\x94\x82", false, false); // │
+        let mut expected = EDGE_DIM_ON.to_vec();
+        expected.extend_from_slice("𜸩".as_bytes());
+        expected.extend_from_slice(EDGE_DIM_OFF);
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn dim_spaces_passthrough() {
+        assert_eq!(run_emit(b"   ", false, false), b"   ");
+    }
+
+    #[test]
+    fn dim_strips_fg_color_around_mutable_node() {
+        // jj's fg color must be filtered out before the darken color is applied.
+        let out = run_emit(b"\x1b[38;5;14m\xe2\x97\x8b\x1b[39m", false, false);
+        // No leading [38;5;14m; trailing [39m preserved (not stripped, it's default-fg reset
+        // but is_fg_color_sgr flags it as fg → also dropped).
+        assert_eq!(out, darken(MUTABLE_ICON.as_bytes()));
+    }
+}
