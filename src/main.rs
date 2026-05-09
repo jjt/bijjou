@@ -19,6 +19,12 @@
 //   Examples invalid:
 //   - hidden working copy
 //   - hidden divergent (anything)
+//
+//   Since C,E,WC,I are most common we use the log node:
+//   - WC is the hex icon and green
+//   - I is a lock icon, takes precedence over WC icon
+//   - C is the color red, takes precedence over the WC color
+//   - E is a hollow version of the icon
 
 use std::io::{self, IsTerminal, Read, Write};
 
@@ -30,10 +36,18 @@ const EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
 const EDGE_DIM_OFF: &[u8] = b"\x1b[39m";
 const MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
 const MUTABLE_NODE_OFF: &[u8] = b"\x1b[39m";
-const EMPTY_ICON: &str = "\u{F28d}";
-const WC_EMPTY_ICON: &str = "\u{E667}";
+const EMPTY_ICON: &str = "";
+const WC_EMPTY_ICON: &str = "";
+const EMPTY_IMMUTABLE_ICON: &str = "";
+const WC_ICON: &str = "󰋘";
+const MUTABLE_ICON: &str = "";
+const IMMUTABLE_ICON: &str = "";
+const CONFLICT_ICON: &str = "";
+const ALTERNATE_ICON: &str = "";
 const EMPTY_MARKER: u32 = 0x1D640; // 𝙀
 const EMPTY_MARKER_BYTES: &[u8] = b"\xf0\x9d\x99\x80";
+const IMMUTABLE_MARKER: u32 = 0x1D644; // 𝙄
+const IMMUTABLE_MARKER_BYTES: &[u8] = b"\xf0\x9d\x99\x84";
 
 struct Parsed {
     graph_end: usize,
@@ -165,11 +179,11 @@ fn is_node_char(cp: u32) -> bool {
 // Replace jj's commit-node glyphs with Nerd Font icons.
 fn map_node_char(cp: u32) -> Option<&'static str> {
     match cp {
-        0x40 => Some("󰋘"),   // @ → working copy
-        0x25CB => Some(""), // ○ → regular (mutable)
-        0x25C6 => Some(""), // ◆ → immutable
-        0xD7 => Some(""),   // × → conflicted
-        0x25CF => Some(""), // ● → alternate
+        0x40 => Some(WC_ICON),
+        0x25CB => Some(MUTABLE_ICON),
+        0x25C6 => Some(IMMUTABLE_ICON),
+        0xD7 => Some(CONFLICT_ICON),
+        0x25CF => Some(ALTERNATE_ICON),
         _ => None,
     }
 }
@@ -224,7 +238,7 @@ fn emit_filtered_ansi(bytes: &[u8], out: &mut Vec<u8>, filter: impl Fn(&str) -> 
 // Emit bytes with all visible non-space chars wrapped in dim SGR, except
 // commit-node chars (○ ● ◆ @ ×) which pass through with normal intensity.
 // Strips jj's fg-color codes; preserves other ANSI sequences.
-fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool) {
+fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immutable: bool) {
     let mut i = 0;
     while i < bytes.len() {
         let ansi_start = i;
@@ -246,7 +260,7 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool) {
         }
 
         let (cp, len) = decode_utf8(bytes, i);
-        if cp == EMPTY_MARKER {
+        if cp == EMPTY_MARKER || cp == IMMUTABLE_MARKER {
             emit_filtered_ansi(ansi_bytes, out, is_fg_color_sgr);
             i += len;
             continue;
@@ -262,12 +276,15 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool) {
                 out.extend_from_slice(ansi_bytes);
             }
             if is_empty {
-                let icon = if cp == 0x40 {
-                    WC_EMPTY_ICON
-                } else {
-                    EMPTY_ICON
+                let icon = match cp {
+                    0x40 if is_immutable => EMPTY_IMMUTABLE_ICON,
+                    0x40 => WC_EMPTY_ICON,
+                    0x25C6 => EMPTY_IMMUTABLE_ICON,
+                    _ => EMPTY_ICON,
                 };
                 out.extend_from_slice(icon.as_bytes());
+            } else if cp == 0x40 && is_immutable {
+                out.extend_from_slice(IMMUTABLE_ICON.as_bytes());
             } else {
                 match map_node_char(cp) {
                     Some(replacement) => out.extend_from_slice(replacement.as_bytes()),
@@ -290,7 +307,9 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool) {
     }
 }
 
-fn line_is_empty(body: &[u8]) -> bool {
+fn line_flags(body: &[u8]) -> (bool, bool) {
+    let mut empty = false;
+    let mut immutable = false;
     let mut i = 0;
     while i < body.len() {
         if let Some(after) = skip_csi(body, i) {
@@ -299,11 +318,13 @@ fn line_is_empty(body: &[u8]) -> bool {
         }
         let (cp, len) = decode_utf8(body, i);
         if cp == EMPTY_MARKER {
-            return true;
+            empty = true;
+        } else if cp == IMMUTABLE_MARKER {
+            immutable = true;
         }
         i += len;
     }
-    false
+    (empty, immutable)
 }
 
 fn write_stripping_marker(content: &[u8], out: &mut Vec<u8>) {
@@ -311,6 +332,10 @@ fn write_stripping_marker(content: &[u8], out: &mut Vec<u8>) {
     while i < content.len() {
         if content[i..].starts_with(EMPTY_MARKER_BYTES) {
             i += EMPTY_MARKER_BYTES.len();
+            continue;
+        }
+        if content[i..].starts_with(IMMUTABLE_MARKER_BYTES) {
+            i += IMMUTABLE_MARKER_BYTES.len();
             continue;
         }
         out.push(content[i]);
@@ -389,13 +414,13 @@ fn run() -> io::Result<()> {
             *line
         };
 
-        let is_empty = line_is_empty(body);
+        let (is_empty, is_immutable) = line_flags(body);
         match p {
             Some(p) => {
                 let graph = &body[..p.graph_end];
                 let content = &body[p.content_start..];
 
-                emit_dim_graph(graph, &mut out, is_empty);
+                emit_dim_graph(graph, &mut out, is_empty, is_immutable);
 
                 let gap = target_col - p.graph_col;
                 let mut peek = p.content_start;
@@ -423,7 +448,7 @@ fn run() -> io::Result<()> {
                 write_stripping_marker(content, &mut out);
             }
             None => {
-                emit_dim_graph(body, &mut out, is_empty);
+                emit_dim_graph(body, &mut out, is_empty, is_immutable);
             }
         }
 
