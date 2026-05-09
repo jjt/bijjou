@@ -1,0 +1,9 @@
+[icons]
+working_copy       = "★"
+mutable            = "◉"
+immutable          = "⬢"
+conflict           = "⊗"
+alternate          = "✦"
+empty              = "○"
+working_copy_empty = "☆"
+empty_immutable    = "⬡"

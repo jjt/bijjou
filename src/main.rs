@@ -26,28 +26,315 @@
 //   - C is the color red, takes precedence over the WC color
 //   - E is a hollow version of the icon
 
+use std::collections::HashMap;
 use std::io::{self, IsTerminal, Read, Write};
+use std::path::PathBuf;
+use std::sync::OnceLock;
 
-// const DASH: &str = "\u{2504}"; // ┄ BOX DRAWINGS LIGHT TRIPLE DASH HORIZONTAL
-const DASH: &str = "━"; // ┄ BOX DRAWINGS LIGHT TRIPLE DASH HORIZONTAL
-const DIM_ON: &[u8] = b"\x1b[38;5;8m";
-const DIM_OFF: &[u8] = b"\x1b[39m";
-const EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
-const EDGE_DIM_OFF: &[u8] = b"\x1b[39m";
-const MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
-const MUTABLE_NODE_OFF: &[u8] = b"\x1b[39m";
-const EMPTY_ICON: &str = "";
-const WC_EMPTY_ICON: &str = "";
-const EMPTY_IMMUTABLE_ICON: &str = "";
-const WC_ICON: &str = "󰋘";
-const MUTABLE_ICON: &str = "";
-const IMMUTABLE_ICON: &str = "";
-const CONFLICT_ICON: &str = "";
-const ALTERNATE_ICON: &str = "";
+const DEFAULT_DASH: &str = "━";
+const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
+const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
+const DEFAULT_MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
+const FG_RESET: &[u8] = b"\x1b[39m";
+const DEFAULT_EMPTY_ICON: &str = "\u{f28d}";
+const DEFAULT_WC_EMPTY_ICON: &str = "\u{e667}";
+const DEFAULT_EMPTY_IMMUTABLE_ICON: &str = "\u{f456}";
+const DEFAULT_WC_ICON: &str = "\u{f02d8}";
+const DEFAULT_MUTABLE_ICON: &str = "\u{f111}";
+const DEFAULT_IMMUTABLE_ICON: &str = "\u{f023}";
+const DEFAULT_CONFLICT_ICON: &str = "\u{f071}";
+const DEFAULT_ALTERNATE_ICON: &str = "\u{f059}";
+const DEFAULT_GRAPH_HORIZONTAL: &str = "𜸟";
+const DEFAULT_GRAPH_VERTICAL: &str = "𜸩";
+const DEFAULT_GRAPH_TOP_LEFT: &str = "𜸚";
+const DEFAULT_GRAPH_TOP_RIGHT: &str = "𜸤";
+const DEFAULT_GRAPH_BOTTOM_LEFT: &str = "𜸾";
+const DEFAULT_GRAPH_BOTTOM_RIGHT: &str = "𜹃";
+const DEFAULT_GRAPH_TEE_RIGHT: &str = "𜸨";
+const DEFAULT_GRAPH_TEE_LEFT: &str = "𜸶";
+const DEFAULT_GRAPH_TEE_DOWN: &str = "𜸠";
+const DEFAULT_GRAPH_TEE_UP: &str = "𜹀";
+const DEFAULT_GRAPH_CROSS: &str = "𜸺";
+const DEFAULT_GRAPH_ELISION: &str = "⌇";
+
 const EMPTY_MARKER: u32 = 0x1D640; // 𝙀
 const EMPTY_MARKER_BYTES: &[u8] = b"\xf0\x9d\x99\x80";
 const IMMUTABLE_MARKER: u32 = 0x1D644; // 𝙄
 const IMMUTABLE_MARKER_BYTES: &[u8] = b"\xf0\x9d\x99\x84";
+
+struct Config {
+    wc_icon: String,
+    mutable_icon: String,
+    immutable_icon: String,
+    conflict_icon: String,
+    alternate_icon: String,
+    empty_icon: String,
+    wc_empty_icon: String,
+    empty_immutable_icon: String,
+    dash: String,
+    graph_horizontal: String,
+    graph_vertical: String,
+    graph_top_left: String,
+    graph_top_right: String,
+    graph_bottom_left: String,
+    graph_bottom_right: String,
+    graph_tee_right: String,
+    graph_tee_left: String,
+    graph_tee_down: String,
+    graph_tee_up: String,
+    graph_cross: String,
+    graph_elision: String,
+    dim_on: Vec<u8>,
+    edge_dim_on: Vec<u8>,
+    mutable_node_color: Vec<u8>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            wc_icon: DEFAULT_WC_ICON.to_string(),
+            mutable_icon: DEFAULT_MUTABLE_ICON.to_string(),
+            immutable_icon: DEFAULT_IMMUTABLE_ICON.to_string(),
+            conflict_icon: DEFAULT_CONFLICT_ICON.to_string(),
+            alternate_icon: DEFAULT_ALTERNATE_ICON.to_string(),
+            empty_icon: DEFAULT_EMPTY_ICON.to_string(),
+            wc_empty_icon: DEFAULT_WC_EMPTY_ICON.to_string(),
+            empty_immutable_icon: DEFAULT_EMPTY_IMMUTABLE_ICON.to_string(),
+            dash: DEFAULT_DASH.to_string(),
+            graph_horizontal: DEFAULT_GRAPH_HORIZONTAL.to_string(),
+            graph_vertical: DEFAULT_GRAPH_VERTICAL.to_string(),
+            graph_top_left: DEFAULT_GRAPH_TOP_LEFT.to_string(),
+            graph_top_right: DEFAULT_GRAPH_TOP_RIGHT.to_string(),
+            graph_bottom_left: DEFAULT_GRAPH_BOTTOM_LEFT.to_string(),
+            graph_bottom_right: DEFAULT_GRAPH_BOTTOM_RIGHT.to_string(),
+            graph_tee_right: DEFAULT_GRAPH_TEE_RIGHT.to_string(),
+            graph_tee_left: DEFAULT_GRAPH_TEE_LEFT.to_string(),
+            graph_tee_down: DEFAULT_GRAPH_TEE_DOWN.to_string(),
+            graph_tee_up: DEFAULT_GRAPH_TEE_UP.to_string(),
+            graph_cross: DEFAULT_GRAPH_CROSS.to_string(),
+            graph_elision: DEFAULT_GRAPH_ELISION.to_string(),
+            dim_on: DEFAULT_DIM_ON.to_vec(),
+            edge_dim_on: DEFAULT_EDGE_DIM_ON.to_vec(),
+            mutable_node_color: DEFAULT_MUTABLE_NODE_COLOR.to_vec(),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum TomlValue {
+    String(String),
+    Int(i64),
+}
+
+type TomlSections = HashMap<String, HashMap<String, TomlValue>>;
+
+fn parse_toml(s: &str) -> Result<TomlSections, String> {
+    let mut sections: TomlSections = HashMap::new();
+    let mut current = String::new();
+    sections.insert(String::new(), HashMap::new());
+
+    for (idx, raw) in s.lines().enumerate() {
+        let line = raw.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix('[') {
+            let inner = rest
+                .strip_suffix(']')
+                .ok_or_else(|| format!("line {}: unclosed section header", idx + 1))?;
+            current = inner.trim().to_string();
+            sections.entry(current.clone()).or_insert_with(HashMap::new);
+            continue;
+        }
+        let eq = line
+            .find('=')
+            .ok_or_else(|| format!("line {}: missing '='", idx + 1))?;
+        let key = line[..eq].trim().to_string();
+        let val_str = line[eq + 1..].trim();
+        let val = parse_toml_value(val_str)
+            .map_err(|e| format!("line {}: {}", idx + 1, e))?;
+        sections
+            .entry(current.clone())
+            .or_insert_with(HashMap::new)
+            .insert(key, val);
+    }
+    Ok(sections)
+}
+
+fn parse_toml_value(s: &str) -> Result<TomlValue, String> {
+    if let Some(rest) = s.strip_prefix('"') {
+        let inner = rest
+            .strip_suffix('"')
+            .ok_or_else(|| format!("unterminated string: {:?}", s))?;
+        return Ok(TomlValue::String(unescape(inner)?));
+    }
+    if let Ok(n) = s.parse::<i64>() {
+        return Ok(TomlValue::Int(n));
+    }
+    Err(format!("expected quoted string or integer, got {:?}", s))
+}
+
+fn unescape(s: &str) -> Result<String, String> {
+    let mut out = String::with_capacity(s.len());
+    let mut chars = s.chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match chars.next() {
+            Some('n') => out.push('\n'),
+            Some('t') => out.push('\t'),
+            Some('r') => out.push('\r'),
+            Some('"') => out.push('"'),
+            Some('\\') => out.push('\\'),
+            Some(other) => return Err(format!("bad escape: \\{}", other)),
+            None => return Err("trailing backslash".into()),
+        }
+    }
+    Ok(out)
+}
+
+fn parse_color(v: &TomlValue) -> Result<Vec<u8>, String> {
+    match v {
+        TomlValue::Int(n) => {
+            if !(0..=255).contains(n) {
+                return Err(format!("expected 0-255, got {}", n));
+            }
+            Ok(format!("\x1b[38;5;{}m", n).into_bytes())
+        }
+        TomlValue::String(s) => {
+            let hex = s.strip_prefix('#').ok_or_else(|| {
+                format!("expected integer or \"#rrggbb\", got {:?}", s)
+            })?;
+            if hex.len() != 6 {
+                return Err(format!("expected #rrggbb, got {:?}", s));
+            }
+            let r = u8::from_str_radix(&hex[0..2], 16)
+                .map_err(|_| format!("bad hex: {:?}", s))?;
+            let g = u8::from_str_radix(&hex[2..4], 16)
+                .map_err(|_| format!("bad hex: {:?}", s))?;
+            let b = u8::from_str_radix(&hex[4..6], 16)
+                .map_err(|_| format!("bad hex: {:?}", s))?;
+            Ok(format!("\x1b[38;2;{};{};{}m", r, g, b).into_bytes())
+        }
+    }
+}
+
+fn take_string(sec: &str, k: &str, v: &TomlValue) -> Result<String, String> {
+    match v {
+        TomlValue::String(s) => Ok(s.clone()),
+        _ => Err(format!("{}.{}: expected string", sec, k)),
+    }
+}
+
+impl Config {
+    fn from_toml(s: &str) -> Result<Self, String> {
+        let mut cfg = Self::default();
+        let sections = parse_toml(s)?;
+
+        if let Some(sec) = sections.get("icons") {
+            for (k, v) in sec {
+                let s = take_string("icons", k, v)?;
+                match k.as_str() {
+                    "working_copy" => cfg.wc_icon = s,
+                    "mutable" => cfg.mutable_icon = s,
+                    "immutable" => cfg.immutable_icon = s,
+                    "conflict" => cfg.conflict_icon = s,
+                    "alternate" => cfg.alternate_icon = s,
+                    "empty" => cfg.empty_icon = s,
+                    "working_copy_empty" => cfg.wc_empty_icon = s,
+                    "empty_immutable" => cfg.empty_immutable_icon = s,
+                    other => return Err(format!("unknown key: icons.{}", other)),
+                }
+            }
+        }
+
+        if let Some(sec) = sections.get("graph") {
+            for (k, v) in sec {
+                let s = take_string("graph", k, v)?;
+                match k.as_str() {
+                    "horizontal" => cfg.graph_horizontal = s,
+                    "vertical" => cfg.graph_vertical = s,
+                    "top_left" => cfg.graph_top_left = s,
+                    "top_right" => cfg.graph_top_right = s,
+                    "bottom_left" => cfg.graph_bottom_left = s,
+                    "bottom_right" => cfg.graph_bottom_right = s,
+                    "tee_right" => cfg.graph_tee_right = s,
+                    "tee_left" => cfg.graph_tee_left = s,
+                    "tee_down" => cfg.graph_tee_down = s,
+                    "tee_up" => cfg.graph_tee_up = s,
+                    "cross" => cfg.graph_cross = s,
+                    "elision" => cfg.graph_elision = s,
+                    other => return Err(format!("unknown key: graph.{}", other)),
+                }
+            }
+        }
+
+        if let Some(sec) = sections.get("separator") {
+            for (k, v) in sec {
+                let s = take_string("separator", k, v)?;
+                match k.as_str() {
+                    "dash" => cfg.dash = s,
+                    other => return Err(format!("unknown key: separator.{}", other)),
+                }
+            }
+        }
+
+        if let Some(sec) = sections.get("colors") {
+            for (k, v) in sec {
+                let bytes = parse_color(v)
+                    .map_err(|e| format!("colors.{}: {}", k, e))?;
+                match k.as_str() {
+                    "dash_filler" => cfg.dim_on = bytes,
+                    "edge" => cfg.edge_dim_on = bytes,
+                    "mutable_node" => cfg.mutable_node_color = bytes,
+                    other => return Err(format!("unknown key: colors.{}", other)),
+                }
+            }
+        }
+
+        Ok(cfg)
+    }
+
+    fn load() -> Self {
+        let Some(path) = config_path() else {
+            return Self::default();
+        };
+        let Ok(content) = std::fs::read_to_string(&path) else {
+            return Self::default();
+        };
+        match Self::from_toml(&content) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("bijjou: {}: {}", path.display(), e);
+                Self::default()
+            }
+        }
+    }
+}
+
+fn config_path() -> Option<PathBuf> {
+    if let Ok(v) = std::env::var("BIJJOU_CONFIG") {
+        if !v.is_empty() {
+            return Some(PathBuf::from(v));
+        }
+    }
+    let base = match std::env::var("XDG_CONFIG_HOME") {
+        Ok(v) if !v.is_empty() => PathBuf::from(v),
+        _ => {
+            let home = std::env::var("HOME").ok().filter(|s| !s.is_empty())?;
+            PathBuf::from(home).join(".config")
+        }
+    };
+    Some(base.join("bijjou").join("config.toml"))
+}
+
+static CONFIG: OnceLock<Config> = OnceLock::new();
+
+fn cfg() -> &'static Config {
+    CONFIG.get_or_init(Config::default)
+}
 
 struct Parsed {
     graph_end: usize,
@@ -178,32 +465,33 @@ fn is_node_char(cp: u32) -> bool {
 
 // Replace jj's commit-node glyphs with Nerd Font icons.
 fn map_node_char(cp: u32) -> Option<&'static str> {
+    let c = cfg();
     match cp {
-        0x40 => Some(WC_ICON),
-        0x25CB => Some(MUTABLE_ICON),
-        0x25C6 => Some(IMMUTABLE_ICON),
-        0xD7 => Some(CONFLICT_ICON),
-        0x25CF => Some(ALTERNATE_ICON),
+        0x40 => Some(c.wc_icon.as_str()),
+        0x25CB => Some(c.mutable_icon.as_str()),
+        0x25C6 => Some(c.immutable_icon.as_str()),
+        0xD7 => Some(c.conflict_icon.as_str()),
+        0x25CF => Some(c.alternate_icon.as_str()),
         _ => None,
     }
 }
 
-// Map jj box-drawing graph chars to Unicode 16.0 Large Type Pieces
-// (U+1CE1A..U+1CE50). Single-cell visual equivalents.
+// Map jj box-drawing graph chars to single-cell visual equivalents.
 fn map_graph_char(cp: u32) -> Option<&'static str> {
+    let c = cfg();
     match char::from_u32(cp)? {
-        '─' | '┄' | '┈' => Some("𜸟"),
-        '│' => Some("𜸩"),
-        '┌' | '╭' => Some("𜸚"),
-        '┐' | '╮' => Some("𜸤"),
-        '└' | '╰' => Some("𜸾"),
-        '┘' | '╯' => Some("𜹃"),
-        '├' => Some("𜸨"),
-        '┤' => Some("𜸶"),
-        '┬' => Some("𜸠"),
-        '┴' => Some("𜹀"),
-        '┼' => Some("𜸺"),
-        '~' => Some("⌇"),
+        '─' | '┄' | '┈' => Some(c.graph_horizontal.as_str()),
+        '│' => Some(c.graph_vertical.as_str()),
+        '┌' | '╭' => Some(c.graph_top_left.as_str()),
+        '┐' | '╮' => Some(c.graph_top_right.as_str()),
+        '└' | '╰' => Some(c.graph_bottom_left.as_str()),
+        '┘' | '╯' => Some(c.graph_bottom_right.as_str()),
+        '├' => Some(c.graph_tee_right.as_str()),
+        '┤' => Some(c.graph_tee_left.as_str()),
+        '┬' => Some(c.graph_tee_down.as_str()),
+        '┴' => Some(c.graph_tee_up.as_str()),
+        '┼' => Some(c.graph_cross.as_str()),
+        '~' => Some(c.graph_elision.as_str()),
         _ => None,
     }
 }
@@ -239,6 +527,7 @@ fn emit_filtered_ansi(bytes: &[u8], out: &mut Vec<u8>, filter: impl Fn(&str) -> 
 // commit-node chars (○ ● ◆ @ ×) which pass through with normal intensity.
 // Strips jj's fg-color codes; preserves other ANSI sequences.
 fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immutable: bool) {
+    let c = cfg();
     let mut i = 0;
     while i < bytes.len() {
         let ansi_start = i;
@@ -271,20 +560,20 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immutable:
             let darken = cp == 0x25CB || cp == 0x25C6 || (cp == 0x40 && is_immutable);
             if darken {
                 emit_filtered_ansi(ansi_bytes, out, is_fg_color_sgr);
-                out.extend_from_slice(MUTABLE_NODE_COLOR);
+                out.extend_from_slice(&c.mutable_node_color);
             } else {
                 out.extend_from_slice(ansi_bytes);
             }
             if is_empty {
                 let icon = match cp {
-                    0x40 if is_immutable => EMPTY_IMMUTABLE_ICON,
-                    0x40 => WC_EMPTY_ICON,
-                    0x25C6 => EMPTY_IMMUTABLE_ICON,
-                    _ => EMPTY_ICON,
+                    0x40 if is_immutable => c.empty_immutable_icon.as_str(),
+                    0x40 => c.wc_empty_icon.as_str(),
+                    0x25C6 => c.empty_immutable_icon.as_str(),
+                    _ => c.empty_icon.as_str(),
                 };
                 out.extend_from_slice(icon.as_bytes());
             } else if cp == 0x40 && is_immutable {
-                out.extend_from_slice(IMMUTABLE_ICON.as_bytes());
+                out.extend_from_slice(c.immutable_icon.as_bytes());
             } else {
                 match map_node_char(cp) {
                     Some(replacement) => out.extend_from_slice(replacement.as_bytes()),
@@ -292,16 +581,16 @@ fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immutable:
                 }
             }
             if darken {
-                out.extend_from_slice(MUTABLE_NODE_OFF);
+                out.extend_from_slice(FG_RESET);
             }
         } else {
             emit_filtered_ansi(ansi_bytes, out, is_fg_color_sgr);
-            out.extend_from_slice(EDGE_DIM_ON);
+            out.extend_from_slice(&c.edge_dim_on);
             match map_graph_char(cp) {
                 Some(replacement) => out.extend_from_slice(replacement.as_bytes()),
                 None => out.extend_from_slice(&bytes[i..i + len]),
             }
-            out.extend_from_slice(EDGE_DIM_OFF);
+            out.extend_from_slice(FG_RESET);
         }
         i += len;
     }
@@ -360,6 +649,7 @@ fn is_fg_color_sgr(params: &str) -> bool {
 }
 
 fn main() {
+    let _ = CONFIG.set(Config::load());
     if let Err(e) = run() {
         if e.kind() == io::ErrorKind::BrokenPipe {
             return;
@@ -404,6 +694,7 @@ fn run() -> io::Result<()> {
         .unwrap_or(0);
     let target_col = max_graph + 2;
 
+    let c = cfg();
     let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 8);
 
     for (line, p) in lines.iter().zip(parsed.iter()) {
@@ -433,11 +724,11 @@ fn run() -> io::Result<()> {
                     .unwrap_or(false);
                 if gap >= 3 && has_change_id {
                     out.write_all(b" ")?;
-                    out.write_all(DIM_ON)?;
+                    out.write_all(&c.dim_on)?;
                     for _ in 0..(gap - 2) {
-                        out.write_all(DASH.as_bytes())?;
+                        out.write_all(c.dash.as_bytes())?;
                     }
-                    out.write_all(DIM_OFF)?;
+                    out.write_all(FG_RESET)?;
                     out.write_all(b" ")?;
                 } else {
                     for _ in 0..gap {
@@ -653,11 +944,11 @@ mod tests {
 
     #[test]
     fn map_node_char_covers_each_node() {
-        assert_eq!(map_node_char(0x40), Some(WC_ICON));
-        assert_eq!(map_node_char(0x25CB), Some(MUTABLE_ICON));
-        assert_eq!(map_node_char(0x25C6), Some(IMMUTABLE_ICON));
-        assert_eq!(map_node_char(0xD7), Some(CONFLICT_ICON));
-        assert_eq!(map_node_char(0x25CF), Some(ALTERNATE_ICON));
+        assert_eq!(map_node_char(0x40), Some(DEFAULT_WC_ICON));
+        assert_eq!(map_node_char(0x25CB), Some(DEFAULT_MUTABLE_ICON));
+        assert_eq!(map_node_char(0x25C6), Some(DEFAULT_IMMUTABLE_ICON));
+        assert_eq!(map_node_char(0xD7), Some(DEFAULT_CONFLICT_ICON));
+        assert_eq!(map_node_char(0x25CF), Some(DEFAULT_ALTERNATE_ICON));
     }
 
     #[test]
@@ -894,29 +1185,29 @@ mod tests {
     }
 
     fn darken(body: &[u8]) -> Vec<u8> {
-        let mut v = MUTABLE_NODE_COLOR.to_vec();
+        let mut v = DEFAULT_MUTABLE_NODE_COLOR.to_vec();
         v.extend_from_slice(body);
-        v.extend_from_slice(MUTABLE_NODE_OFF);
+        v.extend_from_slice(FG_RESET);
         v
     }
 
     #[test]
     fn dim_mutable_circle_gets_darken_and_icon() {
         let out = run_emit(b"\xe2\x97\x8b", false, false);
-        assert_eq!(out, darken(MUTABLE_ICON.as_bytes()));
+        assert_eq!(out, darken(DEFAULT_MUTABLE_ICON.as_bytes()));
     }
 
     #[test]
     fn dim_immutable_diamond_gets_darken_and_lock() {
         let out = run_emit(b"\xe2\x97\x86", false, true);
-        assert_eq!(out, darken(IMMUTABLE_ICON.as_bytes()));
+        assert_eq!(out, darken(DEFAULT_IMMUTABLE_ICON.as_bytes()));
     }
 
     #[test]
     fn dim_immutable_diamond_darkens_even_without_flag() {
         // ◆ should darken regardless of is_immutable line flag.
         let out = run_emit(b"\xe2\x97\x86", false, false);
-        assert_eq!(out, darken(IMMUTABLE_ICON.as_bytes()));
+        assert_eq!(out, darken(DEFAULT_IMMUTABLE_ICON.as_bytes()));
     }
 
     #[test]
@@ -925,7 +1216,7 @@ mod tests {
         let input = b"\x1b[1m\x1b[38;5;2m@\x1b[0m";
         let out = run_emit(input, false, false);
         let mut expected = b"\x1b[1m\x1b[38;5;2m".to_vec();
-        expected.extend_from_slice(WC_ICON.as_bytes());
+        expected.extend_from_slice(DEFAULT_WC_ICON.as_bytes());
         expected.extend_from_slice(b"\x1b[0m");
         assert_eq!(out, expected);
     }
@@ -933,20 +1224,20 @@ mod tests {
     #[test]
     fn dim_empty_wc_uses_empty_icon() {
         let out = run_emit(b"@", true, false);
-        assert_eq!(out, WC_EMPTY_ICON.as_bytes());
+        assert_eq!(out, DEFAULT_WC_EMPTY_ICON.as_bytes());
     }
 
     #[test]
     fn dim_immutable_wc_darkens_and_uses_lock() {
         // @ on an immutable line renders as IMMUTABLE_ICON (lock takes precedence).
         let out = run_emit(b"@", false, true);
-        assert_eq!(out, darken(IMMUTABLE_ICON.as_bytes()));
+        assert_eq!(out, darken(DEFAULT_IMMUTABLE_ICON.as_bytes()));
     }
 
     #[test]
     fn dim_immutable_diamond_empty_uses_empty_immutable_icon() {
         let out = run_emit(b"\xe2\x97\x86", true, true);
-        assert_eq!(out, darken(EMPTY_IMMUTABLE_ICON.as_bytes()));
+        assert_eq!(out, darken(DEFAULT_EMPTY_IMMUTABLE_ICON.as_bytes()));
     }
 
     #[test]
@@ -962,9 +1253,9 @@ mod tests {
     #[test]
     fn dim_box_drawing_gets_edge_dim() {
         let out = run_emit(b"\xe2\x94\x82", false, false); // │
-        let mut expected = EDGE_DIM_ON.to_vec();
-        expected.extend_from_slice("𜸩".as_bytes());
-        expected.extend_from_slice(EDGE_DIM_OFF);
+        let mut expected = DEFAULT_EDGE_DIM_ON.to_vec();
+        expected.extend_from_slice(DEFAULT_GRAPH_VERTICAL.as_bytes());
+        expected.extend_from_slice(FG_RESET);
         assert_eq!(out, expected);
     }
 
@@ -979,6 +1270,58 @@ mod tests {
         let out = run_emit(b"\x1b[38;5;14m\xe2\x97\x8b\x1b[39m", false, false);
         // No leading [38;5;14m; trailing [39m preserved (not stripped, it's default-fg reset
         // but is_fg_color_sgr flags it as fg → also dropped).
-        assert_eq!(out, darken(MUTABLE_ICON.as_bytes()));
+        assert_eq!(out, darken(DEFAULT_MUTABLE_ICON.as_bytes()));
+    }
+
+    // --- TOML parser / Config ------------------------------------------------
+
+    #[test]
+    fn toml_parses_section_string_int() {
+        let s = r#"
+[icons]
+working_copy = "X"
+
+[colors]
+edge = 200
+"#;
+        let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(cfg.wc_icon, "X");
+        assert_eq!(cfg.edge_dim_on, b"\x1b[38;5;200m".to_vec());
+    }
+
+    #[test]
+    fn toml_color_hex_string() {
+        let s = "[colors]\nmutable_node = \"#aabbcc\"\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(
+            cfg.mutable_node_color,
+            b"\x1b[38;2;170;187;204m".to_vec()
+        );
+    }
+
+    #[test]
+    fn toml_unknown_key_errors() {
+        let s = "[icons]\nbogus = \"x\"\n";
+        assert!(Config::from_toml(s).is_err());
+    }
+
+    #[test]
+    fn toml_color_out_of_range_errors() {
+        let s = "[colors]\nedge = 999\n";
+        assert!(Config::from_toml(s).is_err());
+    }
+
+    #[test]
+    fn toml_empty_input_yields_default() {
+        let cfg = Config::from_toml("").unwrap();
+        assert_eq!(cfg.wc_icon, DEFAULT_WC_ICON);
+        assert_eq!(cfg.dim_on, DEFAULT_DIM_ON);
+    }
+
+    #[test]
+    fn toml_comments_and_blanks_ignored() {
+        let s = "# top comment\n\n[separator]\ndash = \"-\"\n# trailing\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(cfg.dash, "-");
     }
 }

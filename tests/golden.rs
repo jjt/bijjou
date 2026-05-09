@@ -13,12 +13,36 @@ fn read_fixture(name: &str) -> Vec<u8> {
 fn run_bijjou(input: &[u8]) -> Vec<u8> {
     Command::cargo_bin("bijjou")
         .expect("binary built")
+        .env("BIJJOU_CONFIG", "/dev/null")
         .write_stdin(input)
         .assert()
         .success()
         .get_output()
         .stdout
         .clone()
+}
+
+fn config_path(name: &str) -> PathBuf {
+    fixture_dir().join("configs").join(format!("{}.toml", name))
+}
+
+fn run_bijjou_with_config(input: &[u8], config: &str) -> Vec<u8> {
+    let path = config_path(config);
+    Command::cargo_bin("bijjou")
+        .expect("binary built")
+        .env("BIJJOU_CONFIG", &path)
+        .write_stdin(input)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone()
+}
+
+fn snapshot_with_config(input_name: &str, config: &str, snap_name: &str) {
+    let input = read_fixture(input_name);
+    let output = run_bijjou_with_config(&input, config);
+    insta::assert_snapshot!(snap_name, visualize(&output));
 }
 
 // Render bytes for snapshots. CSI escapes appear as \e[...X so the params and
@@ -434,5 +458,55 @@ fn degenerate_marker_after_graph_only() {
     snap_bytes(
         "degenerate_marker_after_graph_only",
         b"\xe2\x97\x8b  \xf0\x9d\x99\x80\n",
+    );
+}
+
+// --- Custom-config fixtures --------------------------------------------
+// Each pipes a stock input through bijjou with a non-default config from
+// tests/fixtures/configs/*.toml. The snapshot captures the configured
+// glyphs/colors so regressions in config plumbing show up here.
+
+#[test]
+fn config_ascii_linear_chain() {
+    snapshot_with_config("linear_chain", "ascii", "config_ascii_linear_chain");
+}
+
+#[test]
+fn config_ascii_branching() {
+    snapshot_with_config("branching", "ascii", "config_ascii_branching");
+}
+
+#[test]
+fn config_ascii_workspaces() {
+    snapshot_with_config("workspaces", "ascii", "config_ascii_workspaces");
+}
+
+#[test]
+fn config_hex_colors_workspaces() {
+    snapshot_with_config(
+        "workspaces",
+        "hex_colors",
+        "config_hex_colors_workspaces",
+    );
+}
+
+#[test]
+fn config_dash_only_workspaces() {
+    snapshot_with_config(
+        "workspaces",
+        "dash_only",
+        "config_dash_only_workspaces",
+    );
+}
+
+#[test]
+fn config_alt_nodes_kitchen_sink() {
+    // Kitchen-sink fixture exercises every node type (@, ○, ◆, ×, ●,
+    // empty, immutable @, empty-immutable). Renders them via a non-default
+    // BMP-only icon set so the override applies across all branches.
+    snapshot_with_config(
+        "combo_kitchen_sink",
+        "alt_nodes",
+        "config_alt_nodes_kitchen_sink",
     );
 }

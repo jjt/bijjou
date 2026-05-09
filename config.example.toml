@@ -1,0 +1,62 @@
+# Example bijjou config.
+#
+# Path resolution:
+#   1. $BIJJOU_CONFIG, if set
+#   2. $XDG_CONFIG_HOME/bijjou/config.toml
+#   3. $HOME/.config/bijjou/config.toml
+#
+# Every key is optional. Omitted keys keep their built-in default.
+# Sections may be omitted entirely. Comments must start in column 0
+# (inline `# ...` after a value is not supported).
+
+[icons]
+# Replacement glyphs for the commit-node chars jj prints (@ ○ ◆ × ●).
+# Defaults are Nerd Font codepoints:
+#   working_copy        = U+F02D8   (nf-md-hexagon_outline-style)
+#   mutable             = U+F111
+#   immutable           = U+F023    (lock)
+#   conflict            = U+F071    (warning triangle)
+#   alternate           = U+F059
+#   empty               = U+F28D
+#   working_copy_empty  = U+E667
+#   empty_immutable     = U+F456
+#
+# working_copy = "@"
+# mutable      = "o"
+# immutable    = "#"
+
+[graph]
+# Single-cell replacements for jj's box-drawing graph chars. Defaults are
+# Unicode 16 Large Type Pieces (U+1CE1A..U+1CE50): 𜸟 𜸩 𜸚 𜸤 𜸾 𜹃 𜸨 𜸶 𜸠 𜹀 𜸺
+# (elision falls back to ⌇).
+#
+# horizontal   = "-"
+# vertical     = "|"
+# top_left     = "/"
+# top_right    = "\\"
+# bottom_left  = "\\"
+# bottom_right = "/"
+# tee_right    = "+"
+# tee_left     = "+"
+# tee_down     = "+"
+# tee_up       = "+"
+# cross        = "+"
+# elision      = "~"
+
+[separator]
+# Repeated to fill the gap between the graph column and commit content.
+# Default: "━"
+#
+# dash = "."
+
+[colors]
+# Either an integer 0-255 (256-color palette) or a "#rrggbb" hex string.
+# Defaults: dash_filler = 8, edge = 240, mutable_node = 245.
+#
+# dash_filler — color of the dash filler between graph and content.
+# edge        — color of graph edges (lines, corners, tees, crosses).
+# mutable_node — color applied to ○, ◆, and the immutable @ glyph.
+#
+# dash_filler  = 8
+# edge         = "#5f5f5f"
+# mutable_node = 245

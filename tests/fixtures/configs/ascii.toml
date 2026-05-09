@@ -1,0 +1,31 @@
+[icons]
+working_copy = "@"
+mutable = "o"
+immutable = "#"
+conflict = "x"
+alternate = "*"
+empty = "."
+working_copy_empty = "_"
+empty_immutable = ":"
+
+[graph]
+horizontal = "-"
+vertical = "|"
+top_left = "/"
+top_right = "\\"
+bottom_left = "\\"
+bottom_right = "/"
+tee_right = "+"
+tee_left = "+"
+tee_down = "+"
+tee_up = "+"
+cross = "+"
+elision = "~"
+
+[separator]
+dash = "."
+
+[colors]
+dash_filler = 244
+edge = 245
+mutable_node = 246
