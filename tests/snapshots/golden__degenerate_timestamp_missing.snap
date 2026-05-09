@@ -1,0 +1,5 @@
+---
+source: tests/golden.rs
+expression: visualize(&output)
+---
+󰋘  abcde 12345 ME desc-without-timestamp

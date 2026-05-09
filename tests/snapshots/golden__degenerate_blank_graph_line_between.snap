@@ -1,0 +1,7 @@
+---
+source: tests/golden.rs
+expression: visualize(&output)
+---
+\e[38;5;245m\e[39m  abcde 12345
+
+\e[38;5;245m\e[39m  fghij 67890

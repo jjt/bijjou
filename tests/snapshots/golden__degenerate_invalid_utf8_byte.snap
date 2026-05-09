@@ -1,0 +1,5 @@
+---
+source: tests/golden.rs
+expression: visualize(&output)
+---
+󰋘  abcde \x80 strange desc

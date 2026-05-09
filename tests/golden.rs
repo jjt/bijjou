@@ -189,6 +189,20 @@ fn combo_kitchen_sink() {
     snapshot("combo_kitchen_sink");
 }
 
+#[test]
+fn diff_authors() {
+    // Mix of single-name, multi-word, CJK, and emoji authors — exercises how
+    // jj's truncate/pad on the author cell shapes a variable-width column.
+    snapshot("diff_authors");
+}
+
+#[test]
+fn remote_bookmarks() {
+    // Local main ahead of origin: shows `main*` (locally-modified marker) and
+    // `main@origin` (remote-tracking bookmark) on different commits.
+    snapshot("remote_bookmarks");
+}
+
 // Synthetic fixtures: hand-crafted bytes that exercise specific paths
 // without depending on a captured jj session.
 
@@ -275,4 +289,150 @@ fn synthetic_marker_inside_csi_segment() {
     let input = b"@  abc \x1b[38;5;10m\xf0\x9d\x99\x80\x1b[39mdesc\n";
     let output = run_bijjou(input);
     insta::assert_snapshot!("synthetic_marker_inside_csi_segment", visualize(&output));
+}
+
+// --- Degenerate inputs --------------------------------------------------
+// These exercise bijjou's robustness against malformed / unexpected input
+// that real jj output usually wouldn't produce. Behavior should be
+// deterministic and never panic.
+
+fn snap_bytes(name: &str, input: &[u8]) {
+    let output = run_bijjou(input);
+    insta::assert_snapshot!(name, visualize(&output));
+}
+
+#[test]
+fn degenerate_author_column_missing() {
+    // Realistic format minus the author cell.
+    snap_bytes(
+        "degenerate_author_column_missing",
+        b"@  abcde 12345 260509\xc2\xb70958 desc\n",
+    );
+}
+
+#[test]
+fn degenerate_timestamp_missing() {
+    snap_bytes(
+        "degenerate_timestamp_missing",
+        b"@  abcde 12345 ME desc-without-timestamp\n",
+    );
+}
+
+#[test]
+fn degenerate_no_description() {
+    // Bare graph + change/commit IDs only.
+    snap_bytes("degenerate_no_description", b"\xe2\x97\x8b  abcde 12345\n");
+}
+
+#[test]
+fn degenerate_only_newlines() {
+    snap_bytes("degenerate_only_newlines", b"\n\n\n");
+}
+
+#[test]
+fn degenerate_only_csi_no_text() {
+    // Pure escape sequences with no visible characters.
+    snap_bytes("degenerate_only_csi_no_text", b"\x1b[31m\x1b[39m\n");
+}
+
+#[test]
+fn degenerate_unterminated_csi() {
+    // CSI cut off without final byte (no terminator). bijjou should not panic;
+    // it consumes to end-of-buffer.
+    snap_bytes("degenerate_unterminated_csi", b"@  abc\x1b[38;5;");
+}
+
+#[test]
+fn degenerate_no_trailing_newline() {
+    snap_bytes(
+        "degenerate_no_trailing_newline",
+        b"\xe2\x97\x8b  abcde 12345 desc",
+    );
+}
+
+#[test]
+fn degenerate_many_consecutive_markers() {
+    // Stack of markers (𝙀𝙄𝙀𝙄) — all should be stripped, no doubled spacing.
+    let mut buf = b"@  abc ".to_vec();
+    for _ in 0..4 {
+        buf.extend_from_slice(b"\xf0\x9d\x99\x80"); // 𝙀
+        buf.extend_from_slice(b"\xf0\x9d\x99\x84"); // 𝙄
+    }
+    buf.extend_from_slice(b"desc\n");
+    snap_bytes("degenerate_many_consecutive_markers", &buf);
+}
+
+#[test]
+fn degenerate_marker_at_line_start() {
+    snap_bytes(
+        "degenerate_marker_at_line_start",
+        b"\xf0\x9d\x99\x80@  abcde desc\n",
+    );
+}
+
+#[test]
+fn degenerate_invalid_utf8_byte() {
+    // Stray 0x80 (continuation byte) in the middle of content. bijjou's UTF-8
+    // decoder treats it as a 1-byte char; output should pass through.
+    snap_bytes(
+        "degenerate_invalid_utf8_byte",
+        b"@  abcde \x80 strange desc\n",
+    );
+}
+
+#[test]
+fn degenerate_tab_in_content() {
+    snap_bytes(
+        "degenerate_tab_in_content",
+        b"@  abcde 12345 ME 260509 desc\twith\ttabs\n",
+    );
+}
+
+#[test]
+fn degenerate_blank_graph_line_between() {
+    // Mid-graph blank line (jj doesn't normally emit this).
+    snap_bytes(
+        "degenerate_blank_graph_line_between",
+        b"\xe2\x97\x8b  abcde 12345\n\n\xe2\x97\x8b  fghij 67890\n",
+    );
+}
+
+#[test]
+fn degenerate_graph_only_no_content() {
+    // Lines with graph chars but no content after.
+    snap_bytes(
+        "degenerate_graph_only_no_content",
+        b"\xe2\x94\x82\n\xe2\x94\x9c\xe2\x94\x80\xe2\x95\xaf\n",
+    );
+}
+
+#[test]
+fn degenerate_long_line_no_graph() {
+    // 500-byte plain text line; emit_dim_graph wraps each non-space char
+    // individually — make sure that scales.
+    let body: Vec<u8> = std::iter::repeat(b'x').take(500).collect();
+    let mut buf = body.clone();
+    buf.push(b'\n');
+    snap_bytes("degenerate_long_line_no_graph", &buf);
+}
+
+#[test]
+fn degenerate_csi_then_newline() {
+    // CSI with newline immediately after.
+    snap_bytes("degenerate_csi_then_newline", b"\x1b[1m\n");
+}
+
+#[test]
+fn degenerate_solo_marker_byte_no_newline() {
+    // Empty marker as the only input, no trailing newline.
+    snap_bytes("degenerate_solo_marker_byte_no_newline", b"\xf0\x9d\x99\x80");
+}
+
+#[test]
+fn degenerate_marker_after_graph_only() {
+    // Graph + marker but no content. The marker should still be stripped.
+    snap_bytes(
+        "degenerate_marker_after_graph_only",
+        b"\xe2\x97\x8b  \xf0\x9d\x99\x80\n",
+    );
 }
