@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#MISE description="Print golden snapshots with escape codes rendered as ANSI"
+#MISE alias="sg"
+# Usage:
+#   mise run show-golden                # all snapshots
+#   mise run show-golden merge_graph    # one by short name
+#   mise run show-golden tests/snapshots/golden__merge_graph.snap   # full path
+set -euo pipefail
+
+render() {
+  perl -pe 's/\\e/\e/g; s/\\x([0-9a-f]{2})/chr hex $1/ge' "$1"
+}
+
+if [ $# -eq 0 ]; then
+  for f in tests/snapshots/golden__*.snap; do
+    printf '\e[1m=== %s ===\e[0m\n' "$f"
+    render "$f"
+    printf '\n'
+  done
+  exit 0
+fi
+
+for arg in "$@"; do
+  if [ -f "$arg" ]; then
+    f="$arg"
+  elif [ -f "tests/snapshots/golden__${arg}.snap" ]; then
+    f="tests/snapshots/golden__${arg}.snap"
+  else
+    echo "snapshot not found: $arg" >&2
+    exit 1
+  fi
+  printf '\e[1m=== %s ===\e[0m\n' "$f"
+  render "$f"
+  printf '\n'
+done

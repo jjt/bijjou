@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Install bijjou (default destination: ~/.local/bin/bijjou)"
+#MISE depends=["build"]
+set -euo pipefail
+dest="${1:-${BIJJOU_INSTALL_PATH:-$HOME/.local/bin/bijjou}}"
+mkdir -p "$(dirname "$dest")"
+install -m 755 target/release/bijjou "$dest"
+echo "Installed to $dest"

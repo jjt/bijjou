@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Run unit tests in src/main.rs"
+set -euo pipefail
+cargo test --bin bijjou "$@"

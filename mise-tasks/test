@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Run all tests (unit + insta golden)"
+#MISE alias="t"
+set -euo pipefail
+cargo test "$@"
