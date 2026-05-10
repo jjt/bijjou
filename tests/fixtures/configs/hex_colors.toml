@@ -2,3 +2,6 @@
 dash_filler = "#ff0000"
 edge = "#00ff00"
 mutable_node = "#0000ff"
+
+[activation]
+marker = ""

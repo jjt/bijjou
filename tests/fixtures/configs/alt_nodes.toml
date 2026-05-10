@@ -7,3 +7,6 @@ alternate          = "✦"
 empty              = "○"
 working_copy_empty = "☆"
 empty_immutable    = "⬡"
+
+[activation]
+marker = ""

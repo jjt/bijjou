@@ -72,9 +72,24 @@ fn strip_trailing_nl(line: &[u8]) -> (&[u8], bool) {
     }
 }
 
+fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
+    if needle.is_empty() || needle.len() > haystack.len() {
+        return false;
+    }
+    haystack.windows(needle.len()).any(|w| w == needle)
+}
+
 fn run() -> io::Result<()> {
     let mut input = Vec::new();
     io::stdin().read_to_end(&mut input)?;
+
+    let marker = cfg().activation_marker.as_bytes();
+    if !marker.is_empty() && !contains_bytes(&input, marker) {
+        let mut out = io::stdout().lock();
+        out.write_all(&input)?;
+        out.flush()?;
+        return Ok(());
+    }
 
     let lines = split_lines(&input);
     let parsed: Vec<Option<Parsed>> = lines

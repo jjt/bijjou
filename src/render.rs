@@ -145,15 +145,28 @@ pub fn line_flags(body: &[u8]) -> (bool, bool) {
     (empty, immutable)
 }
 
+fn strip_markers() -> Vec<&'static [u8]> {
+    let mut v: Vec<&'static [u8]> = vec![EMPTY_MARKER_BYTES, IMMUTABLE_MARKER_BYTES];
+    let act = cfg().activation_marker.as_bytes();
+    if !act.is_empty() {
+        v.push(act);
+    }
+    v
+}
+
+fn match_marker<'a>(bytes: &[u8], i: usize, markers: &'a [&'a [u8]]) -> Option<usize> {
+    markers
+        .iter()
+        .find(|m| bytes[i..].starts_with(m))
+        .map(|m| m.len())
+}
+
 pub fn write_stripping_marker(content: &[u8], out: &mut Vec<u8>) {
+    let markers = strip_markers();
     let mut i = 0;
     while i < content.len() {
-        if content[i..].starts_with(EMPTY_MARKER_BYTES) {
-            i += EMPTY_MARKER_BYTES.len();
-            continue;
-        }
-        if content[i..].starts_with(IMMUTABLE_MARKER_BYTES) {
-            i += IMMUTABLE_MARKER_BYTES.len();
+        if let Some(skip) = match_marker(content, i, &markers) {
+            i += skip;
             continue;
         }
         out.push(content[i]);
@@ -219,6 +232,7 @@ fn emit_edge(cp: u32, raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
 // commit-node chars (○ ● ◆ @ ×) which pass through with normal intensity.
 // Strips jj's fg-color codes; preserves other ANSI sequences.
 pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immutable: bool) {
+    let markers = strip_markers();
     let mut i = 0;
     while i < bytes.len() {
         let ansi_start = i;
@@ -239,13 +253,13 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immuta
             continue;
         }
 
-        let (cp, len) = decode_utf8(bytes, i);
-        if cp == EMPTY_MARKER || cp == IMMUTABLE_MARKER {
+        if let Some(skip) = match_marker(bytes, i, &markers) {
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
-            i += len;
+            i += skip;
             continue;
         }
 
+        let (cp, len) = decode_utf8(bytes, i);
         let raw = &bytes[i..i + len];
         if is_node_char(cp) {
             emit_node(cp, raw, ansi, is_empty, is_immutable, out);

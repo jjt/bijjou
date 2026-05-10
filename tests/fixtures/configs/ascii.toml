@@ -29,3 +29,6 @@ dash = "."
 dash_filler = 244
 edge = 245
 mutable_node = 246
+
+[activation]
+marker = ""

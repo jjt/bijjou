@@ -11,6 +11,10 @@ fn read_fixture(name: &str) -> Vec<u8> {
 }
 
 fn run_bijjou(input: &[u8]) -> Vec<u8> {
+    run_bijjou_with_config(input, "bypass_gate")
+}
+
+fn run_bijjou_default(input: &[u8]) -> Vec<u8> {
     Command::cargo_bin("bijjou")
         .expect("binary built")
         .env("BIJJOU_CONFIG", "/dev/null")
@@ -546,6 +550,45 @@ fn degenerate_marker_after_graph_only() {
         "degenerate_marker_after_graph_only",
         b"\xe2\x97\x8b  \xf0\x9d\x99\x80\n",
         "Graph + marker but no commit content; marker still stripped.",
+    );
+}
+
+// --- Activation gate ----------------------------------------------------
+// Default config gates processing on presence of the activation marker
+// (𝘽 / U+1D63D). Absent → byte-identical passthrough. Present → process and
+// strip every occurrence of the marker.
+
+#[test]
+fn gate_passthrough_when_marker_absent() {
+    let input = b"\xe2\x97\x8b  abcde 12345 description\n";
+    let output = run_bijjou_default(input);
+    assert_eq!(output, input, "input without 𝘽 must passthrough unchanged");
+}
+
+#[test]
+fn gate_processes_when_marker_present() {
+    let mut input = "\u{1D63D}".as_bytes().to_vec();
+    input.extend_from_slice(b"\n\xe2\x97\x8b  abcde 12345 description\n");
+    let output = run_bijjou_default(&input);
+    // Marker bytes never appear in output.
+    assert!(
+        !output.windows(4).any(|w| w == "\u{1D63D}".as_bytes()),
+        "activation marker bytes must be stripped"
+    );
+    // Output got rewritten (icons/colors swapped) — must differ from input.
+    assert_ne!(output, input, "input with 𝘽 must be processed");
+}
+
+#[test]
+fn gate_strips_inline_marker_in_content() {
+    // Marker embedded inside a description should be stripped.
+    let mut input = "\u{25CB}  abcde 12345 desc ".as_bytes().to_vec();
+    input.extend_from_slice("\u{1D63D}".as_bytes());
+    input.extend_from_slice(b" suffix\n");
+    let output = run_bijjou_default(&input);
+    assert!(
+        !output.windows(4).any(|w| w == "\u{1D63D}".as_bytes()),
+        "inline activation marker must be stripped"
     );
 }
 

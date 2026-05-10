@@ -1,0 +1,36 @@
+# Drop this snippet into ~/.config/jj/config.toml (or merge with your existing
+# config) to enable bijjou rendering. Pipe jj output through bijjou:
+#
+#   jj log | bijjou
+#
+# The snippet defines:
+#
+#   * format_bijjou_status — emits per-commit status markers consumed by
+#     bijjou:
+#       𝙀 (U+1D640) — commit is empty
+#       𝙄 (U+1D644) — commit is immutable
+#
+#   * my_log_oneline — like the stock builtin_log_oneline, but prefixes each
+#     commit with bijjou's activation marker 𝘽 (U+1D63D) plus the status
+#     markers above.
+#
+# A single 𝘽 anywhere in stdin is enough to opt bijjou into processing the
+# whole stream; without it bijjou passes input through unchanged.
+#
+# Conflict, working-copy, mutable, immutable diamond, and elision nodes are
+# already encoded in jj's --graph output (× @ ○ ◆ ~) and need no markers.
+
+[template-aliases]
+'format_bijjou_status(commit)' = '''
+concat(
+  if(commit.empty(), "𝙀"),
+  if(commit.contained_in("immutable()"), "𝙄"),
+)
+'''
+
+'my_log_oneline(commit)' = '''
+"𝘽" ++ format_bijjou_status(commit) ++ builtin_log_oneline(commit)
+'''
+
+[templates]
+log = 'my_log_oneline(self)'

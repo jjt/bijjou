@@ -26,6 +26,7 @@ pub const DEFAULT_GRAPH_TEE_DOWN: &str = "𜸠";
 pub const DEFAULT_GRAPH_TEE_UP: &str = "𜹀";
 pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "⌇";
+pub const DEFAULT_ACTIVATION_MARKER: &str = "\u{1D63D}"; // 𝘽
 
 pub struct Config {
     pub wc_icon: String,
@@ -52,6 +53,7 @@ pub struct Config {
     pub dim_on: Vec<u8>,
     pub edge_dim_on: Vec<u8>,
     pub mutable_node_color: Vec<u8>,
+    pub activation_marker: String,
 }
 
 impl Default for Config {
@@ -81,6 +83,7 @@ impl Default for Config {
             dim_on: DEFAULT_DIM_ON.to_vec(),
             edge_dim_on: DEFAULT_EDGE_DIM_ON.to_vec(),
             mutable_node_color: DEFAULT_MUTABLE_NODE_COLOR.to_vec(),
+            activation_marker: DEFAULT_ACTIVATION_MARKER.to_string(),
         }
     }
 }
@@ -242,6 +245,16 @@ impl Config {
             }
         }
 
+        if let Some(sec) = sections.get("activation") {
+            for (k, v) in sec {
+                let s = take_string("activation", k, v)?;
+                match k.as_str() {
+                    "marker" => cfg.activation_marker = s,
+                    other => return Err(format!("unknown key: activation.{}", other)),
+                }
+            }
+        }
+
         if let Some(sec) = sections.get("colors") {
             for (k, v) in sec {
                 let bytes = parse_color(v)
@@ -343,6 +356,26 @@ edge = 200
         let cfg = Config::from_toml("").unwrap();
         assert_eq!(cfg.wc_icon, DEFAULT_WC_ICON);
         assert_eq!(cfg.dim_on, DEFAULT_DIM_ON);
+    }
+
+    #[test]
+    fn toml_activation_marker_override() {
+        let s = "[activation]\nmarker = \"XX\"\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(cfg.activation_marker, "XX");
+    }
+
+    #[test]
+    fn toml_activation_marker_empty_disables_gate() {
+        let s = "[activation]\nmarker = \"\"\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(cfg.activation_marker, "");
+    }
+
+    #[test]
+    fn toml_default_activation_marker_is_b() {
+        let cfg = Config::from_toml("").unwrap();
+        assert_eq!(cfg.activation_marker, DEFAULT_ACTIVATION_MARKER);
     }
 
     #[test]
