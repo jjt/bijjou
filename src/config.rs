@@ -25,7 +25,7 @@ pub const DEFAULT_GRAPH_TEE_LEFT: &str = "𜸶";
 pub const DEFAULT_GRAPH_TEE_DOWN: &str = "𜸠";
 pub const DEFAULT_GRAPH_TEE_UP: &str = "𜹀";
 pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
-pub const DEFAULT_GRAPH_ELISION: &str = "⌇";
+pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "𝘽";
 
 pub struct Config {
