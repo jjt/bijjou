@@ -6,14 +6,14 @@ pub const DEFAULT_DASH: &str = "━";
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
 pub const DEFAULT_MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
-pub const DEFAULT_EMPTY_ICON: &str = "\u{f28d}";
-pub const DEFAULT_WC_EMPTY_ICON: &str = "\u{e667}";
-pub const DEFAULT_EMPTY_IMMUTABLE_ICON: &str = "\u{f456}";
-pub const DEFAULT_WC_ICON: &str = "\u{f02d8}";
-pub const DEFAULT_MUTABLE_ICON: &str = "\u{f111}";
-pub const DEFAULT_IMMUTABLE_ICON: &str = "\u{f023}";
-pub const DEFAULT_CONFLICT_ICON: &str = "\u{f071}";
-pub const DEFAULT_ALTERNATE_ICON: &str = "\u{f059}";
+pub const DEFAULT_EMPTY_ICON: &str = "";
+pub const DEFAULT_WC_EMPTY_ICON: &str = "";
+pub const DEFAULT_EMPTY_IMMUTABLE_ICON: &str = "";
+pub const DEFAULT_WC_ICON: &str = "󰋘";
+pub const DEFAULT_MUTABLE_ICON: &str = "";
+pub const DEFAULT_IMMUTABLE_ICON: &str = "";
+pub const DEFAULT_CONFLICT_ICON: &str = "";
+pub const DEFAULT_ALTERNATE_ICON: &str = "";
 pub const DEFAULT_GRAPH_HORIZONTAL: &str = "𜸟";
 pub const DEFAULT_GRAPH_VERTICAL: &str = "𜸩";
 pub const DEFAULT_GRAPH_TOP_LEFT: &str = "𜸚";
@@ -26,7 +26,7 @@ pub const DEFAULT_GRAPH_TEE_DOWN: &str = "𜸠";
 pub const DEFAULT_GRAPH_TEE_UP: &str = "𜹀";
 pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "⌇";
-pub const DEFAULT_ACTIVATION_MARKER: &str = "\u{1D63D}"; // 𝘽
+pub const DEFAULT_ACTIVATION_MARKER: &str = "𝘽";
 
 pub struct Config {
     pub wc_icon: String,
@@ -118,9 +118,11 @@ fn parse_toml(s: &str) -> Result<TomlSections, String> {
             .ok_or_else(|| format!("line {}: missing '='", idx + 1))?;
         let key = line[..eq].trim().to_string();
         let val_str = line[eq + 1..].trim();
-        let val = parse_toml_value(val_str)
-            .map_err(|e| format!("line {}: {}", idx + 1, e))?;
-        sections.entry(current.clone()).or_default().insert(key, val);
+        let val = parse_toml_value(val_str).map_err(|e| format!("line {}: {}", idx + 1, e))?;
+        sections
+            .entry(current.clone())
+            .or_default()
+            .insert(key, val);
     }
     Ok(sections)
 }
@@ -168,18 +170,15 @@ fn parse_color(v: &TomlValue) -> Result<Vec<u8>, String> {
             Ok(format!("\x1b[38;5;{}m", n).into_bytes())
         }
         TomlValue::String(s) => {
-            let hex = s.strip_prefix('#').ok_or_else(|| {
-                format!("expected integer or \"#rrggbb\", got {:?}", s)
-            })?;
+            let hex = s
+                .strip_prefix('#')
+                .ok_or_else(|| format!("expected integer or \"#rrggbb\", got {:?}", s))?;
             if hex.len() != 6 {
                 return Err(format!("expected #rrggbb, got {:?}", s));
             }
-            let r = u8::from_str_radix(&hex[0..2], 16)
-                .map_err(|_| format!("bad hex: {:?}", s))?;
-            let g = u8::from_str_radix(&hex[2..4], 16)
-                .map_err(|_| format!("bad hex: {:?}", s))?;
-            let b = u8::from_str_radix(&hex[4..6], 16)
-                .map_err(|_| format!("bad hex: {:?}", s))?;
+            let r = u8::from_str_radix(&hex[0..2], 16).map_err(|_| format!("bad hex: {:?}", s))?;
+            let g = u8::from_str_radix(&hex[2..4], 16).map_err(|_| format!("bad hex: {:?}", s))?;
+            let b = u8::from_str_radix(&hex[4..6], 16).map_err(|_| format!("bad hex: {:?}", s))?;
             Ok(format!("\x1b[38;2;{};{};{}m", r, g, b).into_bytes())
         }
     }
@@ -257,8 +256,7 @@ impl Config {
 
         if let Some(sec) = sections.get("colors") {
             for (k, v) in sec {
-                let bytes = parse_color(v)
-                    .map_err(|e| format!("colors.{}: {}", k, e))?;
+                let bytes = parse_color(v).map_err(|e| format!("colors.{}: {}", k, e))?;
                 match k.as_str() {
                     "dash_filler" => cfg.dim_on = bytes,
                     "edge" => cfg.edge_dim_on = bytes,

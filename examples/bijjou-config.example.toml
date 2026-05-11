@@ -23,37 +23,34 @@
 
 [icons]
 # Replacement glyphs for the commit-node chars jj prints (@ ○ ◆ × ●).
-# Defaults are Nerd Font codepoints:
-#   working_copy        = U+F02D8   (nf-md-hexagon_outline-style)
-#   mutable             = U+F111
-#   immutable           = U+F023    (lock)
-#   conflict            = U+F071    (warning triangle)
-#   alternate           = U+F059
-#   empty               = U+F28D
-#   working_copy_empty  = U+E667
-#   empty_immutable     = U+F456
+# Many defaults are Nerd Font codepoints.
 #
-# working_copy = "@"
-# mutable      = "o"
-# immutable    = "#"
+# working_copy       = "󰋘"
+# mutable            = ""
+# immutable          = ""
+# conflict           = ""
+# alternate          = ""
+# empty              = ""
+# working_copy_empty = ""
+# empty_immutable    = ""
 
 [graph]
 # Single-cell replacements for jj's box-drawing graph chars. Defaults are
 # Unicode 16 Large Type Pieces (U+1CE1A..U+1CE50): 𜸟 𜸩 𜸚 𜸤 𜸾 𜹃 𜸨 𜸶 𜸠 𜹀 𜸺
 # (elision falls back to ⌇).
 #
-# horizontal   = "-"
-# vertical     = "|"
-# top_left     = "/"
-# top_right    = "\\"
-# bottom_left  = "\\"
-# bottom_right = "/"
-# tee_right    = "+"
-# tee_left     = "+"
-# tee_down     = "+"
-# tee_up       = "+"
-# cross        = "+"
-# elision      = "~"
+# horizontal   = "𜸟"
+# vertical     = "𜸩"
+# top_left     = "𜸚"
+# top_right    = "𜸤"
+# bottom_left  = "𜸾"
+# bottom_right = "𜹃"
+# tee_right    = "𜸨"
+# tee_left     = "𜸶"
+# tee_down     = "𜸠"
+# tee_up       = "𜹀"
+# cross        = "𜸺"
+# elision      = "⌇"
 
 [separator]
 # Repeated to fill the gap between the graph column and commit content.
