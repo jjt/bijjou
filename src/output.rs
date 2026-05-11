@@ -1,12 +1,8 @@
 use std::io::{self, IsTerminal, Write};
 
-pub fn write_output(buf: &[u8], line_count: usize) -> io::Result<()> {
+pub fn write_output(buf: &[u8], _line_count: usize) -> io::Result<()> {
     let stdout = io::stdout();
-    let is_tty = stdout.is_terminal();
-    let height = terminal_height();
-    let should_page = is_tty && height.map_or(false, |h| line_count > h as usize);
-
-    if should_page {
+    if stdout.is_terminal() {
         if let Some(()) = try_pager(buf)? {
             return Ok(());
         }
@@ -18,47 +14,100 @@ pub fn write_output(buf: &[u8], line_count: usize) -> io::Result<()> {
     Ok(())
 }
 
-fn terminal_height() -> Option<u16> {
-    use core::ffi::c_ulong;
-    use std::os::fd::AsRawFd;
-
-    #[repr(C)]
-    struct Winsize {
-        ws_row: u16,
-        ws_col: u16,
-        ws_xpixel: u16,
-        ws_ypixel: u16,
-    }
+#[cfg(unix)]
+fn try_pager(buf: &[u8]) -> io::Result<Option<()>> {
+    use std::ffi::{c_char, CString};
 
     extern "C" {
-        fn ioctl(fd: i32, request: c_ulong, ...) -> i32;
+        fn pipe(fds: *mut i32) -> i32;
+        fn fork() -> i32;
+        fn dup2(oldfd: i32, newfd: i32) -> i32;
+        fn close(fd: i32) -> i32;
+        fn _exit(status: i32) -> !;
+        fn write(fd: i32, buf: *const u8, count: usize) -> isize;
+        fn execvp(file: *const c_char, argv: *const *const c_char) -> i32;
     }
 
-    #[cfg(target_os = "macos")]
-    const TIOCGWINSZ: c_ulong = 0x40087468;
-    #[cfg(target_os = "linux")]
-    const TIOCGWINSZ: c_ulong = 0x5413;
-    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-    return None;
+    let Some(s) = std::env::var("PAGER").ok().filter(|s| !s.trim().is_empty()) else {
+        return Ok(None);
+    };
+    let parts: Vec<String> = s.split_whitespace().map(|s| s.to_string()).collect();
+    let Some(cmd) = parts.first() else {
+        return Ok(None);
+    };
+    let Ok(c_cmd) = CString::new(cmd.as_str()) else {
+        return Ok(None);
+    };
+    let c_argv: Vec<CString> = parts
+        .iter()
+        .map(|s| CString::new(s.as_str()).unwrap())
+        .collect();
+    let mut argv: Vec<*const c_char> = c_argv.iter().map(|c| c.as_ptr()).collect();
+    argv.push(std::ptr::null());
 
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    {
-        let mut ws: Winsize = unsafe { std::mem::zeroed() };
-        let fd = io::stdout().as_raw_fd();
-        let r = unsafe { ioctl(fd, TIOCGWINSZ, &mut ws as *mut Winsize) };
-        if r == 0 && ws.ws_row > 0 {
-            Some(ws.ws_row)
-        } else {
-            None
+    let mut fds: [i32; 2] = [0; 2];
+    if unsafe { pipe(fds.as_mut_ptr()) } != 0 {
+        return Ok(None);
+    }
+    let (rfd, wfd) = (fds[0], fds[1]);
+
+    let _ = io::stdout().flush();
+    let _ = io::stderr().flush();
+
+    let pid = unsafe { fork() };
+    if pid < 0 {
+        unsafe {
+            close(rfd);
+            close(wfd);
+        }
+        return Ok(None);
+    }
+    if pid == 0 {
+        // Child: stream rendered buf into the pipe and exit. Parent will exec
+        // the pager, replacing bijjou's process so the pager keeps bijjou's
+        // pid/pgid and stays in the shell's foreground process group.
+        unsafe { close(rfd) };
+        let mut written = 0usize;
+        while written < buf.len() {
+            let n =
+                unsafe { write(wfd, buf.as_ptr().add(written), buf.len() - written) };
+            if n < 0 {
+                if io::Error::last_os_error().kind() == io::ErrorKind::Interrupted {
+                    continue;
+                }
+                break;
+            }
+            if n == 0 {
+                break;
+            }
+            written += n as usize;
+        }
+        unsafe {
+            close(wfd);
+            _exit(0);
         }
     }
+
+    unsafe { close(wfd) };
+    if unsafe { dup2(rfd, 0) } < 0 {
+        unsafe { close(rfd) };
+        return Ok(None);
+    }
+    unsafe { close(rfd) };
+    unsafe { execvp(c_cmd.as_ptr(), argv.as_ptr()) };
+    eprintln!(
+        "bijjou: failed to exec pager '{}': {}",
+        cmd,
+        io::Error::last_os_error()
+    );
+    unsafe { _exit(127) };
 }
 
+#[cfg(not(unix))]
 fn try_pager(buf: &[u8]) -> io::Result<Option<()>> {
     use std::process::{Command, Stdio};
 
-    let pager_env = std::env::var("PAGER").ok().filter(|s| !s.trim().is_empty());
-    let Some(s) = pager_env else {
+    let Some(s) = std::env::var("PAGER").ok().filter(|s| !s.trim().is_empty()) else {
         return Ok(None);
     };
     let mut parts = s.split_whitespace().map(|s| s.to_string());
