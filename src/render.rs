@@ -127,6 +127,22 @@ pub fn find_boundary(line: &[u8]) -> Option<Parsed> {
 
 const VERTICAL_CP: u32 = 0x2502; // │
 
+pub fn has_graph_char(body: &[u8]) -> bool {
+    let mut i = 0;
+    while i < body.len() {
+        if let Some(after) = skip_csi(body, i) {
+            i = after;
+            continue;
+        }
+        let (cp, len) = decode_utf8(body, i);
+        if is_graph_char(cp) {
+            return true;
+        }
+        i += len;
+    }
+    false
+}
+
 pub fn is_vertical_only_line(body: &[u8]) -> bool {
     let markers = strip_markers();
     let mut i = 0;

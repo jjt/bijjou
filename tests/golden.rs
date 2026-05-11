@@ -292,7 +292,7 @@ fn synthetic_only_marker_byte() {
     snap_bytes(
         "synthetic_only_marker_byte",
         input,
-        "Empty marker on its own line — must strip to bare \\n.",
+        "Empty marker on its own line — non-graph line passes through verbatim.",
     );
 }
 
@@ -554,7 +554,7 @@ fn degenerate_solo_marker_byte_no_newline() {
     snap_bytes(
         "degenerate_solo_marker_byte_no_newline",
         b"\xf0\x9d\x99\x80",
-        "Empty marker as the entire input, no newline — stripped to empty output.",
+        "Empty marker as the entire input, no newline — non-graph line passes through verbatim.",
     );
 }
 
@@ -581,16 +581,37 @@ fn gate_passthrough_when_marker_absent() {
 
 #[test]
 fn gate_processes_when_marker_present() {
-    let mut input = "\u{1D63D}".as_bytes().to_vec();
-    input.extend_from_slice(b"\n\xe2\x97\x8b  abcde 12345 description\n");
+    // Marker on a graph line triggers processing; the graph line gets rewritten.
+    let mut input = "\u{25CB}  abcde 12345 ".as_bytes().to_vec();
+    input.extend_from_slice("\u{1D63D}".as_bytes());
+    input.extend_from_slice(b"description\n");
     let output = run_bijjou_default(&input);
-    // Marker bytes never appear in output.
+    assert_ne!(output, input, "input with 𝘽 on a graph line must be processed");
+}
+
+#[test]
+fn gate_passes_through_non_graph_lines_even_when_marker_present() {
+    // Marker present in input → gate opens. But lines without graph chars
+    // (plain text, status output, anything that isn't the log graph) must pass
+    // through byte-for-byte unchanged, including any marker bytes on them.
+    let mut input = "\u{1D63D}".as_bytes().to_vec();
+    input.extend_from_slice(b" plain text line\n");
+    input.extend_from_slice(b"M src/main.rs\n");
+    input.extend_from_slice(b"\xe2\x97\x8b  abcde 12345 description\n");
+    let output = run_bijjou_default(&input);
+    let marker_line = {
+        let mut v = "\u{1D63D}".as_bytes().to_vec();
+        v.extend_from_slice(b" plain text line\n");
+        v
+    };
     assert!(
-        !output.windows(4).any(|w| w == "\u{1D63D}".as_bytes()),
-        "activation marker bytes must be stripped"
+        output.windows(marker_line.len()).any(|w| w == marker_line),
+        "non-graph line containing marker must passthrough verbatim"
     );
-    // Output got rewritten (icons/colors swapped) — must differ from input.
-    assert_ne!(output, input, "input with 𝘽 must be processed");
+    assert!(
+        output.windows(b"M src/main.rs\n".len()).any(|w| w == b"M src/main.rs\n"),
+        "plain-text status line must passthrough verbatim"
+    );
 }
 
 #[test]

@@ -1,6 +1,6 @@
 ---
 source: tests/golden.rs
-description: "Empty marker as the entire input, no newline — stripped to empty output."
+description: "Empty marker as the entire input, no newline — non-graph line passes through verbatim."
 expression: visualize(&output)
 ---
-
+𝙀

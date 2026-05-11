@@ -37,8 +37,8 @@ use crate::ansi::FG_RESET;
 use crate::config::{cfg, Config};
 use crate::output::write_output;
 use crate::render::{
-    emit_dim_graph, find_boundary, is_vertical_only_line, line_flags, write_stripping_marker,
-    Parsed,
+    emit_dim_graph, find_boundary, has_graph_char, is_vertical_only_line, line_flags,
+    write_stripping_marker, Parsed,
 };
 
 fn main() {
@@ -118,15 +118,18 @@ fn run() -> io::Result<()> {
             continue;
         }
 
-        let (is_empty, is_immutable) = line_flags(body);
-
         match p {
             Some(p) => {
+                let (is_empty, is_immutable) = line_flags(body);
                 emit_dim_graph(&body[..p.graph_end], &mut out, is_empty, is_immutable);
                 write_gap(&mut out, p, target_col, &c.dash, &c.dim_on)?;
                 write_stripping_marker(&body[p.content_start..], &mut out);
             }
-            None => emit_dim_graph(body, &mut out, is_empty, is_immutable),
+            None if has_graph_char(body) => {
+                let (is_empty, is_immutable) = line_flags(body);
+                emit_dim_graph(body, &mut out, is_empty, is_immutable);
+            }
+            None => out.write_all(body)?,
         }
 
         if trailing_nl {
