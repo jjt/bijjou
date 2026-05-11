@@ -648,6 +648,26 @@ fn config_dash_only_workspaces() {
 }
 
 #[test]
+fn config_hide_vertical_only_single_wc() {
+    snapshot_with_config(
+        "single_wc",
+        "hide_vertical",
+        "config_hide_vertical_only_single_wc",
+        "single_wc with hide_vertical.toml — the lone `│` filler line above the elision marker must be dropped.",
+    );
+}
+
+#[test]
+fn config_hide_vertical_only_megamerge_conflict() {
+    snapshot_with_config(
+        "combo_megamerge_conflict",
+        "hide_vertical",
+        "config_hide_vertical_only_megamerge_conflict",
+        "combo_megamerge_conflict with hide_vertical.toml — vertical-only filler row between nodes is dropped; rows with corners/tees stay.",
+    );
+}
+
+#[test]
 fn config_alt_nodes_kitchen_sink() {
     snapshot_with_config(
         "combo_kitchen_sink",

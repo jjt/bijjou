@@ -125,6 +125,36 @@ pub fn find_boundary(line: &[u8]) -> Option<Parsed> {
     None
 }
 
+const VERTICAL_CP: u32 = 0x2502; // │
+
+pub fn is_vertical_only_line(body: &[u8]) -> bool {
+    let markers = strip_markers();
+    let mut i = 0;
+    let mut had_vertical = false;
+    while i < body.len() {
+        if let Some(after) = skip_csi(body, i) {
+            i = after;
+            continue;
+        }
+        if body[i] == b' ' {
+            i += 1;
+            continue;
+        }
+        if let Some(skip) = match_marker(body, i, &markers) {
+            i += skip;
+            continue;
+        }
+        let (cp, len) = decode_utf8(body, i);
+        if cp == VERTICAL_CP {
+            had_vertical = true;
+            i += len;
+        } else {
+            return false;
+        }
+    }
+    had_vertical
+}
+
 pub fn line_flags(body: &[u8]) -> (bool, bool) {
     let mut empty = false;
     let mut immutable = false;
@@ -552,6 +582,44 @@ mod tests {
     #[test]
     fn dim_spaces_passthrough() {
         assert_eq!(run_emit(b"   ", false, false), b"   ");
+    }
+
+    #[test]
+    fn vertical_only_single_pipe() {
+        assert!(is_vertical_only_line("│".as_bytes()));
+    }
+
+    #[test]
+    fn vertical_only_pipes_with_spaces() {
+        assert!(is_vertical_only_line("│ │ │".as_bytes()));
+    }
+
+    #[test]
+    fn vertical_only_with_csi_wrapper() {
+        assert!(is_vertical_only_line(b"\x1b[38;5;8m\xe2\x94\x82\x1b[39m"));
+    }
+
+    #[test]
+    fn vertical_only_rejects_empty_line() {
+        assert!(!is_vertical_only_line(b""));
+        assert!(!is_vertical_only_line(b"   "));
+    }
+
+    #[test]
+    fn vertical_only_rejects_node_line() {
+        assert!(!is_vertical_only_line("│ ○".as_bytes()));
+    }
+
+    #[test]
+    fn vertical_only_rejects_corner() {
+        assert!(!is_vertical_only_line("├─╯".as_bytes()));
+    }
+
+    #[test]
+    fn vertical_only_ignores_strip_markers() {
+        let mut buf = "│".as_bytes().to_vec();
+        buf.extend_from_slice(EMPTY_MARKER_BYTES);
+        assert!(is_vertical_only_line(&buf));
     }
 
     #[test]

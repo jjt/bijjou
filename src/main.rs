@@ -36,7 +36,10 @@ use std::io::{self, Read, Write};
 use crate::ansi::{skip_all_csi, FG_RESET};
 use crate::config::{cfg, Config};
 use crate::output::write_output;
-use crate::render::{emit_dim_graph, find_boundary, line_flags, write_stripping_marker, Parsed};
+use crate::render::{
+    emit_dim_graph, find_boundary, is_vertical_only_line, line_flags, write_stripping_marker,
+    Parsed,
+};
 
 fn main() {
     config::init(Config::load());
@@ -106,9 +109,15 @@ fn run() -> io::Result<()> {
 
     let c = cfg();
     let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 8);
+    let mut emitted_lines = 0usize;
 
     for (line, p) in lines.iter().zip(parsed.iter()) {
         let (body, trailing_nl) = strip_trailing_nl(line);
+
+        if c.hide_vertical_only_lines && p.is_none() && is_vertical_only_line(body) {
+            continue;
+        }
+
         let (is_empty, is_immutable) = line_flags(body);
 
         match p {
@@ -123,9 +132,10 @@ fn run() -> io::Result<()> {
         if trailing_nl {
             out.write_all(b"\n")?;
         }
+        emitted_lines += 1;
     }
 
-    write_output(&out, lines.len())
+    write_output(&out, emitted_lines)
 }
 
 fn write_gap(

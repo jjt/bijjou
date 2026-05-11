@@ -52,6 +52,15 @@
 # cross        = "𜸺"
 # elision      = "⌇"
 
+[filter]
+# Drop lines whose visible content is nothing but vertical graph edges (│) —
+# the filler rows jj prints between commit nodes. Spaces, CSI escapes, and
+# bijjou's own markers are ignored when judging "vertical-only".
+#
+# Default: false
+#
+# hide_vertical_only_lines = true
+
 [separator]
 # Repeated to fill the gap between the graph column and commit content.
 # Default: "━"

@@ -1,0 +1,5 @@
+[activation]
+marker = ""
+
+[filter]
+hide_vertical_only_lines = true

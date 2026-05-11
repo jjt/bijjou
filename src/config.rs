@@ -54,6 +54,7 @@ pub struct Config {
     pub edge_dim_on: Vec<u8>,
     pub mutable_node_color: Vec<u8>,
     pub activation_marker: String,
+    pub hide_vertical_only_lines: bool,
 }
 
 impl Default for Config {
@@ -84,6 +85,7 @@ impl Default for Config {
             edge_dim_on: DEFAULT_EDGE_DIM_ON.to_vec(),
             mutable_node_color: DEFAULT_MUTABLE_NODE_COLOR.to_vec(),
             activation_marker: DEFAULT_ACTIVATION_MARKER.to_string(),
+            hide_vertical_only_lines: false,
         }
     }
 }
@@ -92,6 +94,7 @@ impl Default for Config {
 enum TomlValue {
     String(String),
     Int(i64),
+    Bool(bool),
 }
 
 type TomlSections = HashMap<String, HashMap<String, TomlValue>>;
@@ -134,10 +137,19 @@ fn parse_toml_value(s: &str) -> Result<TomlValue, String> {
             .ok_or_else(|| format!("unterminated string: {:?}", s))?;
         return Ok(TomlValue::String(unescape(inner)?));
     }
+    if s == "true" {
+        return Ok(TomlValue::Bool(true));
+    }
+    if s == "false" {
+        return Ok(TomlValue::Bool(false));
+    }
     if let Ok(n) = s.parse::<i64>() {
         return Ok(TomlValue::Int(n));
     }
-    Err(format!("expected quoted string or integer, got {:?}", s))
+    Err(format!(
+        "expected quoted string, bool, or integer, got {:?}",
+        s
+    ))
 }
 
 fn unescape(s: &str) -> Result<String, String> {
@@ -181,6 +193,7 @@ fn parse_color(v: &TomlValue) -> Result<Vec<u8>, String> {
             let b = u8::from_str_radix(&hex[4..6], 16).map_err(|_| format!("bad hex: {:?}", s))?;
             Ok(format!("\x1b[38;2;{};{};{}m", r, g, b).into_bytes())
         }
+        TomlValue::Bool(_) => Err("expected integer or \"#rrggbb\", got bool".into()),
     }
 }
 
@@ -188,6 +201,13 @@ fn take_string(sec: &str, k: &str, v: &TomlValue) -> Result<String, String> {
     match v {
         TomlValue::String(s) => Ok(s.clone()),
         _ => Err(format!("{}.{}: expected string", sec, k)),
+    }
+}
+
+fn take_bool(sec: &str, k: &str, v: &TomlValue) -> Result<bool, String> {
+    match v {
+        TomlValue::Bool(b) => Ok(*b),
+        _ => Err(format!("{}.{}: expected bool", sec, k)),
     }
 }
 
@@ -250,6 +270,17 @@ impl Config {
                 match k.as_str() {
                     "marker" => cfg.activation_marker = s,
                     other => return Err(format!("unknown key: activation.{}", other)),
+                }
+            }
+        }
+
+        if let Some(sec) = sections.get("filter") {
+            for (k, v) in sec {
+                match k.as_str() {
+                    "hide_vertical_only_lines" => {
+                        cfg.hide_vertical_only_lines = take_bool("filter", k, v)?;
+                    }
+                    other => return Err(format!("unknown key: filter.{}", other)),
                 }
             }
         }
