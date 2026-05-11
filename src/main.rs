@@ -33,7 +33,7 @@ mod render;
 
 use std::io::{self, Read, Write};
 
-use crate::ansi::{skip_all_csi, FG_RESET};
+use crate::ansi::FG_RESET;
 use crate::config::{cfg, Config};
 use crate::output::write_output;
 use crate::render::{
@@ -123,7 +123,7 @@ fn run() -> io::Result<()> {
         match p {
             Some(p) => {
                 emit_dim_graph(&body[..p.graph_end], &mut out, is_empty, is_immutable);
-                write_gap(&mut out, body, p, target_col, &c.dash, &c.dim_on)?;
+                write_gap(&mut out, p, target_col, &c.dash, &c.dim_on)?;
                 write_stripping_marker(&body[p.content_start..], &mut out);
             }
             None => emit_dim_graph(body, &mut out, is_empty, is_immutable),
@@ -140,19 +140,14 @@ fn run() -> io::Result<()> {
 
 fn write_gap(
     out: &mut Vec<u8>,
-    body: &[u8],
     p: &Parsed,
     target_col: usize,
     dash: &str,
     dim_on: &[u8],
 ) -> io::Result<()> {
     let gap = target_col - p.graph_col;
-    let first_byte = body.get(skip_all_csi(body, p.content_start)).copied();
-    let has_change_id = first_byte
-        .map(|b| b.is_ascii_alphanumeric())
-        .unwrap_or(false);
 
-    if gap >= 3 && has_change_id {
+    if gap >= 3 {
         out.write_all(b" ")?;
         out.write_all(dim_on)?;
         for _ in 0..(gap - 2) {

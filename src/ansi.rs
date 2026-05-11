@@ -48,14 +48,6 @@ pub fn decode_utf8(bytes: &[u8], i: usize) -> (u32, usize) {
     (b as u32, 1)
 }
 
-pub fn skip_all_csi(bytes: &[u8], from: usize) -> usize {
-    let mut i = from;
-    while let Some(after) = skip_csi(bytes, i) {
-        i = after;
-    }
-    i
-}
-
 pub fn is_fg_color_sgr(params: &str) -> bool {
     let parts: Vec<&str> = params.split(';').collect();
     match parts

@@ -377,6 +377,20 @@ fn synthetic_alignment_dash_filler() {
 }
 
 #[test]
+fn synthetic_alignment_dash_filler_non_alphanumeric() {
+    // Tall + short rows where the short row's content begins with `(` (an
+    // annotation like `(elided revisions)`, `(empty)`, `(conflict)`). The dash
+    // filler must still pad the gap — the first content byte being non-
+    // alphanumeric does NOT disqualify a row from alignment.
+    let input = "│ │ ○  abcde 12345\n~  (elided revisions)\n".as_bytes();
+    snap_bytes(
+        "synthetic_alignment_dash_filler_non_alphanumeric",
+        input,
+        "Tall + short rows; short row's content begins with `(` — dash filler must still appear.",
+    );
+}
+
+#[test]
 fn synthetic_marker_inside_csi_segment() {
     let input = b"@  abc \x1b[38;5;10m\xf0\x9d\x99\x80\x1b[39mdesc\n";
     snap_bytes(
