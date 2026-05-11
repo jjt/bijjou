@@ -122,7 +122,7 @@ fn run() -> io::Result<()> {
             Some(p) => {
                 let (is_empty, is_immutable) = line_flags(body);
                 emit_dim_graph(&body[..p.graph_end], &mut out, is_empty, is_immutable);
-                write_gap(&mut out, p, target_col, &c.dash, &c.dim_on)?;
+                write_gap(&mut out, p, target_col, &c.dash, &c.dash_arrow, &c.dim_on)?;
                 write_stripping_marker(&body[p.content_start..], &mut out);
             }
             None if has_graph_char(body) => {
@@ -146,15 +146,21 @@ fn write_gap(
     p: &Parsed,
     target_col: usize,
     dash: &str,
+    dash_arrow: &str,
     dim_on: &[u8],
 ) -> io::Result<()> {
     let gap = target_col - p.graph_col;
 
     if gap >= 3 {
+        let fill = gap - 2;
         out.write_all(b" ")?;
         out.write_all(dim_on)?;
-        for _ in 0..(gap - 2) {
+        let dash_count = if dash_arrow.is_empty() { fill } else { fill - 1 };
+        for _ in 0..dash_count {
             out.write_all(dash.as_bytes())?;
+        }
+        if !dash_arrow.is_empty() {
+            out.write_all(dash_arrow.as_bytes())?;
         }
         out.write_all(FG_RESET)?;
         out.write_all(b" ")?;

@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-pub const DEFAULT_DASH: &str = "━";
+pub const DEFAULT_DASH: &str = "∽";
+pub const DEFAULT_DASH_ARROW: &str = "";
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
 pub const DEFAULT_MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
@@ -38,6 +39,7 @@ pub struct Config {
     pub wc_empty_icon: String,
     pub empty_immutable_icon: String,
     pub dash: String,
+    pub dash_arrow: String,
     pub graph_horizontal: String,
     pub graph_vertical: String,
     pub graph_top_left: String,
@@ -69,6 +71,7 @@ impl Default for Config {
             wc_empty_icon: DEFAULT_WC_EMPTY_ICON.to_string(),
             empty_immutable_icon: DEFAULT_EMPTY_IMMUTABLE_ICON.to_string(),
             dash: DEFAULT_DASH.to_string(),
+            dash_arrow: DEFAULT_DASH_ARROW.to_string(),
             graph_horizontal: DEFAULT_GRAPH_HORIZONTAL.to_string(),
             graph_vertical: DEFAULT_GRAPH_VERTICAL.to_string(),
             graph_top_left: DEFAULT_GRAPH_TOP_LEFT.to_string(),
@@ -259,6 +262,7 @@ impl Config {
                 let s = take_string("separator", k, v)?;
                 match k.as_str() {
                     "dash" => cfg.dash = s,
+                    "dash_arrow" => cfg.dash_arrow = s,
                     other => return Err(format!("unknown key: separator.{}", other)),
                 }
             }

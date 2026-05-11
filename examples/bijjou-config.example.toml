@@ -36,8 +36,7 @@
 
 [graph]
 # Single-cell replacements for jj's box-drawing graph chars. Defaults are
-# Unicode 16 Large Type Pieces (U+1CE1A..U+1CE50): 𜸟 𜸩 𜸚 𜸤 𜸾 𜹃 𜸨 𜸶 𜸠 𜹀 𜸺
-# (elision falls back to ⌇).
+# Unicode 16 Large Type Pieces (U+1CE1A..U+1CE50): 𜸟 𜸩 𜸚 𜸤 𜸾 𜹃 𜸨 𜸶 𜸠 𜹀 𜸺.
 #
 # horizontal   = "𜸟"
 # vertical     = "𜸩"
@@ -50,7 +49,7 @@
 # tee_down     = "𜸠"
 # tee_up       = "𜹀"
 # cross        = "𜸺"
-# elision      = "⌇"
+# elision      = "𜹀"
 
 [filter]
 # Drop lines whose visible content is nothing but vertical graph edges (│) —
@@ -62,10 +61,14 @@
 # hide_vertical_only_lines = true
 
 [separator]
-# Repeated to fill the gap between the graph column and commit content.
-# Default: "━"
+# Fill the gap between the graph column and commit content.
+# `dash` is repeated. If `dash_arrow` is set, it replaces the rightmost char;
+# omit it (or leave empty) for a plain dash run.
 #
-# dash = "."
+# Defaults: dash = "∽", dash_arrow = "" (no arrow)
+#
+# dash       = "∽"
+# dash_arrow = "→"
 
 [colors]
 # Either an integer 0-255 (256-color palette) or a "#rrggbb" hex string.
