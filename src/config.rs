@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-pub const DEFAULT_DASH: &str = "∽";
+pub const DEFAULT_DASH: &str = "━";
 pub const DEFAULT_DASH_ARROW: &str = "";
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";

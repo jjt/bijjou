@@ -65,10 +65,10 @@
 # `dash` is repeated. If `dash_arrow` is set, it replaces the rightmost char;
 # omit it (or leave empty) for a plain dash run.
 #
-# Defaults: dash = "∽", dash_arrow = "" (no arrow)
+# Defaults: dash = "━", dash_arrow = "" (no arrow)
 #
-# dash       = "∽"
-# dash_arrow = "→"
+# dash       = "━"
+# dash_arrow = "▶"
 
 [colors]
 # Either an integer 0-255 (256-color palette) or a "#rrggbb" hex string.
