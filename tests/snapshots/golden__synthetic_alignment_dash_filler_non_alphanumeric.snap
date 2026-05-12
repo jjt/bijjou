@@ -1,7 +1,7 @@
 ---
 source: tests/golden.rs
-description: "Tall + short rows; short row's content begins with `(` — dash filler must still appear."
+description: "Tall + short rows; short row's graph is `~` (no node) — gap is plain spaces, not dashes."
 expression: visualize(&output)
 ---
 \e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  abcde 12345
-\e[38;5;240m𜹀\e[39m \e[38;5;8m━━━━\e[39m (elided revisions)
+\e[38;5;240m𜹀\e[39m      (elided revisions)

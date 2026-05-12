@@ -37,8 +37,8 @@ use crate::ansi::FG_RESET;
 use crate::config::{cfg, parse_activate, Activate, Config};
 use crate::output::write_output;
 use crate::render::{
-    emit_dim_graph, find_boundary, has_graph_char, is_vertical_only_line, line_flags,
-    write_stripping_marker, Parsed,
+    emit_dim_graph, find_boundary, has_graph_char, has_node_char, is_vertical_only_line,
+    line_flags, write_stripping_marker, Parsed,
 };
 
 fn main() {
@@ -157,8 +157,10 @@ fn run() -> io::Result<()> {
         match p {
             Some(p) => {
                 let (is_empty, is_immutable) = line_flags(body);
-                emit_dim_graph(&body[..p.graph_end], &mut out, is_empty, is_immutable);
-                write_gap(&mut out, p, target_col, &c.dash, &c.dash_arrow, &c.dim_on)?;
+                let graph = &body[..p.graph_end];
+                emit_dim_graph(graph, &mut out, is_empty, is_immutable);
+                let dashed = has_node_char(graph);
+                write_gap(&mut out, p, target_col, &c.dash, &c.dash_arrow, &c.dim_on, dashed)?;
                 write_stripping_marker(&body[p.content_start..], &mut out);
             }
             None if has_graph_char(body) => {
@@ -184,10 +186,11 @@ fn write_gap(
     dash: &str,
     dash_arrow: &str,
     dim_on: &[u8],
+    dashed: bool,
 ) -> io::Result<()> {
     let gap = target_col - p.graph_col;
 
-    if gap >= 3 {
+    if dashed && gap >= 3 {
         let fill = gap - 2;
         out.write_all(b" ")?;
         out.write_all(dim_on)?;

@@ -283,6 +283,24 @@ fn remote_bookmarks() {
     );
 }
 
+#[test]
+fn compact_log() {
+    snapshot(
+        "compact_log",
+        "Captured from `jj log -T builtin_log_compact` — two-line records per commit; continuation `│` lines have edges but no node, so dash filler must NOT appear on them.",
+    );
+}
+
+#[test]
+fn config_ascii_compact_log() {
+    snapshot_with_config(
+        "compact_log",
+        "ascii",
+        "config_ascii_compact_log",
+        "compact_log with ascii.toml — ASCII fallbacks applied to the compact two-line layout.",
+    );
+}
+
 // Synthetic fixtures: hand-crafted bytes that exercise specific paths
 // without depending on a captured jj session.
 
@@ -379,14 +397,14 @@ fn synthetic_alignment_dash_filler() {
 #[test]
 fn synthetic_alignment_dash_filler_non_alphanumeric() {
     // Tall + short rows where the short row's content begins with `(` (an
-    // annotation like `(elided revisions)`, `(empty)`, `(conflict)`). The dash
-    // filler must still pad the gap — the first content byte being non-
-    // alphanumeric does NOT disqualify a row from alignment.
+    // annotation like `(elided revisions)`, `(empty)`, `(conflict)`). The
+    // short row's graph segment is the elision `~` — no node char — so the
+    // gap pads with plain spaces; dash filler only fires on rows with nodes.
     let input = "│ │ ○  abcde 12345\n~  (elided revisions)\n".as_bytes();
     snap_bytes(
         "synthetic_alignment_dash_filler_non_alphanumeric",
         input,
-        "Tall + short rows; short row's content begins with `(` — dash filler must still appear.",
+        "Tall + short rows; short row's graph is `~` (no node) — gap is plain spaces, not dashes.",
     );
 }
 
