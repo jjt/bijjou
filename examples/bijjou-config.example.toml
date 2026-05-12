@@ -9,10 +9,21 @@
 # Sections may be omitted entirely. Comments must start in column 0
 # (inline `# ...` after a value is not supported).
 
-# Opt-in marker. Bijjou processes input only if this byte sequence appears at
-# least once anywhere in stdin. All occurrences are stripped from output.
-# When absent, stdin is passed through byte-for-byte. Set to "" to disable the
-# gate and always process.
+# Processing mode: one of "auto", "always", "never".
+#   auto   — gate on `activation_marker` (default).
+#   always — process every line regardless of marker presence.
+#   never  — passthrough stdin byte-for-byte without processing.
+# The `--activate=<auto|always|never>` CLI flag overrides this; `--activate`
+# with no value resolves to "auto".
+#
+# Default: "auto"
+#
+# activate = "auto"
+
+# Opt-in marker. In `auto` mode, bijjou processes input only if this byte
+# sequence appears at least once anywhere in stdin. All occurrences are
+# stripped from output. When absent (and mode is auto), stdin is passed
+# through byte-for-byte. Set to "" to disable the gate and always process.
 #
 # Default: "𝘽" (U+1D63D)
 # Pair with a jj template that emits the marker — see

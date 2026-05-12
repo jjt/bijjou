@@ -31,6 +31,23 @@ pub const DEFAULT_ACTIVATION_MARKER: &str = "𝘽";
 pub const DEFAULT_EMPTY_MARKER: &str = "𝙀";
 pub const DEFAULT_IMMUTABLE_MARKER: &str = "𝙄";
 
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum Activate {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
+pub fn parse_activate(s: &str) -> Result<Activate, String> {
+    match s {
+        "auto" => Ok(Activate::Auto),
+        "always" => Ok(Activate::Always),
+        "never" => Ok(Activate::Never),
+        other => Err(format!("expected auto|always|never, got {:?}", other)),
+    }
+}
+
 pub struct Config {
     pub wc_icon: String,
     pub mutable_icon: String,
@@ -60,6 +77,7 @@ pub struct Config {
     pub activation_marker: String,
     pub empty_marker: String,
     pub immutable_marker: String,
+    pub activate: Activate,
     pub hide_vertical_only_lines: bool,
 }
 
@@ -94,6 +112,7 @@ impl Default for Config {
             activation_marker: DEFAULT_ACTIVATION_MARKER.to_string(),
             empty_marker: DEFAULT_EMPTY_MARKER.to_string(),
             immutable_marker: DEFAULT_IMMUTABLE_MARKER.to_string(),
+            activate: Activate::default(),
             hide_vertical_only_lines: false,
         }
     }
@@ -290,6 +309,11 @@ impl Config {
                 match k.as_str() {
                     "activation_marker" => {
                         cfg.activation_marker = take_string("", k, v)?;
+                    }
+                    "activate" => {
+                        let s = take_string("", k, v)?;
+                        cfg.activate =
+                            parse_activate(&s).map_err(|e| format!("activate: {}", e))?;
                     }
                     other => return Err(format!("unknown top-level key: {}", other)),
                 }
@@ -492,6 +516,29 @@ edge = 200
         let cfg = Config::from_toml("").unwrap();
         assert_eq!(cfg.empty_marker, DEFAULT_EMPTY_MARKER);
         assert_eq!(cfg.immutable_marker, DEFAULT_IMMUTABLE_MARKER);
+    }
+
+    #[test]
+    fn toml_activate_default_is_auto() {
+        let cfg = Config::from_toml("").unwrap();
+        assert_eq!(cfg.activate, Activate::Auto);
+    }
+
+    #[test]
+    fn toml_activate_accepts_each_variant() {
+        for (s, want) in [
+            ("auto", Activate::Auto),
+            ("always", Activate::Always),
+            ("never", Activate::Never),
+        ] {
+            let cfg = Config::from_toml(&format!("activate = \"{}\"\n", s)).unwrap();
+            assert_eq!(cfg.activate, want);
+        }
+    }
+
+    #[test]
+    fn toml_activate_rejects_bad_value() {
+        assert!(Config::from_toml("activate = \"sometimes\"\n").is_err());
     }
 
     #[test]

@@ -34,7 +34,7 @@ mod render;
 use std::io::{self, Read, Write};
 
 use crate::ansi::FG_RESET;
-use crate::config::{cfg, Config};
+use crate::config::{cfg, parse_activate, Activate, Config};
 use crate::output::write_output;
 use crate::render::{
     emit_dim_graph, find_boundary, has_graph_char, is_vertical_only_line, line_flags,
@@ -42,7 +42,18 @@ use crate::render::{
 };
 
 fn main() {
-    config::init(Config::load());
+    let cli_activate = match parse_cli_activate(std::env::args().skip(1)) {
+        Ok(a) => a,
+        Err(e) => {
+            eprintln!("bijjou: {}", e);
+            std::process::exit(2);
+        }
+    };
+    let mut cfg_obj = Config::load();
+    if let Some(a) = cli_activate {
+        cfg_obj.activate = a;
+    }
+    config::init(cfg_obj);
     if let Err(e) = run() {
         if e.kind() == io::ErrorKind::BrokenPipe {
             return;
@@ -50,6 +61,20 @@ fn main() {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }
+}
+
+fn parse_cli_activate<I: IntoIterator<Item = String>>(args: I) -> Result<Option<Activate>, String> {
+    let mut found = None;
+    for arg in args {
+        if arg == "--activate" {
+            found = Some(Activate::Auto);
+        } else if let Some(val) = arg.strip_prefix("--activate=") {
+            found = Some(parse_activate(val).map_err(|e| format!("--activate: {}", e))?);
+        } else {
+            return Err(format!("unknown argument: {}", arg));
+        }
+    }
+    Ok(found)
 }
 
 fn split_lines(input: &[u8]) -> Vec<&[u8]> {
@@ -86,12 +111,24 @@ fn run() -> io::Result<()> {
     let mut input = Vec::new();
     io::stdin().read_to_end(&mut input)?;
 
-    let marker = cfg().activation_marker.as_bytes();
-    if !marker.is_empty() && !contains_bytes(&input, marker) {
-        let mut out = io::stdout().lock();
-        out.write_all(&input)?;
-        out.flush()?;
-        return Ok(());
+    let c = cfg();
+    match c.activate {
+        Activate::Never => {
+            let mut out = io::stdout().lock();
+            out.write_all(&input)?;
+            out.flush()?;
+            return Ok(());
+        }
+        Activate::Always => {}
+        Activate::Auto => {
+            let marker = c.activation_marker.as_bytes();
+            if !marker.is_empty() && !contains_bytes(&input, marker) {
+                let mut out = io::stdout().lock();
+                out.write_all(&input)?;
+                out.flush()?;
+                return Ok(());
+            }
+        }
     }
 
     let lines = split_lines(&input);
@@ -107,7 +144,6 @@ fn run() -> io::Result<()> {
         .unwrap_or(0);
     let target_col = max_graph + 2;
 
-    let c = cfg();
     let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 8);
     let mut emitted_lines = 0usize;
 
