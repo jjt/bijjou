@@ -1,5 +1,4 @@
+activation_marker = ""
+
 [separator]
 dash = "·"
-
-[activation]
-marker = ""

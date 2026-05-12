@@ -1,4 +1,6 @@
-[icons]
+activation_marker = ""
+
+[graph.nodes.chars]
 working_copy = "@"
 mutable = "o"
 immutable = "#"
@@ -8,7 +10,7 @@ empty = "."
 working_copy_empty = "_"
 empty_immutable = ":"
 
-[graph]
+[graph.edges.chars]
 horizontal = "-"
 vertical = "|"
 top_left = "/"
@@ -29,6 +31,3 @@ dash = "."
 dash_filler = 244
 edge = 245
 mutable_node = 246
-
-[activation]
-marker = ""

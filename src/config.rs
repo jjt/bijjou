@@ -28,6 +28,8 @@ pub const DEFAULT_GRAPH_TEE_UP: &str = "𜹀";
 pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "𝘽";
+pub const DEFAULT_EMPTY_MARKER: &str = "𝙀";
+pub const DEFAULT_IMMUTABLE_MARKER: &str = "𝙄";
 
 pub struct Config {
     pub wc_icon: String,
@@ -56,6 +58,8 @@ pub struct Config {
     pub edge_dim_on: Vec<u8>,
     pub mutable_node_color: Vec<u8>,
     pub activation_marker: String,
+    pub empty_marker: String,
+    pub immutable_marker: String,
     pub hide_vertical_only_lines: bool,
 }
 
@@ -88,6 +92,8 @@ impl Default for Config {
             edge_dim_on: DEFAULT_EDGE_DIM_ON.to_vec(),
             mutable_node_color: DEFAULT_MUTABLE_NODE_COLOR.to_vec(),
             activation_marker: DEFAULT_ACTIVATION_MARKER.to_string(),
+            empty_marker: DEFAULT_EMPTY_MARKER.to_string(),
+            immutable_marker: DEFAULT_IMMUTABLE_MARKER.to_string(),
             hide_vertical_only_lines: false,
         }
     }
@@ -219,9 +225,9 @@ impl Config {
         let mut cfg = Self::default();
         let sections = parse_toml(s)?;
 
-        if let Some(sec) = sections.get("icons") {
+        if let Some(sec) = sections.get("graph.nodes.chars") {
             for (k, v) in sec {
-                let s = take_string("icons", k, v)?;
+                let s = take_string("graph.nodes.chars", k, v)?;
                 match k.as_str() {
                     "working_copy" => cfg.wc_icon = s,
                     "mutable" => cfg.mutable_icon = s,
@@ -231,14 +237,14 @@ impl Config {
                     "empty" => cfg.empty_icon = s,
                     "working_copy_empty" => cfg.wc_empty_icon = s,
                     "empty_immutable" => cfg.empty_immutable_icon = s,
-                    other => return Err(format!("unknown key: icons.{}", other)),
+                    other => return Err(format!("unknown key: graph.nodes.chars.{}", other)),
                 }
             }
         }
 
-        if let Some(sec) = sections.get("graph") {
+        if let Some(sec) = sections.get("graph.edges.chars") {
             for (k, v) in sec {
-                let s = take_string("graph", k, v)?;
+                let s = take_string("graph.edges.chars", k, v)?;
                 match k.as_str() {
                     "horizontal" => cfg.graph_horizontal = s,
                     "vertical" => cfg.graph_vertical = s,
@@ -252,7 +258,7 @@ impl Config {
                     "tee_up" => cfg.graph_tee_up = s,
                     "cross" => cfg.graph_cross = s,
                     "elision" => cfg.graph_elision = s,
-                    other => return Err(format!("unknown key: graph.{}", other)),
+                    other => return Err(format!("unknown key: graph.edges.chars.{}", other)),
                 }
             }
         }
@@ -268,12 +274,24 @@ impl Config {
             }
         }
 
-        if let Some(sec) = sections.get("activation") {
+        if let Some(sec) = sections.get("commits.markers") {
             for (k, v) in sec {
-                let s = take_string("activation", k, v)?;
+                let s = take_string("commits.markers", k, v)?;
                 match k.as_str() {
-                    "marker" => cfg.activation_marker = s,
-                    other => return Err(format!("unknown key: activation.{}", other)),
+                    "empty" => cfg.empty_marker = s,
+                    "immutable" => cfg.immutable_marker = s,
+                    other => return Err(format!("unknown key: commits.markers.{}", other)),
+                }
+            }
+        }
+
+        if let Some(sec) = sections.get("") {
+            for (k, v) in sec {
+                match k.as_str() {
+                    "activation_marker" => {
+                        cfg.activation_marker = take_string("", k, v)?;
+                    }
+                    other => return Err(format!("unknown top-level key: {}", other)),
                 }
             }
         }
@@ -396,7 +414,7 @@ mod tests {
     #[test]
     fn toml_parses_section_string_int() {
         let s = r#"
-[icons]
+[graph.nodes.chars]
 working_copy = "X"
 
 [colors]
@@ -416,7 +434,7 @@ edge = 200
 
     #[test]
     fn toml_unknown_key_errors() {
-        let s = "[icons]\nbogus = \"x\"\n";
+        let s = "[graph.nodes.chars]\nbogus = \"x\"\n";
         assert!(Config::from_toml(s).is_err());
     }
 
@@ -435,14 +453,14 @@ edge = 200
 
     #[test]
     fn toml_activation_marker_override() {
-        let s = "[activation]\nmarker = \"XX\"\n";
+        let s = "activation_marker = \"XX\"\n";
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.activation_marker, "XX");
     }
 
     #[test]
     fn toml_activation_marker_empty_disables_gate() {
-        let s = "[activation]\nmarker = \"\"\n";
+        let s = "activation_marker = \"\"\n";
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.activation_marker, "");
     }
@@ -451,6 +469,29 @@ edge = 200
     fn toml_default_activation_marker_is_b() {
         let cfg = Config::from_toml("").unwrap();
         assert_eq!(cfg.activation_marker, DEFAULT_ACTIVATION_MARKER);
+    }
+
+    #[test]
+    fn toml_commits_markers_override() {
+        let s = "[commits.markers]\nempty = \"E\"\nimmutable = \"I\"\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(cfg.empty_marker, "E");
+        assert_eq!(cfg.immutable_marker, "I");
+    }
+
+    #[test]
+    fn toml_commits_markers_empty_disables() {
+        let s = "[commits.markers]\nempty = \"\"\nimmutable = \"\"\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(cfg.empty_marker, "");
+        assert_eq!(cfg.immutable_marker, "");
+    }
+
+    #[test]
+    fn toml_default_commits_markers_match_legacy() {
+        let cfg = Config::from_toml("").unwrap();
+        assert_eq!(cfg.empty_marker, DEFAULT_EMPTY_MARKER);
+        assert_eq!(cfg.immutable_marker, DEFAULT_IMMUTABLE_MARKER);
     }
 
     #[test]

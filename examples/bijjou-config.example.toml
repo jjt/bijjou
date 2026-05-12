@@ -9,7 +9,6 @@
 # Sections may be omitted entirely. Comments must start in column 0
 # (inline `# ...` after a value is not supported).
 
-[activation]
 # Opt-in marker. Bijjou processes input only if this byte sequence appears at
 # least once anywhere in stdin. All occurrences are stripped from output.
 # When absent, stdin is passed through byte-for-byte. Set to "" to disable the
@@ -19,9 +18,19 @@
 # Pair with a jj template that emits the marker — see
 # examples/jj-config-snippet.toml.
 #
-# marker = "𝘽"
+# activation_marker = "𝘽"
 
-[icons]
+[commits.markers]
+# Sentinel chars bijjou looks for to detect commit state. The jj template
+# (see examples/jj-config-snippet.toml) must emit the same bytes. Both are
+# stripped from output. Set either to "" to disable detection of that state.
+#
+# Defaults: empty = "𝙀" (U+1D640), immutable = "𝙄" (U+1D644)
+#
+# empty     = "𝙀"
+# immutable = "𝙄"
+
+[graph.nodes.chars]
 # Replacement glyphs for the commit-node chars jj prints (@ ○ ◆ × ●).
 # Many defaults are Nerd Font codepoints.
 #
@@ -34,7 +43,7 @@
 # working_copy_empty = ""
 # empty_immutable    = ""
 
-[graph]
+[graph.edges.chars]
 # Single-cell replacements for jj's box-drawing graph chars. Defaults are
 # Unicode 16 Large Type Pieces (U+1CE1A..U+1CE50): 𜸟 𜸩 𜸚 𜸤 𜸾 𜹃 𜸨 𜸶 𜸠 𜹀 𜸺.
 #

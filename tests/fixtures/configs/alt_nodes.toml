@@ -1,4 +1,6 @@
-[icons]
+activation_marker = ""
+
+[graph.nodes.chars]
 working_copy       = "★"
 mutable            = "◉"
 immutable          = "⬢"
@@ -7,6 +9,3 @@ alternate          = "✦"
 empty              = "○"
 working_copy_empty = "☆"
 empty_immutable    = "⬡"
-
-[activation]
-marker = ""

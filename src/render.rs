@@ -1,7 +1,4 @@
-use crate::ansi::{
-    decode_utf8, emit_filtered_ansi, is_fg_color_sgr, skip_csi, EMPTY_MARKER, EMPTY_MARKER_BYTES,
-    FG_RESET, IMMUTABLE_MARKER, IMMUTABLE_MARKER_BYTES,
-};
+use crate::ansi::{decode_utf8, emit_filtered_ansi, is_fg_color_sgr, skip_csi, FG_RESET};
 use crate::config::cfg;
 
 const WC_CP: u32 = 0x40; // @
@@ -172,6 +169,9 @@ pub fn is_vertical_only_line(body: &[u8]) -> bool {
 }
 
 pub fn line_flags(body: &[u8]) -> (bool, bool) {
+    let c = cfg();
+    let em = c.empty_marker.as_bytes();
+    let im = c.immutable_marker.as_bytes();
     let mut empty = false;
     let mut immutable = false;
     let mut i = 0;
@@ -180,20 +180,34 @@ pub fn line_flags(body: &[u8]) -> (bool, bool) {
             i = after;
             continue;
         }
-        let (cp, len) = decode_utf8(body, i);
-        if cp == EMPTY_MARKER {
+        if !em.is_empty() && body[i..].starts_with(em) {
             empty = true;
-        } else if cp == IMMUTABLE_MARKER {
-            immutable = true;
+            i += em.len();
+            continue;
         }
+        if !im.is_empty() && body[i..].starts_with(im) {
+            immutable = true;
+            i += im.len();
+            continue;
+        }
+        let (_, len) = decode_utf8(body, i);
         i += len;
     }
     (empty, immutable)
 }
 
 fn strip_markers() -> Vec<&'static [u8]> {
-    let mut v: Vec<&'static [u8]> = vec![EMPTY_MARKER_BYTES, IMMUTABLE_MARKER_BYTES];
-    let act = cfg().activation_marker.as_bytes();
+    let c = cfg();
+    let mut v: Vec<&'static [u8]> = Vec::with_capacity(3);
+    let em = c.empty_marker.as_bytes();
+    if !em.is_empty() {
+        v.push(em);
+    }
+    let im = c.immutable_marker.as_bytes();
+    if !im.is_empty() {
+        v.push(im);
+    }
+    let act = c.activation_marker.as_bytes();
     if !act.is_empty() {
         v.push(act);
     }
@@ -319,6 +333,7 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immuta
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ansi::{EMPTY_MARKER_BYTES, IMMUTABLE_MARKER_BYTES};
     use crate::config::{
         DEFAULT_ALTERNATE_ICON, DEFAULT_CONFLICT_ICON, DEFAULT_EDGE_DIM_ON,
         DEFAULT_EMPTY_IMMUTABLE_ICON, DEFAULT_GRAPH_VERTICAL, DEFAULT_IMMUTABLE_ICON,

@@ -10,9 +10,11 @@ color = "always"
 # bijjou uses characters from the Math Bold Italic set to tell if the commit
 # is empty and/or immutable, and to activate bijjou. These characters are
 # removed from the final output.
-#  𝘽 (U+1D63D) - activate bijjou
-#  𝙀 (U+1D640) - commit is empty
-#  𝙄 (U+1D644) - commit is immutable
+#  𝘽 (U+1D63D) - activate bijjou         (override via `activation_marker`)
+#  𝙀 (U+1D640) - commit is empty         (override via `commits.markers.empty`)
+#  𝙄 (U+1D644) - commit is immutable     (override via `commits.markers.immutable`)
+# If you change any of these in bijjou's config, mirror the change in the
+# string literals below so the template emits the matching bytes.
 'format_bijjou_markers(commit)' = '''
 separate("",
   "𝘽",

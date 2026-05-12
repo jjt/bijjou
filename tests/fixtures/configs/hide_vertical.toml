@@ -1,5 +1,4 @@
-[activation]
-marker = ""
+activation_marker = ""
 
 [filter]
 hide_vertical_only_lines = true
