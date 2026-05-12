@@ -24,7 +24,7 @@ tee-up = "+"
 cross = "+"
 elision = "~"
 
-[separator]
+[layout]
 dash = "."
 
 [colors]

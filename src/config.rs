@@ -31,6 +31,8 @@ pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
 pub const DEFAULT_EMPTY_MARKER: &str = "𝙴";
 pub const DEFAULT_IMMUTABLE_MARKER: &str = "𝙸";
 pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
+pub const DEFAULT_ALIGN_ENABLED: bool = true;
+pub const DEFAULT_ALIGN_GAP: usize = 2;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum Activate {
@@ -95,6 +97,8 @@ pub struct Config {
     pub hide_vertical_only_lines: bool,
     pub stream_enabled: bool,
     pub stream_batch_size: usize,
+    pub align_enabled: bool,
+    pub align_gap: usize,
 }
 
 impl Default for Config {
@@ -132,6 +136,8 @@ impl Default for Config {
             hide_vertical_only_lines: false,
             stream_enabled: false,
             stream_batch_size: DEFAULT_STREAM_BATCH_SIZE,
+            align_enabled: DEFAULT_ALIGN_ENABLED,
+            align_gap: DEFAULT_ALIGN_GAP,
         }
     }
 }
@@ -336,8 +342,8 @@ impl Config {
             "graph.edges.chars.tee-up" => self.graph_tee_up = value.to_string(),
             "graph.edges.chars.cross" => self.graph_cross = value.to_string(),
             "graph.edges.chars.elision" => self.graph_elision = value.to_string(),
-            "separator.dash" => self.dash = value.to_string(),
-            "separator.dash-arrow" => self.dash_arrow = value.to_string(),
+            "layout.dash" => self.dash = value.to_string(),
+            "layout.dash-arrow" => self.dash_arrow = value.to_string(),
             "commits.markers.empty" => self.empty_marker = value.to_string(),
             "commits.markers.immutable" => self.immutable_marker = value.to_string(),
             "filter.hide-vertical-only-lines" => {
@@ -352,6 +358,16 @@ impl Config {
                     return Err(mkerr(format!("expected integer >= 1, got {}", n)));
                 }
                 self.stream_batch_size = n as usize;
+            }
+            "layout.align" => self.align_enabled = parse_bool_str(value).map_err(mkerr)?,
+            "layout.gap" => {
+                let n: i64 = value
+                    .parse()
+                    .map_err(|_| mkerr(format!("expected integer >= 0, got {:?}", value)))?;
+                if n < 0 {
+                    return Err(mkerr(format!("expected integer >= 0, got {}", n)));
+                }
+                self.align_gap = n as usize;
             }
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
@@ -565,7 +581,7 @@ edge = 200
 
     #[test]
     fn toml_comments_and_blanks_ignored() {
-        let s = "# top comment\n\n[separator]\ndash = \"-\"\n# trailing\n";
+        let s = "# top comment\n\n[layout]\ndash = \"-\"\n# trailing\n";
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.dash, "-");
     }
@@ -623,14 +639,14 @@ edge = 200
     #[test]
     fn cli_missing_value_errors() {
         let mut cfg = Config::default();
-        assert!(cfg.apply_cli(args(&["--separator__dash"])).is_err());
+        assert!(cfg.apply_cli(args(&["--layout__dash"])).is_err());
     }
 
     #[test]
     fn cli_overrides_existing_value() {
         let mut cfg = Config::default();
-        cfg.apply_kv("separator.dash", "-", "").unwrap();
-        cfg.apply_cli(args(&["--separator__dash=="])).unwrap();
+        cfg.apply_kv("layout.dash", "-", "").unwrap();
+        cfg.apply_cli(args(&["--layout__dash=="])).unwrap();
         assert_eq!(cfg.dash, "=");
     }
 
@@ -692,5 +708,68 @@ edge = 200
     fn cli_stream_batch_size_non_integer_errors() {
         let mut cfg = Config::default();
         assert!(cfg.apply_cli(args(&["--stream__batch-size=abc"])).is_err());
+    }
+
+    #[test]
+    fn layout_defaults() {
+        let cfg = Config::from_toml("").unwrap();
+        assert!(cfg.align_enabled);
+        assert_eq!(cfg.align_gap, DEFAULT_ALIGN_GAP);
+    }
+
+    #[test]
+    fn layout_toml_section() {
+        let s = "[layout]\nalign = false\ngap = 4\ndash = \".\"\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert!(!cfg.align_enabled);
+        assert_eq!(cfg.align_gap, 4);
+        assert_eq!(cfg.dash, ".");
+    }
+
+    #[test]
+    fn layout_toml_gap_zero_ok() {
+        let s = "[layout]\ngap = 0\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(cfg.align_gap, 0);
+    }
+
+    #[test]
+    fn layout_toml_gap_negative_errors() {
+        let s = "[layout]\ngap = -1\n";
+        assert!(Config::from_toml(s).is_err());
+    }
+
+    #[test]
+    fn cli_layout_align_false() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--layout__align=false"])).unwrap();
+        assert!(!cfg.align_enabled);
+    }
+
+    #[test]
+    fn cli_layout_gap() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--layout__gap=5"])).unwrap();
+        assert_eq!(cfg.align_gap, 5);
+    }
+
+    #[test]
+    fn cli_layout_gap_zero_ok() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--layout__gap=0"])).unwrap();
+        assert_eq!(cfg.align_gap, 0);
+    }
+
+    #[test]
+    fn cli_layout_gap_negative_errors() {
+        let mut cfg = Config::default();
+        assert!(cfg.apply_cli(args(&["--layout__gap=-1"])).is_err());
+    }
+
+    #[test]
+    fn cli_layout_dash_arrow() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--layout__dash-arrow=>"])).unwrap();
+        assert_eq!(cfg.dash_arrow, ">");
     }
 }

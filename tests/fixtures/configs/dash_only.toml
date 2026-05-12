@@ -1,4 +1,4 @@
 activate = "always"
 
-[separator]
+[layout]
 dash = "·"

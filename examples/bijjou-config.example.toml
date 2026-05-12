@@ -89,13 +89,28 @@ activation-marker = "BIJJOU_ACTIVATE"
 #
 # hide-vertical-only-lines = true
 
-[separator]
-# Fill the gap between the graph column and commit content.
-# `dash` is repeated. If `dash-arrow` is set, it replaces the rightmost char;
-# omit it (or leave empty) for a plain dash run.
+[layout]
+# Controls horizontal layout between the graph column and commit content.
 #
-# Defaults: dash = "━", dash-arrow = "" (no arrow)
+# `align` — when true (default), every line's content column is shifted to
+# the right of the widest graph column seen in the input, so all change ids
+# line up vertically. Narrow rows get dash filler to bridge the gap. When
+# false, each line uses only its own graph width plus `gap`, so content
+# starts immediately after its local graph column with no filler.
 #
+# `gap` — number of spaces between the rightmost graph column and the start
+# of commit content. 0 lets content touch the graph node.
+#
+# `dash` — glyph repeated to fill the alignment gap (only used when `align`
+# is true and the gap is wide enough).
+#
+# `dash-arrow` — if non-empty, replaces the rightmost dash with this glyph
+# to point at the content; leave empty for a plain dash run.
+#
+# Defaults: align = true, gap = 2, dash = "━", dash-arrow = "" (no arrow)
+#
+# align      = true
+# gap        = 2
 # dash       = "━"
 # dash-arrow = "▶"
 

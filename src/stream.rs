@@ -68,6 +68,7 @@ fn process_batch(
     running_max: &mut usize,
     sink: &mut OutputSink,
 ) -> io::Result<()> {
+    let c = cfg();
     let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 8).sum());
     for line in batch {
         let parsed = find_boundary(strip_trailing_nl(line).0);
@@ -76,7 +77,11 @@ fn process_batch(
                 *running_max = p.graph_col;
             }
         }
-        let target_col = *running_max + 2;
+        let target_col = if c.align_enabled {
+            *running_max + c.align_gap
+        } else {
+            parsed.as_ref().map(|p| p.graph_col).unwrap_or(0) + c.align_gap
+        };
         emit_line(line, parsed.as_ref(), target_col, &mut out);
     }
     sink_write(sink, &out)

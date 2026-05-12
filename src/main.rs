@@ -79,13 +79,15 @@ KEYS
   [filter]
     hide-vertical-only-lines                bool
 
+  [layout]
+    align                                   bool (default true)
+    gap                                     int >= 0 (default 2)
+    dash                                    string
+    dash-arrow                              string
+
   [stream]
     enabled                                 bool
     batch-size                              int >= 1 (default 128)
-
-  [separator]
-    dash                                    string
-    dash-arrow                              string
 
   [commits.markers]
     empty                                   string
@@ -193,12 +195,16 @@ fn run() -> io::Result<()> {
         .filter_map(|p| p.as_ref().map(|p| p.graph_col))
         .max()
         .unwrap_or(0);
-    let target_col = max_graph + 2;
 
     let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 8);
     let mut emitted_lines = 0usize;
 
     for (line, p) in lines.iter().zip(parsed.iter()) {
+        let target_col = if c.align_enabled {
+            max_graph + c.align_gap
+        } else {
+            p.as_ref().map(|p| p.graph_col).unwrap_or(0) + c.align_gap
+        };
         if emit_line(line, p.as_ref(), target_col, &mut out) {
             emitted_lines += 1;
         }
