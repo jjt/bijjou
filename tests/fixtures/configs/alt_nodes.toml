@@ -1,11 +1,11 @@
 activate = "always"
 
 [graph.nodes.chars]
-working_copy       = "★"
+working-copy       = "★"
 mutable            = "◉"
 immutable          = "⬢"
 conflict           = "⊗"
 alternate          = "✦"
 empty              = "○"
-working_copy_empty = "☆"
-empty_immutable    = "⬡"
+working-copy-empty = "☆"
+empty-immutable    = "⬡"

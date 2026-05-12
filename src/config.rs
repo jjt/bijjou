@@ -50,11 +50,11 @@ pub fn parse_activate(s: &str) -> Result<Activate, String> {
 
 pub fn validate_activation_marker(m: &str) -> Result<(), String> {
     if m.is_empty() {
-        return Err("activation_marker: must not be empty".into());
+        return Err("activation-marker: must not be empty".into());
     }
     if let Some(c) = m.chars().find(|c| c.is_control()) {
         return Err(format!(
-            "activation_marker: contains non-printable character {:?}",
+            "activation-marker: contains non-printable character {:?}",
             c
         ));
     }
@@ -261,14 +261,14 @@ impl Config {
             for (k, v) in sec {
                 let s = take_string("graph.nodes.chars", k, v)?;
                 match k.as_str() {
-                    "working_copy" => cfg.wc_icon = s,
+                    "working-copy" => cfg.wc_icon = s,
                     "mutable" => cfg.mutable_icon = s,
                     "immutable" => cfg.immutable_icon = s,
                     "conflict" => cfg.conflict_icon = s,
                     "alternate" => cfg.alternate_icon = s,
                     "empty" => cfg.empty_icon = s,
-                    "working_copy_empty" => cfg.wc_empty_icon = s,
-                    "empty_immutable" => cfg.empty_immutable_icon = s,
+                    "working-copy-empty" => cfg.wc_empty_icon = s,
+                    "empty-immutable" => cfg.empty_immutable_icon = s,
                     other => return Err(format!("unknown key: graph.nodes.chars.{}", other)),
                 }
             }
@@ -280,14 +280,14 @@ impl Config {
                 match k.as_str() {
                     "horizontal" => cfg.graph_horizontal = s,
                     "vertical" => cfg.graph_vertical = s,
-                    "top_left" => cfg.graph_top_left = s,
-                    "top_right" => cfg.graph_top_right = s,
-                    "bottom_left" => cfg.graph_bottom_left = s,
-                    "bottom_right" => cfg.graph_bottom_right = s,
-                    "tee_right" => cfg.graph_tee_right = s,
-                    "tee_left" => cfg.graph_tee_left = s,
-                    "tee_down" => cfg.graph_tee_down = s,
-                    "tee_up" => cfg.graph_tee_up = s,
+                    "top-left" => cfg.graph_top_left = s,
+                    "top-right" => cfg.graph_top_right = s,
+                    "bottom-left" => cfg.graph_bottom_left = s,
+                    "bottom-right" => cfg.graph_bottom_right = s,
+                    "tee-right" => cfg.graph_tee_right = s,
+                    "tee-left" => cfg.graph_tee_left = s,
+                    "tee-down" => cfg.graph_tee_down = s,
+                    "tee-up" => cfg.graph_tee_up = s,
                     "cross" => cfg.graph_cross = s,
                     "elision" => cfg.graph_elision = s,
                     other => return Err(format!("unknown key: graph.edges.chars.{}", other)),
@@ -300,7 +300,7 @@ impl Config {
                 let s = take_string("separator", k, v)?;
                 match k.as_str() {
                     "dash" => cfg.dash = s,
-                    "dash_arrow" => cfg.dash_arrow = s,
+                    "dash-arrow" => cfg.dash_arrow = s,
                     other => return Err(format!("unknown key: separator.{}", other)),
                 }
             }
@@ -320,7 +320,7 @@ impl Config {
         if let Some(sec) = sections.get("") {
             for (k, v) in sec {
                 match k.as_str() {
-                    "activation_marker" => {
+                    "activation-marker" => {
                         let s = take_string("", k, v)?;
                         validate_activation_marker(&s)?;
                         cfg.activation_marker = s;
@@ -338,7 +338,7 @@ impl Config {
         if let Some(sec) = sections.get("filter") {
             for (k, v) in sec {
                 match k.as_str() {
-                    "hide_vertical_only_lines" => {
+                    "hide-vertical-only-lines" => {
                         cfg.hide_vertical_only_lines = take_bool("filter", k, v)?;
                     }
                     other => return Err(format!("unknown key: filter.{}", other)),
@@ -350,9 +350,9 @@ impl Config {
             for (k, v) in sec {
                 let bytes = parse_color(v).map_err(|e| format!("colors.{}: {}", k, e))?;
                 match k.as_str() {
-                    "dash_filler" => cfg.dim_on = bytes,
+                    "dash-filler" => cfg.dim_on = bytes,
                     "edge" => cfg.edge_dim_on = bytes,
-                    "mutable_node" => cfg.mutable_node_color = bytes,
+                    "mutable-node" => cfg.mutable_node_color = bytes,
                     other => return Err(format!("unknown key: colors.{}", other)),
                 }
             }
@@ -448,7 +448,7 @@ mod tests {
     fn toml_parses_section_string_int() {
         let s = r#"
 [graph.nodes.chars]
-working_copy = "X"
+working-copy = "X"
 
 [colors]
 edge = 200
@@ -460,7 +460,7 @@ edge = 200
 
     #[test]
     fn toml_color_hex_string() {
-        let s = "[colors]\nmutable_node = \"#aabbcc\"\n";
+        let s = "[colors]\nmutable-node = \"#aabbcc\"\n";
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.mutable_node_color, b"\x1b[38;2;170;187;204m".to_vec());
     }
@@ -486,24 +486,24 @@ edge = 200
 
     #[test]
     fn toml_activation_marker_override() {
-        let s = "activation_marker = \"XX\"\n";
+        let s = "activation-marker = \"XX\"\n";
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.activation_marker, "XX");
     }
 
     #[test]
     fn toml_activation_marker_empty_is_error() {
-        let s = "activation_marker = \"\"\n";
+        let s = "activation-marker = \"\"\n";
         let err = match Config::from_toml(s) {
             Err(e) => e,
             Ok(_) => panic!("expected error"),
         };
-        assert!(err.contains("activation_marker"), "got: {}", err);
+        assert!(err.contains("activation-marker"), "got: {}", err);
     }
 
     #[test]
     fn toml_activation_marker_control_char_is_error() {
-        let s = "activation_marker = \"AB\\nCD\"\n";
+        let s = "activation-marker = \"AB\\nCD\"\n";
         let err = match Config::from_toml(s) {
             Err(e) => e,
             Ok(_) => panic!("expected error"),

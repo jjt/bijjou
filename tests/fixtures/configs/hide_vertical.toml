@@ -1,4 +1,4 @@
 activate = "always"
 
 [filter]
-hide_vertical_only_lines = true
+hide-vertical-only-lines = true

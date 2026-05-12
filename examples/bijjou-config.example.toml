@@ -10,7 +10,7 @@
 # (inline `# ...` after a value is not supported).
 
 # Processing mode: one of "auto", "always", "never".
-#   auto   — gate on `activation_marker` (default).
+#   auto   — gate on `activation-marker` (default).
 #   always — process every line regardless of marker presence.
 #   never  — passthrough stdin byte-for-byte without processing.
 # The `--activate=<auto|always|never>` CLI flag overrides this; `--activate`
@@ -31,7 +31,7 @@ activate = "auto"
 # Pair with a jj template that emits the marker — see
 # examples/jj-config-snippet.toml.
 #
-activation_marker = "BIJJOU_ACTIVATE"
+activation-marker = "BIJJOU_ACTIVATE"
 
 [commits.markers]
 # Sentinel chars bijjou looks for to detect commit state. The jj template
@@ -47,14 +47,14 @@ activation_marker = "BIJJOU_ACTIVATE"
 # Replacement glyphs for the commit-node chars jj prints (@ ○ ◆ × ●).
 # Many defaults are Nerd Font codepoints.
 #
-# working_copy       = "󰋘"
+# working-copy       = "󰋘"
 # mutable            = ""
 # immutable          = ""
 # conflict           = ""
 # alternate          = ""
 # empty              = ""
-# working_copy_empty = ""
-# empty_immutable    = ""
+# working-copy-empty = ""
+# empty-immutable    = ""
 
 [graph.edges.chars]
 # Single-cell replacements for jj's box-drawing graph chars. Defaults are
@@ -62,14 +62,14 @@ activation_marker = "BIJJOU_ACTIVATE"
 #
 # horizontal   = "𜸟"
 # vertical     = "𜸩"
-# top_left     = "𜸚"
-# top_right    = "𜸤"
-# bottom_left  = "𜸾"
-# bottom_right = "𜹃"
-# tee_right    = "𜸨"
-# tee_left     = "𜸶"
-# tee_down     = "𜸠"
-# tee_up       = "𜹀"
+# top-left     = "𜸚"
+# top-right    = "𜸤"
+# bottom-left  = "𜸾"
+# bottom-right = "𜹃"
+# tee-right    = "𜸨"
+# tee-left     = "𜸶"
+# tee-down     = "𜸠"
+# tee-up       = "𜹀"
 # cross        = "𜸺"
 # elision      = "𜹀"
 
@@ -80,26 +80,26 @@ activation_marker = "BIJJOU_ACTIVATE"
 #
 # Default: false
 #
-# hide_vertical_only_lines = true
+# hide-vertical-only-lines = true
 
 [separator]
 # Fill the gap between the graph column and commit content.
-# `dash` is repeated. If `dash_arrow` is set, it replaces the rightmost char;
+# `dash` is repeated. If `dash-arrow` is set, it replaces the rightmost char;
 # omit it (or leave empty) for a plain dash run.
 #
-# Defaults: dash = "━", dash_arrow = "" (no arrow)
+# Defaults: dash = "━", dash-arrow = "" (no arrow)
 #
 # dash       = "━"
-# dash_arrow = "▶"
+# dash-arrow = "▶"
 
 [colors]
 # Either an integer 0-255 (256-color palette) or a "#rrggbb" hex string.
-# Defaults: dash_filler = 8, edge = 240, mutable_node = 245.
+# Defaults: dash-filler = 8, edge = 240, mutable-node = 245.
 #
-# dash_filler — color of the dash filler between graph and content.
+# dash-filler — color of the dash filler between graph and content.
 # edge        — color of graph edges (lines, corners, tees, crosses).
-# mutable_node — color applied to ○, ◆, and the immutable @ glyph.
+# mutable-node — color applied to ○, ◆, and the immutable @ glyph.
 #
-# dash_filler  = 8
+# dash-filler  = 8
 # edge         = "#5f5f5f"
-# mutable_node = 245
+# mutable-node = 245
