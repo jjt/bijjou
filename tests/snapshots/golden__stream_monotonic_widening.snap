@@ -1,0 +1,9 @@
+---
+source: tests/golden.rs
+description: "Two batches; second widens. First batch emitted at col=3, second at col=5."
+expression: visualize(&output)
+---
+\e[38;5;245m\e[39m  a
+\e[38;5;245m\e[39m  b
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  c
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  d

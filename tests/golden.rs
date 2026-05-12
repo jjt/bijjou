@@ -730,6 +730,139 @@ fn config_hide_vertical_only_megamerge_conflict() {
     );
 }
 
+// --- Streaming mode -----------------------------------------------------
+// Streaming flushes output in batches; graph-column width is recomputed per
+// batch and only grows monotonically across batches. The equivalence test
+// asserts that with a batch large enough to swallow the entire input,
+// streaming output is byte-identical to batch-mode output — locking the
+// shared rendering path. The dedicated streaming tests cover behavior that
+// only manifests when a batch boundary actually splits the input.
+
+const ALL_FIXTURES: &[&str] = &[
+    "empty",
+    "single_wc",
+    "single_wc_no_graph",
+    "linear_chain",
+    "root_immutable",
+    "mixed_with_elision",
+    "plain_text",
+    "branching",
+    "merge_graph",
+    "bookmarks",
+    "conflicted",
+    "hidden",
+    "divergent",
+    "workspaces",
+    "megamerge",
+    "combo_conflicted_wc",
+    "combo_megamerge_conflict",
+    "combo_kitchen_sink",
+    "diff_authors",
+    "remote_bookmarks",
+    "compact_log",
+];
+
+#[test]
+fn stream_huge_batch_matches_batch_mode_for_all_fixtures() {
+    for name in ALL_FIXTURES {
+        let input = read_fixture(name);
+        let batch = run_bijjou(&input);
+        let streamed = run_bijjou_with_config(&input, "stream-huge");
+        assert_eq!(
+            batch, streamed,
+            "fixture {} streamed (huge batch) must match batch mode byte-for-byte",
+            name
+        );
+    }
+}
+
+#[test]
+fn stream_monotonic_widening() {
+    // First batch (2 lines) has graph_col=1, second batch widens to graph_col=3.
+    // Expected: first batch padded to col 3 (1+2), second to col 5 (3+2).
+    let input = b"\
+\xe2\x97\x8b  a\n\
+\xe2\x97\x8b  b\n\
+\xe2\x94\x82 \xe2\x97\x8b  c\n\
+\xe2\x94\x82 \xe2\x97\x8b  d\n";
+    let output = run_bijjou_with_config(input, "stream-batch-2-always");
+    insta::with_settings!({description => "Two batches; second widens. First batch emitted at col=3, second at col=5."}, {
+        insta::assert_snapshot!("stream_monotonic_widening", visualize(&output));
+    });
+}
+
+#[test]
+fn stream_monotonic_no_shrink() {
+    // First batch (2 lines) has graph_col=3, second batch narrows to graph_col=1.
+    // Running max sticks at 3, so second batch is still emitted at col=5.
+    let input = b"\
+\xe2\x94\x82 \xe2\x97\x8b  a\n\
+\xe2\x94\x82 \xe2\x97\x8b  b\n\
+\xe2\x97\x8b  c\n\
+\xe2\x97\x8b  d\n";
+    let output = run_bijjou_with_config(input, "stream-batch-2-always");
+    insta::with_settings!({description => "Two batches; second narrows. Running max sticks at 3, so both batches emit at col=5."}, {
+        insta::assert_snapshot!("stream_monotonic_no_shrink", visualize(&output));
+    });
+}
+
+#[test]
+fn stream_auto_marker_in_first_batch_activates() {
+    // Marker is on line 2, within the first batch (size 2). Auto must activate
+    // and process the input — graph chars get rewritten.
+    let mut input = b"\xe2\x97\x8b  a\n".to_vec();
+    input.extend_from_slice(b"\xe2\x97\x8b  b ");
+    input.extend_from_slice(ACTIVATION_MARKER);
+    input.extend_from_slice(b"\n\xe2\x97\x8b  c\n\xe2\x97\x8b  d\n");
+    let output = run_bijjou_with_config(&input, "stream-batch-2-auto");
+    assert_ne!(
+        output, input,
+        "marker in first batch must activate streaming auto mode"
+    );
+    assert!(
+        !output.windows(ACTIVATION_MARKER.len()).any(|w| w == ACTIVATION_MARKER),
+        "marker must be stripped from output once activated"
+    );
+}
+
+#[test]
+fn stream_auto_marker_after_first_batch_passes_through() {
+    // Marker is on line 4 (third batch); first batch is 2 lines with no marker.
+    // Streaming auto must give up and pass-through verbatim.
+    let mut input = b"\xe2\x97\x8b  a\n".to_vec();
+    input.extend_from_slice(b"\xe2\x97\x8b  b\n");
+    input.extend_from_slice(b"\xe2\x97\x8b  c\n");
+    input.extend_from_slice(b"\xe2\x97\x8b  d ");
+    input.extend_from_slice(ACTIVATION_MARKER);
+    input.extend_from_slice(b"\n");
+    let output = run_bijjou_with_config(&input, "stream-batch-2-auto");
+    assert_eq!(
+        output, input,
+        "marker missing from first batch must result in byte-identical passthrough"
+    );
+}
+
+#[test]
+fn stream_passthrough_when_activate_never() {
+    // Even with streaming enabled, Activate::Never short-circuits to pure
+    // byte-for-byte passthrough — no batching, no rendering.
+    let input = b"\xe2\x97\x8b  abcde 12345 description\n";
+    let toml = "activate = \"never\"\n[stream]\nenabled = true\nbatch-size = 2\n";
+    let tmp = std::env::temp_dir().join("bijjou-stream-never.toml");
+    std::fs::write(&tmp, toml).unwrap();
+    let output = Command::cargo_bin("bijjou")
+        .expect("binary built")
+        .env("BIJJOU_CONFIG", &tmp)
+        .write_stdin(&input[..])
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let _ = std::fs::remove_file(&tmp);
+    assert_eq!(output, input, "Activate::Never must passthrough regardless of streaming");
+}
+
 #[test]
 fn config_alt_nodes_kitchen_sink() {
     snapshot_with_config(

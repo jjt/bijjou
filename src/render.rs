@@ -1,6 +1,77 @@
 use crate::ansi::{decode_utf8, emit_filtered_ansi, is_fg_color_sgr, skip_csi, FG_RESET};
 use crate::config::cfg;
 
+pub fn strip_trailing_nl(line: &[u8]) -> (&[u8], bool) {
+    if line.last() == Some(&b'\n') {
+        (&line[..line.len() - 1], true)
+    } else {
+        (line, false)
+    }
+}
+
+pub fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
+    if needle.is_empty() || needle.len() > haystack.len() {
+        return false;
+    }
+    haystack.windows(needle.len()).any(|w| w == needle)
+}
+
+fn write_gap(out: &mut Vec<u8>, p: &Parsed, target_col: usize, dashed: bool) {
+    let c = cfg();
+    let gap = target_col - p.graph_col;
+
+    if dashed && gap >= 3 {
+        let fill = gap - 2;
+        out.push(b' ');
+        out.extend_from_slice(&c.dim_on);
+        let dash_count = if c.dash_arrow.is_empty() { fill } else { fill - 1 };
+        for _ in 0..dash_count {
+            out.extend_from_slice(c.dash.as_bytes());
+        }
+        if !c.dash_arrow.is_empty() {
+            out.extend_from_slice(c.dash_arrow.as_bytes());
+        }
+        out.extend_from_slice(FG_RESET);
+        out.push(b' ');
+    } else {
+        for _ in 0..gap {
+            out.push(b' ');
+        }
+    }
+}
+
+// Render one input line into `out`. Returns true if a line was emitted, false
+// if the configured filter dropped it.
+pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, target_col: usize, out: &mut Vec<u8>) -> bool {
+    let (body, trailing_nl) = strip_trailing_nl(line);
+    let c = cfg();
+
+    if c.hide_vertical_only_lines && parsed.is_none() && is_vertical_only_line(body) {
+        return false;
+    }
+
+    match parsed {
+        Some(p) => {
+            let (is_empty, is_immutable) = line_flags(body);
+            let graph = &body[..p.graph_end];
+            emit_dim_graph(graph, out, is_empty, is_immutable);
+            let dashed = has_node_char(graph);
+            write_gap(out, p, target_col, dashed);
+            write_stripping_marker(&body[p.content_start..], out);
+        }
+        None if has_graph_char(body) => {
+            let (is_empty, is_immutable) = line_flags(body);
+            emit_dim_graph(body, out, is_empty, is_immutable);
+        }
+        None => out.extend_from_slice(body),
+    }
+
+    if trailing_nl {
+        out.push(b'\n');
+    }
+    true
+}
+
 const WC_CP: u32 = 0x40; // @
 const MUTABLE_CP: u32 = 0x25CB; // ○
 const ALTERNATE_CP: u32 = 0x25CF; // ●

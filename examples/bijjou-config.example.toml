@@ -110,3 +110,22 @@ activation-marker = "BIJJOU_ACTIVATE"
 # dash-filler  = 8
 # edge         = "#5f5f5f"
 # mutable-node = 245
+
+[stream]
+# Streaming mode flushes rendered output as input arrives, in batches of
+# `batch-size` lines. The graph-column width is recomputed per batch and only
+# grows monotonically across batches, so column alignment never shifts
+# backwards. Smaller batches give lower latency to first paint; larger batches
+# give more stable alignment within a window. When stdout is a terminal and
+# $PAGER is set, batches are flushed into the pager (the pager must tolerate
+# partial input — modern `less` does).
+#
+# When `activate = "auto"` and streaming is on, the activation-marker scan is
+# limited to the first batch. If the marker isn't there, the rest of stdin is
+# passed through byte-for-byte without further processing. Set
+# `activate = "always"` to skip the scan entirely.
+#
+# Defaults: enabled = false, batch-size = 128
+#
+# enabled    = true
+# batch-size = 128

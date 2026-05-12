@@ -30,15 +30,14 @@ mod ansi;
 mod config;
 mod output;
 mod render;
+mod stream;
 
 use std::io::{self, Read, Write};
 
-use crate::ansi::FG_RESET;
 use crate::config::{cfg, Activate, Config};
 use crate::output::write_output;
 use crate::render::{
-    emit_dim_graph, find_boundary, has_graph_char, has_node_char, is_vertical_only_line,
-    line_flags, write_stripping_marker, Parsed,
+    contains_bytes, emit_line, find_boundary, strip_trailing_nl, Parsed,
 };
 
 const HELP: &str = "\
@@ -50,6 +49,7 @@ USAGE
 OPTIONS
   -h, --help                show this help and exit
   --activate[=MODE]         processing mode (auto|always|never); bare flag = auto
+  --stream                  enable streaming mode (shorthand for --stream__enabled=true)
   --<key>=<value>           override any config key; replace '.' with '__'
 
 CONFIGURATION
@@ -66,12 +66,22 @@ CONFIGURATION
   CLI flags: --<key>=<value>, replace '.' with '__'.
     e.g. --graph__nodes__chars__working-copy=X
 
+  Streaming mode flushes output in batches as input arrives. Graph width is
+  computed per batch and only grows monotonically across batches, so alignment
+  never shifts backwards. In streaming `auto` activation mode the marker scan
+  is limited to the first batch; if the marker isn't there, the rest of stdin
+  is passed through verbatim.
+
 KEYS
   activate                                  auto|always|never
   activation-marker                         string
 
   [filter]
     hide-vertical-only-lines                bool
+
+  [stream]
+    enabled                                 bool
+    batch-size                              int >= 1 (default 128)
 
   [separator]
     dash                                    string
@@ -143,42 +153,28 @@ fn split_lines(input: &[u8]) -> Vec<&[u8]> {
     lines
 }
 
-fn strip_trailing_nl(line: &[u8]) -> (&[u8], bool) {
-    if line.last() == Some(&b'\n') {
-        (&line[..line.len() - 1], true)
-    } else {
-        (line, false)
-    }
-}
-
-fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
-    if needle.is_empty() || needle.len() > haystack.len() {
-        return false;
-    }
-    haystack.windows(needle.len()).any(|w| w == needle)
-}
-
 fn run() -> io::Result<()> {
+    let c = cfg();
+    if c.activate == Activate::Never {
+        let mut stdin = io::stdin().lock();
+        let mut stdout = io::stdout().lock();
+        io::copy(&mut stdin, &mut stdout)?;
+        return stdout.flush();
+    }
+    if c.stream_enabled {
+        return stream::run();
+    }
+
     let mut input = Vec::new();
     io::stdin().read_to_end(&mut input)?;
 
-    let c = cfg();
-    match c.activate {
-        Activate::Never => {
+    if c.activate == Activate::Auto {
+        let marker = c.activation_marker.as_bytes();
+        if !contains_bytes(&input, marker) {
             let mut out = io::stdout().lock();
             out.write_all(&input)?;
             out.flush()?;
             return Ok(());
-        }
-        Activate::Always => {}
-        Activate::Auto => {
-            let marker = c.activation_marker.as_bytes();
-            if !contains_bytes(&input, marker) {
-                let mut out = io::stdout().lock();
-                out.write_all(&input)?;
-                out.flush()?;
-                return Ok(());
-            }
         }
     }
 
@@ -199,65 +195,10 @@ fn run() -> io::Result<()> {
     let mut emitted_lines = 0usize;
 
     for (line, p) in lines.iter().zip(parsed.iter()) {
-        let (body, trailing_nl) = strip_trailing_nl(line);
-
-        if c.hide_vertical_only_lines && p.is_none() && is_vertical_only_line(body) {
-            continue;
+        if emit_line(line, p.as_ref(), target_col, &mut out) {
+            emitted_lines += 1;
         }
-
-        match p {
-            Some(p) => {
-                let (is_empty, is_immutable) = line_flags(body);
-                let graph = &body[..p.graph_end];
-                emit_dim_graph(graph, &mut out, is_empty, is_immutable);
-                let dashed = has_node_char(graph);
-                write_gap(&mut out, p, target_col, &c.dash, &c.dash_arrow, &c.dim_on, dashed)?;
-                write_stripping_marker(&body[p.content_start..], &mut out);
-            }
-            None if has_graph_char(body) => {
-                let (is_empty, is_immutable) = line_flags(body);
-                emit_dim_graph(body, &mut out, is_empty, is_immutable);
-            }
-            None => out.write_all(body)?,
-        }
-
-        if trailing_nl {
-            out.write_all(b"\n")?;
-        }
-        emitted_lines += 1;
     }
 
     write_output(&out, emitted_lines)
-}
-
-fn write_gap(
-    out: &mut Vec<u8>,
-    p: &Parsed,
-    target_col: usize,
-    dash: &str,
-    dash_arrow: &str,
-    dim_on: &[u8],
-    dashed: bool,
-) -> io::Result<()> {
-    let gap = target_col - p.graph_col;
-
-    if dashed && gap >= 3 {
-        let fill = gap - 2;
-        out.write_all(b" ")?;
-        out.write_all(dim_on)?;
-        let dash_count = if dash_arrow.is_empty() { fill } else { fill - 1 };
-        for _ in 0..dash_count {
-            out.write_all(dash.as_bytes())?;
-        }
-        if !dash_arrow.is_empty() {
-            out.write_all(dash_arrow.as_bytes())?;
-        }
-        out.write_all(FG_RESET)?;
-        out.write_all(b" ")?;
-    } else {
-        for _ in 0..gap {
-            out.write_all(b" ")?;
-        }
-    }
-    Ok(())
 }

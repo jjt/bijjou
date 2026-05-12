@@ -30,6 +30,7 @@ pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
 pub const DEFAULT_EMPTY_MARKER: &str = "𝙴";
 pub const DEFAULT_IMMUTABLE_MARKER: &str = "𝙸";
+pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum Activate {
@@ -92,6 +93,8 @@ pub struct Config {
     pub immutable_marker: String,
     pub activate: Activate,
     pub hide_vertical_only_lines: bool,
+    pub stream_enabled: bool,
+    pub stream_batch_size: usize,
 }
 
 impl Default for Config {
@@ -127,6 +130,8 @@ impl Default for Config {
             immutable_marker: DEFAULT_IMMUTABLE_MARKER.to_string(),
             activate: Activate::default(),
             hide_vertical_only_lines: false,
+            stream_enabled: false,
+            stream_batch_size: DEFAULT_STREAM_BATCH_SIZE,
         }
     }
 }
@@ -282,6 +287,10 @@ impl Config {
                 self.apply_kv("activate", "auto", "cli")?;
                 continue;
             }
+            if arg == "--stream" {
+                self.apply_kv("stream.enabled", "true", "cli")?;
+                continue;
+            }
             let rest = arg
                 .strip_prefix("--")
                 .ok_or_else(|| format!("cli: unknown argument: {}", arg))?;
@@ -333,6 +342,16 @@ impl Config {
             "commits.markers.immutable" => self.immutable_marker = value.to_string(),
             "filter.hide-vertical-only-lines" => {
                 self.hide_vertical_only_lines = parse_bool_str(value).map_err(mkerr)?;
+            }
+            "stream.enabled" => self.stream_enabled = parse_bool_str(value).map_err(mkerr)?,
+            "stream.batch-size" => {
+                let n: i64 = value
+                    .parse()
+                    .map_err(|_| mkerr(format!("expected integer >= 1, got {:?}", value)))?;
+                if n < 1 {
+                    return Err(mkerr(format!("expected integer >= 1, got {}", n)));
+                }
+                self.stream_batch_size = n as usize;
             }
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
@@ -619,5 +638,59 @@ edge = 200
     fn apply_kv_unknown_key_errors() {
         let mut cfg = Config::default();
         assert!(cfg.apply_kv("nope.x", "v", "env").is_err());
+    }
+
+    #[test]
+    fn stream_defaults() {
+        let cfg = Config::from_toml("").unwrap();
+        assert!(!cfg.stream_enabled);
+        assert_eq!(cfg.stream_batch_size, DEFAULT_STREAM_BATCH_SIZE);
+    }
+
+    #[test]
+    fn stream_toml_section() {
+        let s = "[stream]\nenabled = true\nbatch-size = 64\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert!(cfg.stream_enabled);
+        assert_eq!(cfg.stream_batch_size, 64);
+    }
+
+    #[test]
+    fn stream_toml_batch_size_zero_errors() {
+        let s = "[stream]\nbatch-size = 0\n";
+        assert!(Config::from_toml(s).is_err());
+    }
+
+    #[test]
+    fn stream_toml_batch_size_negative_errors() {
+        let s = "[stream]\nbatch-size = -1\n";
+        assert!(Config::from_toml(s).is_err());
+    }
+
+    #[test]
+    fn cli_bare_stream_sets_enabled() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--stream"])).unwrap();
+        assert!(cfg.stream_enabled);
+    }
+
+    #[test]
+    fn cli_stream_batch_size() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--stream", "--stream__batch-size=32"])).unwrap();
+        assert!(cfg.stream_enabled);
+        assert_eq!(cfg.stream_batch_size, 32);
+    }
+
+    #[test]
+    fn cli_stream_batch_size_zero_errors() {
+        let mut cfg = Config::default();
+        assert!(cfg.apply_cli(args(&["--stream__batch-size=0"])).is_err());
+    }
+
+    #[test]
+    fn cli_stream_batch_size_non_integer_errors() {
+        let mut cfg = Config::default();
+        assert!(cfg.apply_cli(args(&["--stream__batch-size=abc"])).is_err());
     }
 }
