@@ -67,10 +67,10 @@ CONFIGURATION
     e.g. --graph__nodes__chars__working-copy=X
 
   Streaming mode flushes output in batches as input arrives. Graph width is
-  computed per batch and only grows monotonically across batches, so alignment
-  never shifts backwards. In streaming `auto` activation mode the marker scan
-  is limited to the first batch; if the marker isn't there, the rest of stdin
-  is passed through verbatim.
+  tracked across the whole stream and grows monotonically the moment a wider
+  graph column appears; alignment never shifts backwards. In streaming `auto`
+  activation mode the marker scan is limited to the first batch; if the
+  marker isn't there, the rest of stdin is passed through verbatim.
 
 KEYS
   activate                                  auto|always|never
@@ -178,6 +178,10 @@ fn run() -> io::Result<()> {
         }
     }
 
+    // Non-streaming path: one global max over the whole input, applied to
+    // every line. Early narrow rows get dash filler stretching to the widest
+    // point of the log. Streaming mode (stream.rs) diverges intentionally:
+    // it widens per-line and can't backfill once a row is emitted.
     let lines = split_lines(&input);
     let parsed: Vec<Option<Parsed>> = lines
         .iter()

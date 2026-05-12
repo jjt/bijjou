@@ -1,7 +1,7 @@
 use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 
 use crate::config::{cfg, Activate};
-use crate::render::{contains_bytes, emit_line, find_boundary, strip_trailing_nl, Parsed};
+use crate::render::{contains_bytes, emit_line, find_boundary, strip_trailing_nl};
 
 pub fn run() -> io::Result<()> {
     let c = cfg();
@@ -58,29 +58,26 @@ fn read_batch<R: BufRead>(reader: &mut R, batch_size: usize) -> io::Result<Vec<V
     Ok(out)
 }
 
+// Per-line monotonic widening: running_max bumps the moment a wider
+// graph_col is seen and the new target_col takes effect on that same line.
+// Batching is purely flush-cadence — `batch_size` does not affect column
+// alignment. This intentionally diverges from main.rs's batch path, which
+// applies one global max to every line.
 fn process_batch(
     batch: &[Vec<u8>],
     running_max: &mut usize,
     sink: &mut OutputSink,
 ) -> io::Result<()> {
-    let parsed: Vec<Option<Parsed>> = batch
-        .iter()
-        .map(|line| find_boundary(strip_trailing_nl(line).0))
-        .collect();
-
-    let batch_max = parsed
-        .iter()
-        .filter_map(|p| p.as_ref().map(|p| p.graph_col))
-        .max()
-        .unwrap_or(0);
-    if batch_max > *running_max {
-        *running_max = batch_max;
-    }
-    let target_col = *running_max + 2;
-
     let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 8).sum());
-    for (line, p) in batch.iter().zip(parsed.iter()) {
-        emit_line(line, p.as_ref(), target_col, &mut out);
+    for line in batch {
+        let parsed = find_boundary(strip_trailing_nl(line).0);
+        if let Some(p) = &parsed {
+            if p.graph_col > *running_max {
+                *running_max = p.graph_col;
+            }
+        }
+        let target_col = *running_max + 2;
+        emit_line(line, parsed.as_ref(), target_col, &mut out);
     }
     sink_write(sink, &out)
 }

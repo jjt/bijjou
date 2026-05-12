@@ -113,12 +113,21 @@ activation-marker = "BIJJOU_ACTIVATE"
 
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of
-# `batch-size` lines. The graph-column width is recomputed per batch and only
-# grows monotonically across batches, so column alignment never shifts
-# backwards. Smaller batches give lower latency to first paint; larger batches
-# give more stable alignment within a window. When stdout is a terminal and
+# `batch-size` lines. The graph-column width is tracked across the whole
+# stream and grows monotonically the moment a wider graph column appears
+# (not at the batch boundary), so column alignment never shifts backwards.
+# `batch-size` controls flush cadence: smaller batches give lower latency to
+# first paint, larger batches reduce syscalls. When stdout is a terminal and
 # $PAGER is set, batches are flushed into the pager (the pager must tolerate
 # partial input — modern `less` does).
+#
+# Note: streaming and non-streaming intentionally differ here. Non-streaming
+# has the whole input up front and aligns every line to the global max
+# graph_col, so early narrow rows get dash filler that extends to the widest
+# point of the log. Streaming can't see the future, so early narrow rows stay
+# narrow and the alignment steps right at the first row that widens. Same
+# input → different output between the two modes for any log that fans out
+# after the first row.
 #
 # When `activate = "auto"` and streaming is on, the activation-marker scan is
 # limited to the first batch. If the marker isn't there, the rest of stdin is

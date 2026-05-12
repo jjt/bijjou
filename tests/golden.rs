@@ -731,49 +731,28 @@ fn config_hide_vertical_only_megamerge_conflict() {
 }
 
 // --- Streaming mode -----------------------------------------------------
-// Streaming flushes output in batches; graph-column width is recomputed per
-// batch and only grows monotonically across batches. The equivalence test
-// asserts that with a batch large enough to swallow the entire input,
-// streaming output is byte-identical to batch-mode output — locking the
-// shared rendering path. The dedicated streaming tests cover behavior that
-// only manifests when a batch boundary actually splits the input.
-
-const ALL_FIXTURES: &[&str] = &[
-    "empty",
-    "single_wc",
-    "single_wc_no_graph",
-    "linear_chain",
-    "root_immutable",
-    "mixed_with_elision",
-    "plain_text",
-    "branching",
-    "merge_graph",
-    "bookmarks",
-    "conflicted",
-    "hidden",
-    "divergent",
-    "workspaces",
-    "megamerge",
-    "combo_conflicted_wc",
-    "combo_megamerge_conflict",
-    "combo_kitchen_sink",
-    "diff_authors",
-    "remote_bookmarks",
-    "compact_log",
-];
+// Streaming flushes output in batches; graph-column width is updated
+// per-line as wider graph columns are seen and only grows monotonically.
+// The widening takes effect starting at the exact line whose graph_col
+// exceeds the running max, not at the batch boundary. (This differs from
+// batch mode, which applies the global max uniformly to every line.)
 
 #[test]
-fn stream_huge_batch_matches_batch_mode_for_all_fixtures() {
-    for name in ALL_FIXTURES {
-        let input = read_fixture(name);
-        let batch = run_bijjou(&input);
-        let streamed = run_bijjou_with_config(&input, "stream-huge");
-        assert_eq!(
-            batch, streamed,
-            "fixture {} streamed (huge batch) must match batch mode byte-for-byte",
-            name
-        );
-    }
+fn stream_per_line_widening_within_single_batch() {
+    // All 5 lines fit in one batch (batch-size = 1000000). Widening must
+    // still happen line-by-line: lines 1-2 emit at the narrow target, line
+    // 3 onward at the wider one — even though they share one batch and one
+    // flush.
+    let input = b"\
+\xe2\x97\x8b  a\n\
+\xe2\x97\x8b  b\n\
+\xe2\x94\x82 \xe2\x97\x8b  c\n\
+\xe2\x94\x82 \xe2\x97\x8b  d\n\
+\xe2\x94\x82 \xe2\x97\x8b  e\n";
+    let output = run_bijjou_with_config(input, "stream-huge");
+    insta::with_settings!({description => "Widening within a single batch: lines 1-2 emit at narrow target, lines 3-5 at the wider one."}, {
+        insta::assert_snapshot!("stream_per_line_widening_within_single_batch", visualize(&output));
+    });
 }
 
 #[test]
