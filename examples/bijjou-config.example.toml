@@ -8,6 +8,13 @@
 # Every key is optional. Omitted keys keep their built-in default.
 # Sections may be omitted entirely. Comments must start in column 0
 # (inline `# ...` after a value is not supported).
+#
+# Overrides (low → high precedence): config file < env vars < CLI flags.
+#   Env: prefix `BIJJOU__`, replace `.` with `__`.
+#     e.g. `graph.nodes.chars.working-copy` → `BIJJOU__graph__nodes__chars__working-copy`
+#   CLI: `--<key>=<value>`, replace `.` with `__`.
+#     e.g. `--graph__nodes__chars__working-copy=X`
+#   `--activate` with no value is shorthand for `--activate=auto`.
 
 # Processing mode: one of "auto", "always", "never".
 #   auto   — gate on `activation-marker` (default).

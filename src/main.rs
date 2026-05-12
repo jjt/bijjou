@@ -34,7 +34,7 @@ mod render;
 use std::io::{self, Read, Write};
 
 use crate::ansi::FG_RESET;
-use crate::config::{cfg, parse_activate, Activate, Config};
+use crate::config::{cfg, Activate, Config};
 use crate::output::write_output;
 use crate::render::{
     emit_dim_graph, find_boundary, has_graph_char, has_node_char, is_vertical_only_line,
@@ -42,13 +42,6 @@ use crate::render::{
 };
 
 fn main() {
-    let cli_activate = match parse_cli_activate(std::env::args().skip(1)) {
-        Ok(a) => a,
-        Err(e) => {
-            eprintln!("bijjou: {}", e);
-            std::process::exit(2);
-        }
-    };
     let mut cfg_obj = match Config::load() {
         Ok(c) => c,
         Err(e) => {
@@ -56,8 +49,13 @@ fn main() {
             std::process::exit(2);
         }
     };
-    if let Some(a) = cli_activate {
-        cfg_obj.activate = a;
+    if let Err(e) = cfg_obj.apply_env() {
+        eprintln!("bijjou: {}", e);
+        std::process::exit(2);
+    }
+    if let Err(e) = cfg_obj.apply_cli(std::env::args().skip(1)) {
+        eprintln!("bijjou: {}", e);
+        std::process::exit(2);
     }
     config::init(cfg_obj);
     if let Err(e) = run() {
@@ -67,20 +65,6 @@ fn main() {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }
-}
-
-fn parse_cli_activate<I: IntoIterator<Item = String>>(args: I) -> Result<Option<Activate>, String> {
-    let mut found = None;
-    for arg in args {
-        if arg == "--activate" {
-            found = Some(Activate::Auto);
-        } else if let Some(val) = arg.strip_prefix("--activate=") {
-            found = Some(parse_activate(val).map_err(|e| format!("--activate: {}", e))?);
-        } else {
-            return Err(format!("unknown argument: {}", arg));
-        }
-    }
-    Ok(found)
 }
 
 fn split_lines(input: &[u8]) -> Vec<&[u8]> {

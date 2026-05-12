@@ -214,41 +214,36 @@ fn unescape(s: &str) -> Result<String, String> {
     Ok(out)
 }
 
-fn parse_color(v: &TomlValue) -> Result<Vec<u8>, String> {
+fn stringify(v: &TomlValue) -> String {
     match v {
-        TomlValue::Int(n) => {
-            if !(0..=255).contains(n) {
-                return Err(format!("expected 0-255, got {}", n));
-            }
-            Ok(format!("\x1b[38;5;{}m", n).into_bytes())
-        }
-        TomlValue::String(s) => {
-            let hex = s
-                .strip_prefix('#')
-                .ok_or_else(|| format!("expected integer or \"#rrggbb\", got {:?}", s))?;
-            if hex.len() != 6 {
-                return Err(format!("expected #rrggbb, got {:?}", s));
-            }
-            let r = u8::from_str_radix(&hex[0..2], 16).map_err(|_| format!("bad hex: {:?}", s))?;
-            let g = u8::from_str_radix(&hex[2..4], 16).map_err(|_| format!("bad hex: {:?}", s))?;
-            let b = u8::from_str_radix(&hex[4..6], 16).map_err(|_| format!("bad hex: {:?}", s))?;
-            Ok(format!("\x1b[38;2;{};{};{}m", r, g, b).into_bytes())
-        }
-        TomlValue::Bool(_) => Err("expected integer or \"#rrggbb\", got bool".into()),
+        TomlValue::String(s) => s.clone(),
+        TomlValue::Int(n) => n.to_string(),
+        TomlValue::Bool(b) => b.to_string(),
     }
 }
 
-fn take_string(sec: &str, k: &str, v: &TomlValue) -> Result<String, String> {
-    match v {
-        TomlValue::String(s) => Ok(s.clone()),
-        _ => Err(format!("{}.{}: expected string", sec, k)),
+fn parse_bool_str(s: &str) -> Result<bool, String> {
+    match s {
+        "true" => Ok(true),
+        "false" => Ok(false),
+        other => Err(format!("expected true|false, got {:?}", other)),
     }
 }
 
-fn take_bool(sec: &str, k: &str, v: &TomlValue) -> Result<bool, String> {
-    match v {
-        TomlValue::Bool(b) => Ok(*b),
-        _ => Err(format!("{}.{}: expected bool", sec, k)),
+fn parse_color_str(s: &str) -> Result<Vec<u8>, String> {
+    if let Some(hex) = s.strip_prefix('#') {
+        if hex.len() != 6 {
+            return Err(format!("expected #rrggbb, got {:?}", s));
+        }
+        let r = u8::from_str_radix(&hex[0..2], 16).map_err(|_| format!("bad hex: {:?}", s))?;
+        let g = u8::from_str_radix(&hex[2..4], 16).map_err(|_| format!("bad hex: {:?}", s))?;
+        let b = u8::from_str_radix(&hex[4..6], 16).map_err(|_| format!("bad hex: {:?}", s))?;
+        return Ok(format!("\x1b[38;2;{};{};{}m", r, g, b).into_bytes());
+    }
+    match s.parse::<i64>() {
+        Ok(n) if (0..=255).contains(&n) => Ok(format!("\x1b[38;5;{}m", n).into_bytes()),
+        Ok(n) => Err(format!("expected 0-255, got {}", n)),
+        Err(_) => Err(format!("expected integer or \"#rrggbb\", got {:?}", s)),
     }
 }
 
@@ -256,109 +251,95 @@ impl Config {
     pub fn from_toml(s: &str) -> Result<Self, String> {
         let mut cfg = Self::default();
         let sections = parse_toml(s)?;
-
-        if let Some(sec) = sections.get("graph.nodes.chars") {
-            for (k, v) in sec {
-                let s = take_string("graph.nodes.chars", k, v)?;
-                match k.as_str() {
-                    "working-copy" => cfg.wc_icon = s,
-                    "mutable" => cfg.mutable_icon = s,
-                    "immutable" => cfg.immutable_icon = s,
-                    "conflict" => cfg.conflict_icon = s,
-                    "alternate" => cfg.alternate_icon = s,
-                    "empty" => cfg.empty_icon = s,
-                    "working-copy-empty" => cfg.wc_empty_icon = s,
-                    "empty-immutable" => cfg.empty_immutable_icon = s,
-                    other => return Err(format!("unknown key: graph.nodes.chars.{}", other)),
-                }
+        for (section, kvs) in &sections {
+            for (k, v) in kvs {
+                let dotted = if section.is_empty() {
+                    k.clone()
+                } else {
+                    format!("{}.{}", section, k)
+                };
+                cfg.apply_kv(&dotted, &stringify(v), "")?;
             }
         }
-
-        if let Some(sec) = sections.get("graph.edges.chars") {
-            for (k, v) in sec {
-                let s = take_string("graph.edges.chars", k, v)?;
-                match k.as_str() {
-                    "horizontal" => cfg.graph_horizontal = s,
-                    "vertical" => cfg.graph_vertical = s,
-                    "top-left" => cfg.graph_top_left = s,
-                    "top-right" => cfg.graph_top_right = s,
-                    "bottom-left" => cfg.graph_bottom_left = s,
-                    "bottom-right" => cfg.graph_bottom_right = s,
-                    "tee-right" => cfg.graph_tee_right = s,
-                    "tee-left" => cfg.graph_tee_left = s,
-                    "tee-down" => cfg.graph_tee_down = s,
-                    "tee-up" => cfg.graph_tee_up = s,
-                    "cross" => cfg.graph_cross = s,
-                    "elision" => cfg.graph_elision = s,
-                    other => return Err(format!("unknown key: graph.edges.chars.{}", other)),
-                }
-            }
-        }
-
-        if let Some(sec) = sections.get("separator") {
-            for (k, v) in sec {
-                let s = take_string("separator", k, v)?;
-                match k.as_str() {
-                    "dash" => cfg.dash = s,
-                    "dash-arrow" => cfg.dash_arrow = s,
-                    other => return Err(format!("unknown key: separator.{}", other)),
-                }
-            }
-        }
-
-        if let Some(sec) = sections.get("commits.markers") {
-            for (k, v) in sec {
-                let s = take_string("commits.markers", k, v)?;
-                match k.as_str() {
-                    "empty" => cfg.empty_marker = s,
-                    "immutable" => cfg.immutable_marker = s,
-                    other => return Err(format!("unknown key: commits.markers.{}", other)),
-                }
-            }
-        }
-
-        if let Some(sec) = sections.get("") {
-            for (k, v) in sec {
-                match k.as_str() {
-                    "activation-marker" => {
-                        let s = take_string("", k, v)?;
-                        validate_activation_marker(&s)?;
-                        cfg.activation_marker = s;
-                    }
-                    "activate" => {
-                        let s = take_string("", k, v)?;
-                        cfg.activate =
-                            parse_activate(&s).map_err(|e| format!("activate: {}", e))?;
-                    }
-                    other => return Err(format!("unknown top-level key: {}", other)),
-                }
-            }
-        }
-
-        if let Some(sec) = sections.get("filter") {
-            for (k, v) in sec {
-                match k.as_str() {
-                    "hide-vertical-only-lines" => {
-                        cfg.hide_vertical_only_lines = take_bool("filter", k, v)?;
-                    }
-                    other => return Err(format!("unknown key: filter.{}", other)),
-                }
-            }
-        }
-
-        if let Some(sec) = sections.get("colors") {
-            for (k, v) in sec {
-                let bytes = parse_color(v).map_err(|e| format!("colors.{}: {}", k, e))?;
-                match k.as_str() {
-                    "dash-filler" => cfg.dim_on = bytes,
-                    "edge" => cfg.edge_dim_on = bytes,
-                    "mutable-node" => cfg.mutable_node_color = bytes,
-                    other => return Err(format!("unknown key: colors.{}", other)),
-                }
-            }
-        }
-
         Ok(cfg)
+    }
+
+    pub fn apply_env(&mut self) -> Result<(), String> {
+        let mut vars: Vec<(String, String)> = std::env::vars()
+            .filter(|(k, _)| k.starts_with("BIJJOU__"))
+            .collect();
+        vars.sort_by(|a, b| a.0.cmp(&b.0));
+        for (k, v) in vars {
+            let key = k["BIJJOU__".len()..].replace("__", ".");
+            self.apply_kv(&key, &v, "env")?;
+        }
+        Ok(())
+    }
+
+    pub fn apply_cli<I: IntoIterator<Item = String>>(&mut self, args: I) -> Result<(), String> {
+        for arg in args {
+            if arg == "--activate" {
+                self.apply_kv("activate", "auto", "cli")?;
+                continue;
+            }
+            let rest = arg
+                .strip_prefix("--")
+                .ok_or_else(|| format!("cli: unknown argument: {}", arg))?;
+            let (raw_key, value) = rest
+                .split_once('=')
+                .ok_or_else(|| format!("cli: missing value for --{}", rest))?;
+            let key = raw_key.replace("__", ".");
+            self.apply_kv(&key, value, "cli")?;
+        }
+        Ok(())
+    }
+
+    fn apply_kv(&mut self, key: &str, value: &str, src: &str) -> Result<(), String> {
+        let prefix = if src.is_empty() {
+            String::new()
+        } else {
+            format!("{}: ", src)
+        };
+        let mkerr = |e: String| format!("{}{}: {}", prefix, key, e);
+        match key {
+            "activate" => self.activate = parse_activate(value).map_err(mkerr)?,
+            "activation-marker" => {
+                validate_activation_marker(value).map_err(mkerr)?;
+                self.activation_marker = value.to_string();
+            }
+            "graph.nodes.chars.working-copy" => self.wc_icon = value.to_string(),
+            "graph.nodes.chars.mutable" => self.mutable_icon = value.to_string(),
+            "graph.nodes.chars.immutable" => self.immutable_icon = value.to_string(),
+            "graph.nodes.chars.conflict" => self.conflict_icon = value.to_string(),
+            "graph.nodes.chars.alternate" => self.alternate_icon = value.to_string(),
+            "graph.nodes.chars.empty" => self.empty_icon = value.to_string(),
+            "graph.nodes.chars.working-copy-empty" => self.wc_empty_icon = value.to_string(),
+            "graph.nodes.chars.empty-immutable" => self.empty_immutable_icon = value.to_string(),
+            "graph.edges.chars.horizontal" => self.graph_horizontal = value.to_string(),
+            "graph.edges.chars.vertical" => self.graph_vertical = value.to_string(),
+            "graph.edges.chars.top-left" => self.graph_top_left = value.to_string(),
+            "graph.edges.chars.top-right" => self.graph_top_right = value.to_string(),
+            "graph.edges.chars.bottom-left" => self.graph_bottom_left = value.to_string(),
+            "graph.edges.chars.bottom-right" => self.graph_bottom_right = value.to_string(),
+            "graph.edges.chars.tee-right" => self.graph_tee_right = value.to_string(),
+            "graph.edges.chars.tee-left" => self.graph_tee_left = value.to_string(),
+            "graph.edges.chars.tee-down" => self.graph_tee_down = value.to_string(),
+            "graph.edges.chars.tee-up" => self.graph_tee_up = value.to_string(),
+            "graph.edges.chars.cross" => self.graph_cross = value.to_string(),
+            "graph.edges.chars.elision" => self.graph_elision = value.to_string(),
+            "separator.dash" => self.dash = value.to_string(),
+            "separator.dash-arrow" => self.dash_arrow = value.to_string(),
+            "commits.markers.empty" => self.empty_marker = value.to_string(),
+            "commits.markers.immutable" => self.immutable_marker = value.to_string(),
+            "filter.hide-vertical-only-lines" => {
+                self.hide_vertical_only_lines = parse_bool_str(value).map_err(mkerr)?;
+            }
+            "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
+            "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
+            "colors.mutable-node" => self.mutable_node_color = parse_color_str(value).map_err(mkerr)?,
+            other => return Err(format!("{}unknown key: {}", prefix, other)),
+        }
+        Ok(())
     }
 
     pub fn load() -> Result<Self, String> {
@@ -568,5 +549,75 @@ edge = 200
         let s = "# top comment\n\n[separator]\ndash = \"-\"\n# trailing\n";
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.dash, "-");
+    }
+
+    fn args(v: &[&str]) -> Vec<String> {
+        v.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn cli_bare_activate_sets_auto() {
+        let mut cfg = Config::default();
+        cfg.activate = Activate::Never;
+        cfg.apply_cli(args(&["--activate"])).unwrap();
+        assert_eq!(cfg.activate, Activate::Auto);
+    }
+
+    #[test]
+    fn cli_activate_value() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--activate=always"])).unwrap();
+        assert_eq!(cfg.activate, Activate::Always);
+    }
+
+    #[test]
+    fn cli_nested_key_dots_via_double_underscore() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--graph__nodes__chars__working-copy=X"]))
+            .unwrap();
+        assert_eq!(cfg.wc_icon, "X");
+    }
+
+    #[test]
+    fn cli_color_int_and_hex() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--colors__edge=200", "--colors__mutable-node=#aabbcc"]))
+            .unwrap();
+        assert_eq!(cfg.edge_dim_on, b"\x1b[38;5;200m".to_vec());
+        assert_eq!(cfg.mutable_node_color, b"\x1b[38;2;170;187;204m".to_vec());
+    }
+
+    #[test]
+    fn cli_bool_filter() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--filter__hide-vertical-only-lines=true"]))
+            .unwrap();
+        assert!(cfg.hide_vertical_only_lines);
+    }
+
+    #[test]
+    fn cli_unknown_key_errors() {
+        let mut cfg = Config::default();
+        assert!(cfg.apply_cli(args(&["--bogus=x"])).is_err());
+    }
+
+    #[test]
+    fn cli_missing_value_errors() {
+        let mut cfg = Config::default();
+        assert!(cfg.apply_cli(args(&["--separator__dash"])).is_err());
+    }
+
+    #[test]
+    fn cli_overrides_existing_value() {
+        let mut cfg = Config::default();
+        cfg.apply_kv("separator.dash", "-", "").unwrap();
+        cfg.apply_cli(args(&["--separator__dash=="])).unwrap();
+        assert_eq!(cfg.dash, "=");
+    }
+
+    #[test]
+    fn apply_kv_unknown_key_errors() {
+        let mut cfg = Config::default();
+        assert!(cfg.apply_kv("nope.x", "v", "env").is_err());
     }
 }
