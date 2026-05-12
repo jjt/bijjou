@@ -25,11 +25,11 @@
 # stripped from output. When absent (and mode is auto), stdin is passed
 # through byte-for-byte. Set to "" to disable the gate and always process.
 #
-# Default: "𝘽" (U+1D63D)
+# Default: "BIJJOU_ACTIVATE"
 # Pair with a jj template that emits the marker — see
 # examples/jj-config-snippet.toml.
 #
-# activation_marker = "𝘽"
+# activation_marker = "BIJJOU_ACTIVATE"
 
 [commits.markers]
 # Sentinel chars bijjou looks for to detect commit state. The jj template

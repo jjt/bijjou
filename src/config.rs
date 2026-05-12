@@ -27,7 +27,7 @@ pub const DEFAULT_GRAPH_TEE_DOWN: &str = "𜸠";
 pub const DEFAULT_GRAPH_TEE_UP: &str = "𜹀";
 pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
-pub const DEFAULT_ACTIVATION_MARKER: &str = "𝘽";
+pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
 pub const DEFAULT_EMPTY_MARKER: &str = "𝙀";
 pub const DEFAULT_IMMUTABLE_MARKER: &str = "𝙄";
 
@@ -490,7 +490,7 @@ edge = 200
     }
 
     #[test]
-    fn toml_default_activation_marker_is_b() {
+    fn toml_default_activation_marker_matches_const() {
         let cfg = Config::from_toml("").unwrap();
         assert_eq!(cfg.activation_marker, DEFAULT_ACTIVATION_MARKER);
     }

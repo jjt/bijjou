@@ -587,24 +587,32 @@ fn degenerate_marker_after_graph_only() {
 
 // --- Activation gate ----------------------------------------------------
 // Default config gates processing on presence of the activation marker
-// (𝘽 / U+1D63D). Absent → byte-identical passthrough. Present → process and
-// strip every occurrence of the marker.
+// (the ASCII sentinel `BIJJOU_ACTIVATE`). Absent → byte-identical passthrough.
+// Present → process and strip every occurrence of the marker.
+
+const ACTIVATION_MARKER: &[u8] = b"BIJJOU_ACTIVATE";
 
 #[test]
 fn gate_passthrough_when_marker_absent() {
     let input = b"\xe2\x97\x8b  abcde 12345 description\n";
     let output = run_bijjou_default(input);
-    assert_eq!(output, input, "input without 𝘽 must passthrough unchanged");
+    assert_eq!(
+        output, input,
+        "input without BIJJOU_ACTIVATE must passthrough unchanged"
+    );
 }
 
 #[test]
 fn gate_processes_when_marker_present() {
     // Marker on a graph line triggers processing; the graph line gets rewritten.
     let mut input = "\u{25CB}  abcde 12345 ".as_bytes().to_vec();
-    input.extend_from_slice("\u{1D63D}".as_bytes());
+    input.extend_from_slice(ACTIVATION_MARKER);
     input.extend_from_slice(b"description\n");
     let output = run_bijjou_default(&input);
-    assert_ne!(output, input, "input with 𝘽 on a graph line must be processed");
+    assert_ne!(
+        output, input,
+        "input with BIJJOU_ACTIVATE on a graph line must be processed"
+    );
 }
 
 #[test]
@@ -612,13 +620,13 @@ fn gate_passes_through_non_graph_lines_even_when_marker_present() {
     // Marker present in input → gate opens. But lines without graph chars
     // (plain text, status output, anything that isn't the log graph) must pass
     // through byte-for-byte unchanged, including any marker bytes on them.
-    let mut input = "\u{1D63D}".as_bytes().to_vec();
+    let mut input = ACTIVATION_MARKER.to_vec();
     input.extend_from_slice(b" plain text line\n");
     input.extend_from_slice(b"M src/main.rs\n");
     input.extend_from_slice(b"\xe2\x97\x8b  abcde 12345 description\n");
     let output = run_bijjou_default(&input);
     let marker_line = {
-        let mut v = "\u{1D63D}".as_bytes().to_vec();
+        let mut v = ACTIVATION_MARKER.to_vec();
         v.extend_from_slice(b" plain text line\n");
         v
     };
@@ -636,11 +644,13 @@ fn gate_passes_through_non_graph_lines_even_when_marker_present() {
 fn gate_strips_inline_marker_in_content() {
     // Marker embedded inside a description should be stripped.
     let mut input = "\u{25CB}  abcde 12345 desc ".as_bytes().to_vec();
-    input.extend_from_slice("\u{1D63D}".as_bytes());
+    input.extend_from_slice(ACTIVATION_MARKER);
     input.extend_from_slice(b" suffix\n");
     let output = run_bijjou_default(&input);
     assert!(
-        !output.windows(4).any(|w| w == "\u{1D63D}".as_bytes()),
+        !output
+            .windows(ACTIVATION_MARKER.len())
+            .any(|w| w == ACTIVATION_MARKER),
         "inline activation marker must be stripped"
     );
 }
