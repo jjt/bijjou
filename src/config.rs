@@ -48,6 +48,19 @@ pub fn parse_activate(s: &str) -> Result<Activate, String> {
     }
 }
 
+pub fn validate_activation_marker(m: &str) -> Result<(), String> {
+    if m.is_empty() {
+        return Err("activation_marker: must not be empty".into());
+    }
+    if let Some(c) = m.chars().find(|c| c.is_control()) {
+        return Err(format!(
+            "activation_marker: contains non-printable character {:?}",
+            c
+        ));
+    }
+    Ok(())
+}
+
 pub struct Config {
     pub wc_icon: String,
     pub mutable_icon: String,
@@ -308,7 +321,9 @@ impl Config {
             for (k, v) in sec {
                 match k.as_str() {
                     "activation_marker" => {
-                        cfg.activation_marker = take_string("", k, v)?;
+                        let s = take_string("", k, v)?;
+                        validate_activation_marker(&s)?;
+                        cfg.activation_marker = s;
                     }
                     "activate" => {
                         let s = take_string("", k, v)?;
@@ -346,29 +361,23 @@ impl Config {
         Ok(cfg)
     }
 
-    pub fn load() -> Self {
+    pub fn load() -> Result<Self, String> {
         let Some(path) = config_path() else {
-            return Self::default();
+            return Ok(Self::default());
         };
         let content = match std::fs::read_to_string(&path) {
             Ok(c) => c,
             Err(_) => {
                 if std::env::var("BIJJOU_CONFIG").is_ok() {
-                    return Self::default();
+                    return Ok(Self::default());
                 }
                 match create_default_config() {
                     Some(p) => std::fs::read_to_string(&p).unwrap_or_default(),
-                    None => return Self::default(),
+                    None => return Ok(Self::default()),
                 }
             }
         };
-        match Self::from_toml(&content) {
-            Ok(c) => c,
-            Err(e) => {
-                eprintln!("bijjou: {}: {}", path.display(), e);
-                Self::default()
-            }
-        }
+        Self::from_toml(&content).map_err(|e| format!("{}: {}", path.display(), e))
     }
 }
 
@@ -483,10 +492,23 @@ edge = 200
     }
 
     #[test]
-    fn toml_activation_marker_empty_disables_gate() {
+    fn toml_activation_marker_empty_is_error() {
         let s = "activation_marker = \"\"\n";
-        let cfg = Config::from_toml(s).unwrap();
-        assert_eq!(cfg.activation_marker, "");
+        let err = match Config::from_toml(s) {
+            Err(e) => e,
+            Ok(_) => panic!("expected error"),
+        };
+        assert!(err.contains("activation_marker"), "got: {}", err);
+    }
+
+    #[test]
+    fn toml_activation_marker_control_char_is_error() {
+        let s = "activation_marker = \"AB\\nCD\"\n";
+        let err = match Config::from_toml(s) {
+            Err(e) => e,
+            Ok(_) => panic!("expected error"),
+        };
+        assert!(err.contains("non-printable"), "got: {}", err);
     }
 
     #[test]

@@ -49,7 +49,13 @@ fn main() {
             std::process::exit(2);
         }
     };
-    let mut cfg_obj = Config::load();
+    let mut cfg_obj = match Config::load() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("bijjou: {}", e);
+            std::process::exit(2);
+        }
+    };
     if let Some(a) = cli_activate {
         cfg_obj.activate = a;
     }
@@ -122,7 +128,7 @@ fn run() -> io::Result<()> {
         Activate::Always => {}
         Activate::Auto => {
             let marker = c.activation_marker.as_bytes();
-            if !marker.is_empty() && !contains_bytes(&input, marker) {
+            if !contains_bytes(&input, marker) {
                 let mut out = io::stdout().lock();
                 out.write_all(&input)?;
                 out.flush()?;

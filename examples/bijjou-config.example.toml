@@ -23,7 +23,9 @@ activate = "auto"
 # Opt-in marker. In `auto` mode, bijjou processes input only if this byte
 # sequence appears at least once anywhere in stdin. All occurrences are
 # stripped from output. When absent (and mode is auto), stdin is passed
-# through byte-for-byte. Set to "" to disable the gate and always process.
+# through byte-for-byte. Must be a non-empty string of printable characters;
+# empty or control-char markers are a configuration error. To always process
+# regardless of input, set `activate = "always"` instead.
 #
 # Default: "BIJJOU_ACTIVATE"
 # Pair with a jj template that emits the marker — see

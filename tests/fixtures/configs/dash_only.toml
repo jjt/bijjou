@@ -1,4 +1,4 @@
-activation_marker = ""
+activate = "always"
 
 [separator]
 dash = "·"
