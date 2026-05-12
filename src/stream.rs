@@ -1,6 +1,6 @@
 use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 
-use crate::config::{cfg, Activate};
+use crate::config::{cfg, Activate, Pager};
 use crate::render::{contains_bytes, emit_line, find_boundary, strip_trailing_nl};
 
 pub fn run() -> io::Result<()> {
@@ -128,8 +128,15 @@ pub enum OutputSink {
 
 impl OutputSink {
     pub fn open() -> Self {
-        if io::stdout().is_terminal() {
-            if let Some(s) = std::env::var("PAGER").ok().filter(|s| !s.trim().is_empty()) {
+        let is_tty = io::stdout().is_terminal();
+        let pager_var = std::env::var("PAGER").ok().filter(|s| !s.trim().is_empty());
+        let want_page = match cfg().pager {
+            Pager::Never => false,
+            Pager::Always => pager_var.is_some(),
+            Pager::Auto => is_tty && pager_var.is_some(),
+        };
+        if want_page {
+            if let Some(s) = pager_var {
                 if let Some(sink) = spawn_pager(&s) {
                     return sink;
                 }

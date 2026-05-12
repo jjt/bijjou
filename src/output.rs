@@ -1,8 +1,10 @@
 use std::io::{self, IsTerminal, Write};
 
+use crate::config::{cfg, Pager};
+
 pub fn write_output(buf: &[u8], _line_count: usize) -> io::Result<()> {
     let stdout = io::stdout();
-    if stdout.is_terminal() {
+    if should_page(stdout.is_terminal()) {
         if let Some(()) = try_pager(buf)? {
             return Ok(());
         }
@@ -12,6 +14,18 @@ pub fn write_output(buf: &[u8], _line_count: usize) -> io::Result<()> {
     out.write_all(buf)?;
     out.flush()?;
     Ok(())
+}
+
+fn should_page(is_tty: bool) -> bool {
+    let pager_set = std::env::var("PAGER")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .is_some();
+    match cfg().pager {
+        Pager::Never => false,
+        Pager::Always => pager_set,
+        Pager::Auto => is_tty && pager_set,
+    }
 }
 
 #[cfg(unix)]

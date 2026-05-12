@@ -51,6 +51,23 @@ pub fn parse_activate(s: &str) -> Result<Activate, String> {
     }
 }
 
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum Pager {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
+pub fn parse_pager(s: &str) -> Result<Pager, String> {
+    match s {
+        "auto" => Ok(Pager::Auto),
+        "always" => Ok(Pager::Always),
+        "never" => Ok(Pager::Never),
+        other => Err(format!("expected auto|always|never, got {:?}", other)),
+    }
+}
+
 pub fn validate_activation_marker(m: &str) -> Result<(), String> {
     if m.is_empty() {
         return Err("activation-marker: must not be empty".into());
@@ -94,6 +111,7 @@ pub struct Config {
     pub empty_marker: String,
     pub immutable_marker: String,
     pub activate: Activate,
+    pub pager: Pager,
     pub hide_vertical_only_lines: bool,
     pub stream_enabled: bool,
     pub stream_batch_size: usize,
@@ -133,6 +151,7 @@ impl Default for Config {
             empty_marker: DEFAULT_EMPTY_MARKER.to_string(),
             immutable_marker: DEFAULT_IMMUTABLE_MARKER.to_string(),
             activate: Activate::default(),
+            pager: Pager::default(),
             hide_vertical_only_lines: false,
             stream_enabled: false,
             stream_batch_size: DEFAULT_STREAM_BATCH_SIZE,
@@ -318,6 +337,7 @@ impl Config {
         let mkerr = |e: String| format!("{}{}: {}", prefix, key, e);
         match key {
             "activate" => self.activate = parse_activate(value).map_err(mkerr)?,
+            "pager" => self.pager = parse_pager(value).map_err(mkerr)?,
             "activation-marker" => {
                 validate_activation_marker(value).map_err(mkerr)?;
                 self.activation_marker = value.to_string();
@@ -577,6 +597,36 @@ edge = 200
     #[test]
     fn toml_activate_rejects_bad_value() {
         assert!(Config::from_toml("activate = \"sometimes\"\n").is_err());
+    }
+
+    #[test]
+    fn toml_pager_default_is_auto() {
+        let cfg = Config::from_toml("").unwrap();
+        assert_eq!(cfg.pager, Pager::Auto);
+    }
+
+    #[test]
+    fn toml_pager_accepts_each_variant() {
+        for (s, want) in [
+            ("auto", Pager::Auto),
+            ("always", Pager::Always),
+            ("never", Pager::Never),
+        ] {
+            let cfg = Config::from_toml(&format!("pager = \"{}\"\n", s)).unwrap();
+            assert_eq!(cfg.pager, want);
+        }
+    }
+
+    #[test]
+    fn toml_pager_rejects_bad_value() {
+        assert!(Config::from_toml("pager = \"sometimes\"\n").is_err());
+    }
+
+    #[test]
+    fn cli_pager_value() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--pager=never"])).unwrap();
+        assert_eq!(cfg.pager, Pager::Never);
     }
 
     #[test]

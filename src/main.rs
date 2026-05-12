@@ -34,7 +34,7 @@ mod stream;
 
 use std::io::{self, Read, Write};
 
-use crate::config::{cfg, Activate, Config};
+use crate::config::{cfg, Activate, Config, Pager};
 use crate::output::write_output;
 use crate::render::{
     contains_bytes, emit_line, find_boundary, strip_trailing_nl, Parsed,
@@ -75,6 +75,7 @@ CONFIGURATION
 KEYS
   activate                                  auto|always|never
   activation-marker                         string
+  pager                                     auto|always|never
 
   [filter]
     hide-vertical-only-lines                bool
@@ -128,6 +129,15 @@ fn main() {
     }
     if let Err(e) = cfg_obj.apply_cli(argv) {
         eprintln!("bijjou: {}", e);
+        std::process::exit(2);
+    }
+    if cfg_obj.pager == Pager::Always
+        && std::env::var("PAGER")
+            .ok()
+            .filter(|s| !s.trim().is_empty())
+            .is_none()
+    {
+        eprintln!("bijjou: pager = \"always\" but PAGER env var is not set");
         std::process::exit(2);
     }
     config::init(cfg_obj);

@@ -40,6 +40,15 @@ activate = "auto"
 #
 activation-marker = "BIJJOU_ACTIVATE"
 
+# Pager mode: one of "auto", "always", "never".
+#   auto   — page only when $PAGER is set and stdout is a terminal (default).
+#   always — always page; bijjou errors at startup if $PAGER is unset.
+#   never  — never page; output goes straight to stdout.
+#
+# Default: "auto"
+#
+# pager = "auto"
+
 [commits.markers]
 # Sentinel chars bijjou looks for to detect commit state. The jj template
 # (see examples/jj-config-snippet.toml) must emit the same bytes. Both are
