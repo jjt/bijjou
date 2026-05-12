@@ -308,8 +308,17 @@ impl Config {
         let Some(path) = config_path() else {
             return Self::default();
         };
-        let Ok(content) = std::fs::read_to_string(&path) else {
-            return Self::default();
+        let content = match std::fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(_) => {
+                if std::env::var("BIJJOU_CONFIG").is_ok() {
+                    return Self::default();
+                }
+                match create_default_config() {
+                    Some(p) => std::fs::read_to_string(&p).unwrap_or_default(),
+                    None => return Self::default(),
+                }
+            }
         };
         match Self::from_toml(&content) {
             Ok(c) => c,
@@ -319,6 +328,39 @@ impl Config {
             }
         }
     }
+}
+
+const EXAMPLE_CONFIG: &str = include_str!("../examples/bijjou-config.example.toml");
+
+fn default_config_target() -> Option<PathBuf> {
+    if let Ok(v) = std::env::var("XDG_CONFIG_HOME") {
+        if !v.is_empty() {
+            return Some(PathBuf::from(v).join("bijjou").join("config.toml"));
+        }
+    }
+    let h = std::env::var("HOME").ok().filter(|s| !s.is_empty())?;
+    Some(
+        PathBuf::from(h)
+            .join(".config")
+            .join("bijjou")
+            .join("config.toml"),
+    )
+}
+
+fn create_default_config() -> Option<PathBuf> {
+    let target = default_config_target()?;
+    if let Some(parent) = target.parent() {
+        if let Err(e) = std::fs::create_dir_all(parent) {
+            eprintln!("bijjou: failed to create {}: {}", parent.display(), e);
+            return None;
+        }
+    }
+    if let Err(e) = std::fs::write(&target, EXAMPLE_CONFIG) {
+        eprintln!("bijjou: failed to write {}: {}", target.display(), e);
+        return None;
+    }
+    eprintln!("bijjou: created default config at {}", target.display());
+    Some(target)
 }
 
 fn config_path() -> Option<PathBuf> {
