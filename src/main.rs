@@ -41,7 +41,68 @@ use crate::render::{
     line_flags, write_stripping_marker, Parsed,
 };
 
+const HELP: &str = "\
+bijjou - jj log post-processor
+
+USAGE
+  bijjou [OPTIONS] < input
+
+OPTIONS
+  -h, --help                show this help and exit
+  --activate[=MODE]         processing mode (auto|always|never); bare flag = auto
+  --<key>=<value>           override any config key; replace '.' with '__'
+
+CONFIGURATION
+  Precedence (low to high): config file < env vars < CLI flags.
+
+  Config file paths (first match wins):
+    $BIJJOU_CONFIG
+    $XDG_CONFIG_HOME/bijjou/config.toml
+    $HOME/.config/bijjou/config.toml
+
+  Env vars: prefix BIJJOU__, replace '.' with '__'.
+    e.g. BIJJOU__graph__nodes__chars__working-copy=X
+
+  CLI flags: --<key>=<value>, replace '.' with '__'.
+    e.g. --graph__nodes__chars__working-copy=X
+
+KEYS
+  activate                                  auto|always|never
+  activation-marker                         string
+
+  [filter]
+    hide-vertical-only-lines                bool
+
+  [separator]
+    dash                                    string
+    dash-arrow                              string
+
+  [commits.markers]
+    empty                                   string
+    immutable                               string
+
+  [graph.nodes.chars]                       string (each)
+    working-copy  mutable  immutable  conflict  alternate
+    empty  working-copy-empty  empty-immutable
+
+  [graph.edges.chars]                       string (each)
+    horizontal  vertical
+    top-left  top-right  bottom-left  bottom-right
+    tee-right  tee-left  tee-down  tee-up
+    cross  elision
+
+  [colors]                                  int 0-255 | \"#rrggbb\"
+    dash-filler  edge  mutable-node
+
+See examples/bijjou-config.example.toml for defaults and discussion.
+";
+
 fn main() {
+    let argv: Vec<String> = std::env::args().skip(1).collect();
+    if argv.iter().any(|a| a == "--help" || a == "-h") {
+        print!("{}", HELP);
+        return;
+    }
     let mut cfg_obj = match Config::load() {
         Ok(c) => c,
         Err(e) => {
@@ -53,7 +114,7 @@ fn main() {
         eprintln!("bijjou: {}", e);
         std::process::exit(2);
     }
-    if let Err(e) = cfg_obj.apply_cli(std::env::args().skip(1)) {
+    if let Err(e) = cfg_obj.apply_cli(argv) {
         eprintln!("bijjou: {}", e);
         std::process::exit(2);
     }
