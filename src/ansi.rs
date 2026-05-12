@@ -4,13 +4,13 @@ pub const FG_RESET: &[u8] = b"\x1b[39m";
 // the live Config (see config::cfg().empty_marker / immutable_marker), so
 // these constants exist only to keep test fixtures legible.
 #[cfg(test)]
-pub const EMPTY_MARKER: u32 = 0x1D640; // 𝙀
+pub const EMPTY_MARKER: u32 = 0x1D674; // 𝙴
 #[cfg(test)]
-pub const EMPTY_MARKER_BYTES: &[u8] = b"\xf0\x9d\x99\x80";
+pub const EMPTY_MARKER_BYTES: &[u8] = b"\xf0\x9d\x99\xb4";
 #[cfg(test)]
-pub const IMMUTABLE_MARKER: u32 = 0x1D644; // 𝙄
+pub const IMMUTABLE_MARKER: u32 = 0x1D678; // 𝙸
 #[cfg(test)]
-pub const IMMUTABLE_MARKER_BYTES: &[u8] = b"\xf0\x9d\x99\x84";
+pub const IMMUTABLE_MARKER_BYTES: &[u8] = b"\xf0\x9d\x99\xb8";
 
 pub fn skip_csi(bytes: &[u8], i: usize) -> Option<usize> {
     if i + 1 >= bytes.len() || bytes[i] != 0x1b || bytes[i + 1] != b'[' {

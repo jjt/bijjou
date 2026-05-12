@@ -10,15 +10,15 @@ color = "always"
 # bijjou uses sentinel strings to tell if the commit is empty and/or
 # immutable, and to activate bijjou. These are stripped from the final output.
 #  BIJJOU_ACTIVATE - activate bijjou        (override via `activation_marker`)
-#  𝙀 (U+1D640)     - commit is empty        (override via `commits.markers.empty`)
-#  𝙄 (U+1D644)     - commit is immutable    (override via `commits.markers.immutable`)
+#  𝙴 (U+1D674)     - commit is empty        (override via `commits.markers.empty`)
+#  𝙸 (U+1D678)     - commit is immutable    (override via `commits.markers.immutable`)
 # If you change any of these in bijjou's config, mirror the change in the
 # string literals below so the template emits the matching bytes.
 'format_bijjou_markers(commit)' = '''
 separate("",
   "BIJJOU_ACTIVATE",
-  if(commit.empty(), label("empty", "𝙀")),
-  if(commit.immutable(), label("immutable", "𝙄")),
+  if(commit.empty(), label("empty", "𝙴")),
+  if(commit.immutable(), label("immutable", "𝙸")),
 )
 '''
 

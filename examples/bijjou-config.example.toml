@@ -18,7 +18,7 @@
 #
 # Default: "auto"
 #
-# activate = "auto"
+activate = "auto"
 
 # Opt-in marker. In `auto` mode, bijjou processes input only if this byte
 # sequence appears at least once anywhere in stdin. All occurrences are
@@ -29,17 +29,17 @@
 # Pair with a jj template that emits the marker — see
 # examples/jj-config-snippet.toml.
 #
-# activation_marker = "BIJJOU_ACTIVATE"
+activation_marker = "BIJJOU_ACTIVATE"
 
 [commits.markers]
 # Sentinel chars bijjou looks for to detect commit state. The jj template
 # (see examples/jj-config-snippet.toml) must emit the same bytes. Both are
 # stripped from output. Set either to "" to disable detection of that state.
 #
-# Defaults: empty = "𝙀" (U+1D640), immutable = "𝙄" (U+1D644)
+# Defaults: empty = "𝙴" (U+1D674), immutable = "𝙸" (U+1D678)
 #
-# empty     = "𝙀"
-# immutable = "𝙄"
+# empty     = "𝙴"
+# immutable = "𝙸"
 
 [graph.nodes.chars]
 # Replacement glyphs for the commit-node chars jj prints (@ ○ ◆ × ●).

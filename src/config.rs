@@ -28,8 +28,8 @@ pub const DEFAULT_GRAPH_TEE_UP: &str = "𜹀";
 pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
-pub const DEFAULT_EMPTY_MARKER: &str = "𝙀";
-pub const DEFAULT_IMMUTABLE_MARKER: &str = "𝙄";
+pub const DEFAULT_EMPTY_MARKER: &str = "𝙴";
+pub const DEFAULT_IMMUTABLE_MARKER: &str = "𝙸";
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum Activate {
