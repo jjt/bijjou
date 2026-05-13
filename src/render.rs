@@ -444,22 +444,34 @@ fn match_marker<'a>(bytes: &[u8], i: usize, markers: &'a [&'a [u8]]) -> Option<u
 pub fn write_stripping_marker(content: &[u8], out: &mut Vec<u8>) {
     let markers = strip_markers();
     let mut i = 0;
+    let mut last_visible: Option<u8> = out.last().copied();
     while i < content.len() {
+        if let Some(after) = skip_csi(content, i) {
+            out.extend_from_slice(&content[i..after]);
+            i = after;
+            continue;
+        }
         if let Some(skip) = match_marker(content, i, &markers) {
             let next = i + skip;
-            // Avoid leaving doubled spaces where the marker was wedged
-            // between two single spaces in the source. Consume the trailing
-            // space when both sides were spaces.
-            let prev_is_space = out.last() == Some(&b' ');
-            let next_is_space = content.get(next) == Some(&b' ');
+            // Look past any CSI runs after the marker for the next visible byte,
+            // so a wrapping color sequence (e.g. `\x1b[2m(empty)\x1b[22m`) does
+            // not hide the trailing space from the space-collapse check.
+            let mut j = next;
+            while let Some(after) = skip_csi(content, j) {
+                j = after;
+            }
+            let prev_is_space = last_visible == Some(b' ');
+            let next_is_space = content.get(j) == Some(&b' ');
             if prev_is_space && next_is_space {
-                i = next + 1;
+                out.extend_from_slice(&content[next..j]);
+                i = j + 1;
             } else {
                 i = next;
             }
             continue;
         }
         out.push(content[i]);
+        last_visible = Some(content[i]);
         i += 1;
     }
 }
@@ -829,6 +841,16 @@ mod tests {
         let mut out = Vec::new();
         write_stripping_marker(&buf, &mut out);
         assert_eq!(out, b"\x1b[38;5;10m\x1b[39m");
+    }
+
+    #[test]
+    fn strip_collapses_spaces_with_csi_around_marker() {
+        let mut buf = b"260513 \x1b[38;5;2m".to_vec();
+        buf.extend_from_slice(EMPTY_MARKER_BYTES);
+        buf.extend_from_slice(b"\x1b[39m no description");
+        let mut out = Vec::new();
+        write_stripping_marker(&buf, &mut out);
+        assert_eq!(out, b"260513 \x1b[38;5;2m\x1b[39mno description");
     }
 
     #[test]
