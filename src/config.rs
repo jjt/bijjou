@@ -332,6 +332,10 @@ impl Config {
                 self.apply_kv("stream.enabled", "true", "cli")?;
                 continue;
             }
+            if let Some(value) = arg.strip_prefix("--stream=") {
+                self.apply_kv("stream.enabled", value, "cli")?;
+                continue;
+            }
             let rest = arg
                 .strip_prefix("--")
                 .ok_or_else(|| format!("cli: unknown argument: {}", arg))?;
@@ -789,8 +793,30 @@ edge = 200
     #[test]
     fn cli_bare_stream_sets_enabled() {
         let mut cfg = Config::default();
+        cfg.stream_enabled = false;
         cfg.apply_cli(args(&["--stream"])).unwrap();
         assert!(cfg.stream_enabled);
+    }
+
+    #[test]
+    fn cli_stream_true() {
+        let mut cfg = Config::default();
+        cfg.stream_enabled = false;
+        cfg.apply_cli(args(&["--stream=true"])).unwrap();
+        assert!(cfg.stream_enabled);
+    }
+
+    #[test]
+    fn cli_stream_false() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--stream=false"])).unwrap();
+        assert!(!cfg.stream_enabled);
+    }
+
+    #[test]
+    fn cli_stream_invalid_value_errors() {
+        let mut cfg = Config::default();
+        assert!(cfg.apply_cli(args(&["--stream=sometimes"])).is_err());
     }
 
     #[test]

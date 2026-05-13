@@ -64,10 +64,10 @@ minimal snippet.
 
 Streaming is on by default: bijjou flushes batches as input arrives. Graph
 width is tracked across the whole stream and grows monotonically —
-alignment never shifts backwards. Disable with `--stream__enabled=false`
-to fall back to the buffered path, which aligns every line to the widest
-graph column in the input at the cost of waiting for EOF. See the comment
-in `examples/bijjou-config.example.toml` for the trade-off.
+alignment never shifts backwards. Disable with `--stream=false` to fall
+back to the buffered path, which aligns every line to the widest graph
+column in the input at the cost of waiting for EOF. See the comment in
+`examples/bijjou-config.example.toml` for the trade-off.
 
 ## Configuration
 
