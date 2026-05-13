@@ -17,15 +17,15 @@
 #   `--activate` with no value is shorthand for `--activate=auto`.
 
 # Processing mode: one of "auto", "always", "never".
-#   auto   — gate on `activation-marker` (default).
-#   always — process every line regardless of marker presence.
+#   auto   — gate on `activation-marker`.
+#   always — process every line regardless of marker presence (default).
 #   never  — passthrough stdin byte-for-byte without processing.
 # The `--activate=<auto|always|never>` CLI flag overrides this; `--activate`
 # with no value resolves to "auto".
 #
-# Default: "auto"
+# Default: "always"
 #
-activate = "auto"
+# activate = "always"
 
 # Opt-in marker. In `auto` mode, bijjou processes input only if this byte
 # sequence appears at least once anywhere in stdin. All occurrences are
@@ -180,7 +180,7 @@ activation-marker = "BIJJOU_ACTIVATE"
 # passed through byte-for-byte without further processing. Set
 # `activate = "always"` to skip the scan entirely.
 #
-# Defaults: enabled = false, batch-size = 128
+# Defaults: enabled = true, batch-size = 128
 #
 # enabled    = true
 # batch-size = 128

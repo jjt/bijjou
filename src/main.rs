@@ -48,8 +48,8 @@ USAGE
 
 OPTIONS
   -h, --help                show this help and exit
-  --activate[=MODE]         processing mode (auto|always|never); bare flag = auto
-  --stream                  enable streaming mode (shorthand for --stream__enabled=true)
+  --activate[=MODE]         processing mode (auto|always|never); default always; bare flag = auto
+  --stream                  enable streaming mode (default on; shorthand for --stream__enabled=true)
   --<key>=<value>           override any config key; replace '.' with '__'
 
 CONFIGURATION
@@ -88,7 +88,7 @@ KEYS
     dash-margin                             int >= 0 (default 1)
 
   [stream]
-    enabled                                 bool
+    enabled                                 bool (default true)
     batch-size                              int >= 1 (default 128)
 
   [commits.markers]

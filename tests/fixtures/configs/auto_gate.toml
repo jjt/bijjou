@@ -1,4 +1,4 @@
-activate = "always"
+activate = "auto"
 
 [stream]
 enabled = false

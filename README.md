@@ -47,10 +47,10 @@ Pipe `jj log` through bijjou:
 jj log --color=always | bijjou
 ```
 
-By default bijjou is in `auto` mode: it processes input only if it sees
-the activation marker (`BIJJOU_ACTIVATE`) somewhere in the stream, and
-passes input through unchanged otherwise. Force-on with `--activate` or
-`--activate=always`; force-off with `--activate=never`.
+By default bijjou is in `always` mode: it processes every line of input.
+Set `--activate=auto` to gate processing on the presence of the activation
+marker (`BIJJOU_ACTIVATE`) in stdin, or `--activate=never` to force
+byte-for-byte passthrough.
 
 bijjou detects jj's native `(empty)` and `(divergent)` log annotations out
 of the box — no jj config required. Setting `ui.color = "always"` is
@@ -62,16 +62,12 @@ minimal snippet.
 
 ### Streaming
 
-For long logs or live tailing, enable streaming:
-
-```sh
-jj log --color=always | bijjou --stream
-```
-
-Streaming flushes batches as input arrives. Graph width is tracked across
-the whole stream and grows monotonically — alignment never shifts
-backwards. See the comment in `examples/bijjou-config.example.toml` for
-the trade-off versus the non-streaming path.
+Streaming is on by default: bijjou flushes batches as input arrives. Graph
+width is tracked across the whole stream and grows monotonically —
+alignment never shifts backwards. Disable with `--stream__enabled=false`
+to fall back to the buffered path, which aligns every line to the widest
+graph column in the input at the cost of waiting for EOF. See the comment
+in `examples/bijjou-config.example.toml` for the trade-off.
 
 ## Configuration
 

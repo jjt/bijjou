@@ -31,3 +31,6 @@ dash = "."
 dash-filler = 244
 edge = 245
 mutable-node = 246
+
+[stream]
+enabled = false

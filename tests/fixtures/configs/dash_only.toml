@@ -2,3 +2,6 @@ activate = "always"
 
 [layout]
 dash = "·"
+
+[stream]
+enabled = false

@@ -4,3 +4,6 @@ activate = "always"
 dash-filler = "#ff0000"
 edge = "#00ff00"
 mutable-node = "#0000ff"
+
+[stream]
+enabled = false

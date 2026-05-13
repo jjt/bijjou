@@ -39,8 +39,8 @@ pub const DEFAULT_ALIGN_GAP: usize = 2;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum Activate {
-    #[default]
     Auto,
+    #[default]
     Always,
     Never,
 }
@@ -162,7 +162,7 @@ impl Default for Config {
             activate: Activate::default(),
             pager: Pager::default(),
             hide_vertical_only_lines: false,
-            stream_enabled: false,
+            stream_enabled: true,
             stream_batch_size: DEFAULT_STREAM_BATCH_SIZE,
             align_enabled: DEFAULT_ALIGN_ENABLED,
             align_gap: DEFAULT_ALIGN_GAP,
@@ -597,9 +597,9 @@ edge = 200
     }
 
     #[test]
-    fn toml_activate_default_is_auto() {
+    fn toml_activate_default_is_always() {
         let cfg = Config::from_toml("").unwrap();
-        assert_eq!(cfg.activate, Activate::Auto);
+        assert_eq!(cfg.activate, Activate::Always);
     }
 
     #[test]
@@ -729,7 +729,7 @@ edge = 200
     #[test]
     fn stream_defaults() {
         let cfg = Config::from_toml("").unwrap();
-        assert!(!cfg.stream_enabled);
+        assert!(cfg.stream_enabled);
         assert_eq!(cfg.stream_batch_size, DEFAULT_STREAM_BATCH_SIZE);
     }
 

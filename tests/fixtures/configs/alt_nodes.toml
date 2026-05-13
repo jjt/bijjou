@@ -9,3 +9,6 @@ alternate          = "✦"
 empty              = "○"
 working-copy-empty = "☆"
 empty-immutable    = "⬡"
+
+[stream]
+enabled = false

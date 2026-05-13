@@ -14,16 +14,8 @@ fn run_bijjou(input: &[u8]) -> Vec<u8> {
     run_bijjou_with_config(input, "bypass_gate")
 }
 
-fn run_bijjou_default(input: &[u8]) -> Vec<u8> {
-    Command::cargo_bin("bijjou")
-        .expect("binary built")
-        .env("BIJJOU_CONFIG", "/dev/null")
-        .write_stdin(input)
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone()
+fn run_bijjou_with_auto_gate(input: &[u8]) -> Vec<u8> {
+    run_bijjou_with_config(input, "auto_gate")
 }
 
 fn config_path(name: &str) -> PathBuf {
@@ -595,7 +587,7 @@ const ACTIVATION_MARKER: &[u8] = b"BIJJOU_ACTIVATE";
 #[test]
 fn gate_passthrough_when_marker_absent() {
     let input = b"\xe2\x97\x8b  abcde 12345 description\n";
-    let output = run_bijjou_default(input);
+    let output = run_bijjou_with_auto_gate(input);
     assert_eq!(
         output, input,
         "input without BIJJOU_ACTIVATE must passthrough unchanged"
@@ -608,7 +600,7 @@ fn gate_processes_when_marker_present() {
     let mut input = "\u{25CB}  abcde 12345 ".as_bytes().to_vec();
     input.extend_from_slice(ACTIVATION_MARKER);
     input.extend_from_slice(b"description\n");
-    let output = run_bijjou_default(&input);
+    let output = run_bijjou_with_auto_gate(&input);
     assert_ne!(
         output, input,
         "input with BIJJOU_ACTIVATE on a graph line must be processed"
@@ -624,7 +616,7 @@ fn gate_passes_through_non_graph_lines_even_when_marker_present() {
     input.extend_from_slice(b" plain text line\n");
     input.extend_from_slice(b"M src/main.rs\n");
     input.extend_from_slice(b"\xe2\x97\x8b  abcde 12345 description\n");
-    let output = run_bijjou_default(&input);
+    let output = run_bijjou_with_auto_gate(&input);
     let marker_line = {
         let mut v = ACTIVATION_MARKER.to_vec();
         v.extend_from_slice(b" plain text line\n");
@@ -646,7 +638,7 @@ fn gate_strips_inline_marker_in_content() {
     let mut input = "\u{25CB}  abcde 12345 desc ".as_bytes().to_vec();
     input.extend_from_slice(ACTIVATION_MARKER);
     input.extend_from_slice(b" suffix\n");
-    let output = run_bijjou_default(&input);
+    let output = run_bijjou_with_auto_gate(&input);
     assert!(
         !output
             .windows(ACTIVATION_MARKER.len())
