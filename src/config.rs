@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-pub const DEFAULT_DASH: &str = "━";
+pub const DEFAULT_DASH: &str = "·";
 pub const DEFAULT_DASH_ARROW: &str = "";
+pub const DEFAULT_DASH_MARGIN: usize = 1;
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
 pub const DEFAULT_MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
@@ -92,6 +93,7 @@ pub struct Config {
     pub empty_immutable_icon: String,
     pub dash: String,
     pub dash_arrow: String,
+    pub dash_margin: usize,
     pub graph_horizontal: String,
     pub graph_vertical: String,
     pub graph_top_left: String,
@@ -132,6 +134,7 @@ impl Default for Config {
             empty_immutable_icon: DEFAULT_EMPTY_IMMUTABLE_ICON.to_string(),
             dash: DEFAULT_DASH.to_string(),
             dash_arrow: DEFAULT_DASH_ARROW.to_string(),
+            dash_margin: DEFAULT_DASH_MARGIN,
             graph_horizontal: DEFAULT_GRAPH_HORIZONTAL.to_string(),
             graph_vertical: DEFAULT_GRAPH_VERTICAL.to_string(),
             graph_top_left: DEFAULT_GRAPH_TOP_LEFT.to_string(),
@@ -364,6 +367,15 @@ impl Config {
             "graph.edges.chars.elision" => self.graph_elision = value.to_string(),
             "layout.dash" => self.dash = value.to_string(),
             "layout.dash-arrow" => self.dash_arrow = value.to_string(),
+            "layout.dash-margin" => {
+                let n: i64 = value
+                    .parse()
+                    .map_err(|_| mkerr(format!("expected integer >= 0, got {:?}", value)))?;
+                if n < 0 {
+                    return Err(mkerr(format!("expected integer >= 0, got {}", n)));
+                }
+                self.dash_margin = n as usize;
+            }
             "commits.markers.empty" => self.empty_marker = value.to_string(),
             "commits.markers.immutable" => self.immutable_marker = value.to_string(),
             "filter.hide-vertical-only-lines" => {
@@ -821,5 +833,32 @@ edge = 200
         let mut cfg = Config::default();
         cfg.apply_cli(args(&["--layout__dash-arrow=>"])).unwrap();
         assert_eq!(cfg.dash_arrow, ">");
+    }
+
+    #[test]
+    fn layout_dash_margin_default() {
+        let cfg = Config::from_toml("").unwrap();
+        assert_eq!(cfg.dash_margin, DEFAULT_DASH_MARGIN);
+        assert_eq!(cfg.dash, DEFAULT_DASH);
+    }
+
+    #[test]
+    fn layout_dash_margin_toml() {
+        let s = "[layout]\ndash-margin = 0\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(cfg.dash_margin, 0);
+    }
+
+    #[test]
+    fn layout_dash_margin_negative_errors() {
+        let s = "[layout]\ndash-margin = -1\n";
+        assert!(Config::from_toml(s).is_err());
+    }
+
+    #[test]
+    fn cli_layout_dash_margin() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--layout__dash-margin=3"])).unwrap();
+        assert_eq!(cfg.dash_margin, 3);
     }
 }

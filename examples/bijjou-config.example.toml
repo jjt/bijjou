@@ -110,18 +110,27 @@ activation-marker = "BIJJOU_ACTIVATE"
 # `gap` — number of spaces between the rightmost graph column and the start
 # of commit content. 0 lets content touch the graph node.
 #
-# `dash` — glyph repeated to fill the alignment gap (only used when `align`
-# is true and the gap is wide enough).
+# `dash` — glyph repeated to fill the gap between the graph and commit
+# content, and to fill any internal space run that sits immediately to
+# the right of a graph node (○, @, ◆, etc.). Spaces to the right of a
+# graph edge (│, ─, …) or before the first graph char are left alone.
 #
-# `dash-arrow` — if non-empty, replaces the rightmost dash with this glyph
-# to point at the content; leave empty for a plain dash run.
+# `dash-arrow` — if non-empty, replaces the rightmost dash in the
+# trailing run with this glyph to point at the content; leave empty for
+# a plain dash run.
 #
-# Defaults: align = true, gap = 2, dash = "━", dash-arrow = "" (no arrow)
+# `dash-margin` — number of plain spaces kept between a dash run and
+# the adjacent graph char or commit content. A gap is dash-filled only
+# when it is at least `2 * dash-margin + 1` cells wide.
 #
-# align      = true
-# gap        = 2
-# dash       = "━"
-# dash-arrow = "▶"
+# Defaults: align = true, gap = 2, dash = "·", dash-arrow = "" (no arrow),
+# dash-margin = 1
+#
+# align       = true
+# gap         = 2
+# dash        = "·"
+# dash-arrow  = "▶"
+# dash-margin = 1
 
 [colors]
 # Either an integer 0-255 (256-color palette) or a "#rrggbb" hex string.

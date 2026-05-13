@@ -3,16 +3,18 @@
 # A single `BIJJOU_ACTIVATE` anywhere in stdin is enough to opt bijjou into
 # processing the whole stream; without it bijjou passes input through unchanged.
 
+# Optional, but removes the need to add --color=always to jj commands
 [ui]
 color = "always"
 
-[template-aliases]
 # bijjou uses sentinel strings to tell if the commit is empty and/or
-# immutable, and to activate bijjou. These are stripped from the final output.
+# immutable, and also to activate processing if `activate=auto` is set.
+# These are stripped from the final output.
 #  𝙴 (U+1D674)     - commit is empty        (override via `commits.markers.empty`)
 #  𝙸 (U+1D678)     - commit is immutable    (override via `commits.markers.immutable`)
 # If you change any of these in bijjou's config, mirror the change in the
 # string literals below so the template emits the matching bytes.
+[template-aliases]
 'format_bijjou_markers(commit)' = '''
 separate("",
   if(commit.empty(), label("empty", "𝙴")),

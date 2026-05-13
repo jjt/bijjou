@@ -85,6 +85,7 @@ KEYS
     gap                                     int >= 0 (default 2)
     dash                                    string
     dash-arrow                              string
+    dash-margin                             int >= 0 (default 1)
 
   [stream]
     enabled                                 bool

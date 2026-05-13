@@ -3,23 +3,23 @@ source: tests/golden.rs
 description: "Single capture exercising every node type: bookmarks, hidden, divergent, conflicted WC, multi-workspace, octopus megamerge, immutable root."
 expression: visualize(&output)
 ---
-\e[1m\e[38;5;1m󰋘\e[0m \e[38;5;8m━━━━━━\e[39m \e[1m\e[38;5;13mxsp\e[38;5;8mpxl\e[39m \e[38;5;12ma\e[38;5;8m22667\e[39m \e[38;5;3mTU\e[39m \e[38;5;14m260509·1436\e[39m \e[38;5;10mdefault@\e[39m \e[38;5;13mside\e[39m side conflict edit\e[0m
-\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m━━━━\e[39m \e[1m\e[38;5;5mmk\e[0m\e[38;5;8mzlmp\e[39m \e[1m\e[38;5;4m26\e[0m\e[38;5;8m137d\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;2m\e[39mMEGAMERGE
+\e[1m\e[38;5;1m󰋘\e[0m \e[38;5;8m······\e[39m \e[1m\e[38;5;13mxsp\e[38;5;8mpxl\e[39m \e[38;5;12ma\e[38;5;8m22667\e[39m \e[38;5;3mTU\e[39m \e[38;5;14m260509·1436\e[39m \e[38;5;10mdefault@\e[39m \e[38;5;13mside\e[39m side conflict edit\e[0m
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m····\e[39m \e[1m\e[38;5;5mmk\e[0m\e[38;5;8mzlmp\e[39m \e[1m\e[38;5;4m26\e[0m\e[38;5;8m137d\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;2m\e[39mMEGAMERGE
 \e[38;5;240m𜸩\e[39m \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸠\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸤\e[39m
 \e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  \e[1m\e[38;5;5mo\e[0m\e[38;5;8mpnyrm\e[39m \e[1m\e[38;5;4mf\e[0m\e[38;5;8m0f735\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-c\e[39m stack-c commit
 \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-\e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m━━\e[39m \e[1m\e[38;5;5mz\e[0m\e[38;5;8mwvrkr\e[39m \e[1m\e[38;5;4mc\e[0m\e[38;5;8m468a6\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-b\e[39m stack-b commit
+\e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m··\e[39m \e[1m\e[38;5;5mz\e[0m\e[38;5;8mwvrkr\e[39m \e[1m\e[38;5;4mc\e[0m\e[38;5;8m468a6\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-b\e[39m stack-b commit
 \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m━━━━\e[39m \e[1m\e[38;5;5mv\e[0m\e[38;5;8mrmrsw\e[39m \e[1m\e[38;5;4md\e[0m\e[38;5;8m88a94\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-a\e[39m stack-a commit
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m····\e[39m \e[1m\e[38;5;5mv\e[0m\e[38;5;8mrmrsw\e[39m \e[1m\e[38;5;4md\e[0m\e[38;5;8m88a94\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-a\e[39m stack-a commit
 \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m━━━━\e[39m \e[1m\e[38;5;5mq\e[0m\e[38;5;8mzwtry\e[39m \e[1m\e[38;5;4me\e[0m\e[38;5;8m62c4e\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;2mws2@\e[39m \e[38;5;2m\e[3m\e[38;5;8mno description\e[23m\e[39m
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m····\e[39m \e[1m\e[38;5;5mq\e[0m\e[38;5;8mzwtry\e[39m \e[1m\e[38;5;4me\e[0m\e[38;5;8m62c4e\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;2mws2@\e[39m \e[38;5;2m\e[3m\e[38;5;8mno description\e[23m\e[39m
 \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m━━━━\e[39m \e[1m\e[38;5;5mmp\e[0m\e[38;5;8mzqvy\e[1m\e[38;5;5m/0\e[0m \e[1m\e[38;5;4m2a\e[0m\e[38;5;8me826\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5m𝘿\e[39m version C
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m····\e[39m \e[1m\e[38;5;5mmp\e[0m\e[38;5;8mzqvy\e[1m\e[38;5;5m/0\e[0m \e[1m\e[38;5;4m2a\e[0m\e[38;5;8me826\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5m𝘿\e[39m version C
 \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m━━━━\e[39m \e[1m\e[38;5;5mmp\e[0m\e[38;5;8mzqvy\e[1m\e[38;5;5m/1\e[0m \e[1m\e[38;5;4m7\e[0m\e[38;5;8mc0177\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5m𝘿\e[39m version B
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m····\e[39m \e[1m\e[38;5;5mmp\e[0m\e[38;5;8mzqvy\e[1m\e[38;5;5m/1\e[0m \e[1m\e[38;5;4m7\e[0m\e[38;5;8mc0177\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5m𝘿\e[39m version B
 \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m━━━━\e[39m \e[1m\e[39mr\e[0m\e[38;5;8mxpwnq\e[1m\e[39m/0\e[0m \e[1m\e[38;5;4m72\e[0m\e[38;5;8m025f\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m 𝙃 abandoned commit
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m \e[38;5;8m····\e[39m \e[1m\e[39mr\e[0m\e[38;5;8mxpwnq\e[1m\e[39m/0\e[0m \e[1m\e[38;5;4m72\e[0m\e[38;5;8m025f\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m 𝙃 abandoned commit
 \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-\e[38;5;245m\e[39m \e[38;5;8m━━━━━━\e[39m \e[1m\e[38;5;5mw\e[0m\e[38;5;8mosytr\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m12122\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m \e[38;5;5mmain\e[39m main: edit shared
-\e[38;5;245m\e[39m \e[38;5;8m━━━━━━\e[39m \e[1m\e[38;5;5mxsn\e[0m\e[38;5;8mkqp\e[39m \e[1m\e[38;5;4m4\e[0m\e[38;5;8m8a20a\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m base: shared file
-\e[0m\e[38;5;245m\e[39m\e[0m \e[38;5;8m━━━━━━\e[39m \e[1m\e[38;5;5mzz\e[0m\e[38;5;8mzzzz\e[39m \e[38;5;2mroot()\e[39m \e[1m\e[38;5;4m00\e[0m\e[38;5;8m0000\e[39m
+\e[38;5;245m\e[39m \e[38;5;8m······\e[39m \e[1m\e[38;5;5mw\e[0m\e[38;5;8mosytr\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m12122\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m \e[38;5;5mmain\e[39m main: edit shared
+\e[38;5;245m\e[39m \e[38;5;8m······\e[39m \e[1m\e[38;5;5mxsn\e[0m\e[38;5;8mkqp\e[39m \e[1m\e[38;5;4m4\e[0m\e[38;5;8m8a20a\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m base: shared file
+\e[0m\e[38;5;245m\e[39m\e[0m \e[38;5;8m······\e[39m \e[1m\e[38;5;5mzz\e[0m\e[38;5;8mzzzz\e[39m \e[38;5;2mroot()\e[39m \e[1m\e[38;5;4m00\e[0m\e[38;5;8m0000\e[39m

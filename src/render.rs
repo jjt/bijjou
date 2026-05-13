@@ -19,10 +19,14 @@ pub fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
 fn write_gap(out: &mut Vec<u8>, p: &Parsed, target_col: usize, dashed: bool) {
     let c = cfg();
     let gap = target_col - p.graph_col;
+    let margin = c.dash_margin;
+    let min_for_dashes = 2 * margin + 1;
 
-    if dashed && gap >= 3 {
-        let fill = gap - 2;
-        out.push(b' ');
+    if dashed && gap >= min_for_dashes {
+        let fill = gap - 2 * margin;
+        for _ in 0..margin {
+            out.push(b' ');
+        }
         out.extend_from_slice(&c.dim_on);
         let dash_count = if c.dash_arrow.is_empty() { fill } else { fill - 1 };
         for _ in 0..dash_count {
@@ -32,7 +36,9 @@ fn write_gap(out: &mut Vec<u8>, p: &Parsed, target_col: usize, dashed: bool) {
             out.extend_from_slice(c.dash_arrow.as_bytes());
         }
         out.extend_from_slice(FG_RESET);
-        out.push(b' ');
+        for _ in 0..margin {
+            out.push(b' ');
+        }
     } else {
         for _ in 0..gap {
             out.push(b' ');
@@ -378,9 +384,20 @@ fn emit_edge(cp: u32, raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
 // Emit bytes with all visible non-space chars wrapped in dim SGR, except
 // commit-node chars (○ ● ◆ @ ×) which pass through with normal intensity.
 // Strips jj's fg-color codes; preserves other ANSI sequences.
+//
+// Space runs sitting between a node char and the next graph char are
+// dash-filled (respecting `dash_margin`). Runs after an edge, or before
+// the first graph char on the line, stay as plain spaces.
 pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immutable: bool) {
     let markers = strip_markers();
+    let c = cfg();
+    let margin = c.dash_margin;
+    let min_for_dashes = 2 * margin + 1;
     let mut i = 0;
+    let mut prev_was_node = false;
+    let mut run_start: Option<usize> = None;
+    let mut run_space_count: usize = 0;
+
     while i < bytes.len() {
         let ansi_start = i;
         while let Some(after) = skip_csi(bytes, i) {
@@ -389,13 +406,27 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immuta
         let ansi = &bytes[ansi_start..i];
 
         if i >= bytes.len() {
+            flush_internal_run(out, &mut run_start, &mut run_space_count, prev_was_node, false, c, margin, min_for_dashes);
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
             break;
         }
 
-        if bytes[i] == b' ' || bytes[i] == b'\n' {
+        if bytes[i] == b'\n' {
+            flush_internal_run(out, &mut run_start, &mut run_space_count, prev_was_node, false, c, margin, min_for_dashes);
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
-            out.push(bytes[i]);
+            out.push(b'\n');
+            prev_was_node = false;
+            i += 1;
+            continue;
+        }
+
+        if bytes[i] == b' ' {
+            if run_start.is_none() {
+                run_start = Some(out.len());
+            }
+            emit_filtered_ansi(ansi, out, is_fg_color_sgr);
+            out.push(b' ');
+            run_space_count += 1;
             i += 1;
             continue;
         }
@@ -408,12 +439,59 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immuta
 
         let (cp, len) = decode_utf8(bytes, i);
         let raw = &bytes[i..i + len];
+        let cp_is_graph = is_graph_char(cp);
+        flush_internal_run(out, &mut run_start, &mut run_space_count, prev_was_node, cp_is_graph, c, margin, min_for_dashes);
         if is_node_char(cp) {
             emit_node(cp, raw, ansi, is_empty, is_immutable, out);
         } else {
             emit_edge(cp, raw, ansi, out);
         }
+        prev_was_node = is_node_char(cp);
         i += len;
+    }
+
+    flush_internal_run(out, &mut run_start, &mut run_space_count, prev_was_node, false, c, margin, min_for_dashes);
+}
+
+// Convert a pending internal space run into dashes when it sits between a
+// node char and a following graph char. Otherwise the already-emitted spaces
+// stay as-is.
+fn flush_internal_run(
+    out: &mut Vec<u8>,
+    run_start: &mut Option<usize>,
+    run_space_count: &mut usize,
+    left_is_node: bool,
+    right_is_graph: bool,
+    c: &crate::config::Config,
+    margin: usize,
+    min_for_dashes: usize,
+) {
+    let Some(start) = run_start.take() else {
+        return;
+    };
+    let count = std::mem::replace(run_space_count, 0);
+    if !(left_is_node && right_is_graph && count >= min_for_dashes) {
+        return;
+    }
+    let original: Vec<u8> = out[start..].to_vec();
+    out.truncate(start);
+    for _ in 0..margin {
+        out.push(b' ');
+    }
+    out.extend_from_slice(&c.dim_on);
+    for _ in 0..(count - 2 * margin) {
+        out.extend_from_slice(c.dash.as_bytes());
+    }
+    out.extend_from_slice(FG_RESET);
+    for _ in 0..margin {
+        out.push(b' ');
+    }
+    // CSI bytes never contain literal space, so keeping non-space bytes
+    // preserves any colour setup that was buffered between the spaces.
+    for &b in &original {
+        if b != b' ' {
+            out.push(b);
+        }
     }
 }
 
