@@ -148,13 +148,13 @@ activation-marker = "BIJJOU_ACTIVATE"
 
 [colors]
 # Either an integer 0-255 (256-color palette) or a "#rrggbb" hex string.
-# Defaults: dash-filler = 8, edge = 240, mutable-node = 245.
+# Defaults: dash-filler = 240, edge = 240, mutable-node = 245.
 #
 # dash-filler — color of the dash filler between graph and content.
 # edge        — color of graph edges (lines, corners, tees, crosses).
 # mutable-node — color applied to ○, ◆, and the immutable @ glyph.
 #
-# dash-filler  = 8
+# dash-filler  = 240
 # edge         = "#5f5f5f"
 # mutable-node = 245
 

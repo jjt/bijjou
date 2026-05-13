@@ -4,4 +4,4 @@ description: Tall + short graph rows — short row pads with dash filler when co
 expression: visualize(&output)
 ---
 \e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  abcde 12345
-\e[38;5;245m\e[39m \e[38;5;8m────\e[39m fghij 67890
+\e[38;5;245m\e[39m \e[38;5;240m────\e[39m fghij 67890
