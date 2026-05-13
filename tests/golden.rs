@@ -711,6 +711,16 @@ fn config_dash_only_workspaces() {
 }
 
 #[test]
+fn config_dash_margin_zero_megamerge() {
+    snapshot_with_config(
+        "megamerge",
+        "dash_margin_zero",
+        "config_dash_margin_zero_megamerge",
+        "megamerge with dash-margin = 0 — dash runs butt against the graph and content with ╶/╴ half-line caps.",
+    );
+}
+
+#[test]
 fn config_hide_vertical_only_single_wc() {
     snapshot_with_config(
         "single_wc",

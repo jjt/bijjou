@@ -1,0 +1,4 @@
+activate = "always"
+
+[layout]
+dash-margin = 0

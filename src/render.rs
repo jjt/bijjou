@@ -16,7 +16,7 @@ pub fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
     haystack.windows(needle.len()).any(|w| w == needle)
 }
 
-fn write_gap(out: &mut Vec<u8>, p: &Parsed, target_col: usize, dashed: bool) {
+fn write_gap(out: &mut Vec<u8>, p: &Parsed, target_col: usize, dashed: bool, left_is_node: bool) {
     let c = cfg();
     let gap = target_col - p.graph_col;
     let margin = c.dash_margin;
@@ -28,11 +28,23 @@ fn write_gap(out: &mut Vec<u8>, p: &Parsed, target_col: usize, dashed: bool) {
             out.push(b' ');
         }
         out.extend_from_slice(&c.dim_on);
-        let dash_count = if c.dash_arrow.is_empty() { fill } else { fill - 1 };
-        for _ in 0..dash_count {
-            out.extend_from_slice(c.dash.as_bytes());
+        let arrow_in_use = !c.dash_arrow.is_empty();
+        let dash_count = if arrow_in_use { fill - 1 } else { fill };
+        let use_caps = margin == 0;
+        let head_cap = use_caps && left_is_node && !c.dash_start.is_empty();
+        let tail_cap = use_caps && !arrow_in_use && !c.dash_end.is_empty();
+        for idx in 0..dash_count {
+            let is_first = idx == 0;
+            let is_last = idx + 1 == dash_count;
+            if tail_cap && is_last {
+                out.extend_from_slice(c.dash_end.as_bytes());
+            } else if head_cap && is_first {
+                out.extend_from_slice(c.dash_start.as_bytes());
+            } else {
+                out.extend_from_slice(c.dash.as_bytes());
+            }
         }
-        if !c.dash_arrow.is_empty() {
+        if arrow_in_use {
             out.extend_from_slice(c.dash_arrow.as_bytes());
         }
         out.extend_from_slice(FG_RESET);
@@ -62,7 +74,8 @@ pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, target_col: usize, out: &
             let graph = &body[..p.graph_end];
             emit_dim_graph(graph, out, is_empty, is_immutable);
             let dashed = has_node_char(graph);
-            write_gap(out, p, target_col, dashed);
+            let tail_is_node = graph_tail_is_node(graph);
+            write_gap(out, p, target_col, dashed, tail_is_node);
             write_stripping_marker(&body[p.content_start..], out);
         }
         None if has_graph_char(body) => {
@@ -233,6 +246,27 @@ pub fn has_node_char(body: &[u8]) -> bool {
     false
 }
 
+fn graph_tail_is_node(body: &[u8]) -> bool {
+    let mut i = 0;
+    let mut last_was_node = false;
+    while i < body.len() {
+        if let Some(after) = skip_csi(body, i) {
+            i = after;
+            continue;
+        }
+        if body[i] == b' ' {
+            i += 1;
+            continue;
+        }
+        let (cp, len) = decode_utf8(body, i);
+        if is_graph_char(cp) {
+            last_was_node = is_node_char(cp);
+        }
+        i += len;
+    }
+    last_was_node
+}
+
 pub fn is_vertical_only_line(body: &[u8]) -> bool {
     let markers = strip_markers();
     let mut i = 0;
@@ -385,15 +419,15 @@ fn emit_edge(cp: u32, raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
 // commit-node chars (○ ● ◆ @ ×) which pass through with normal intensity.
 // Strips jj's fg-color codes; preserves other ANSI sequences.
 //
-// Space runs sitting between a node char and the next graph char are
-// dash-filled (respecting `dash_margin`). Runs after an edge, or before
-// the first graph char on the line, stay as plain spaces.
+// Once a node char has appeared on the line, any space run between two
+// graph chars (node or edge) is filled with the dash glyph, one dash per
+// space. Runs before the first node, or trailing past the last graph char,
+// stay as plain spaces.
 pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immutable: bool) {
     let markers = strip_markers();
     let c = cfg();
-    let margin = c.dash_margin;
-    let min_for_dashes = 2 * margin + 1;
     let mut i = 0;
+    let mut seen_node = false;
     let mut prev_was_node = false;
     let mut run_start: Option<usize> = None;
     let mut run_space_count: usize = 0;
@@ -406,15 +440,16 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immuta
         let ansi = &bytes[ansi_start..i];
 
         if i >= bytes.len() {
-            flush_internal_run(out, &mut run_start, &mut run_space_count, prev_was_node, false, c, margin, min_for_dashes);
+            flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, c);
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
             break;
         }
 
         if bytes[i] == b'\n' {
-            flush_internal_run(out, &mut run_start, &mut run_space_count, prev_was_node, false, c, margin, min_for_dashes);
+            flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, c);
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
             out.push(b'\n');
+            seen_node = false;
             prev_was_node = false;
             i += 1;
             continue;
@@ -440,52 +475,52 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immuta
         let (cp, len) = decode_utf8(bytes, i);
         let raw = &bytes[i..i + len];
         let cp_is_graph = is_graph_char(cp);
-        flush_internal_run(out, &mut run_start, &mut run_space_count, prev_was_node, cp_is_graph, c, margin, min_for_dashes);
+        flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, cp_is_graph, c);
         if is_node_char(cp) {
             emit_node(cp, raw, ansi, is_empty, is_immutable, out);
+            seen_node = true;
+            prev_was_node = true;
         } else {
             emit_edge(cp, raw, ansi, out);
+            prev_was_node = false;
         }
-        prev_was_node = is_node_char(cp);
         i += len;
     }
 
-    flush_internal_run(out, &mut run_start, &mut run_space_count, prev_was_node, false, c, margin, min_for_dashes);
+    flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, c);
 }
 
-// Convert a pending internal space run into dashes when it sits between a
-// node char and a following graph char. Otherwise the already-emitted spaces
-// stay as-is.
+// Replace a pending internal space run with dashes when the line has already
+// seen its node and the run is followed by another graph char. The first dash
+// is swapped for `dash_start` when it abuts the node (dash_margin == 0).
 fn flush_internal_run(
     out: &mut Vec<u8>,
     run_start: &mut Option<usize>,
     run_space_count: &mut usize,
-    left_is_node: bool,
+    seen_node: bool,
+    left_was_node: bool,
     right_is_graph: bool,
     c: &crate::config::Config,
-    margin: usize,
-    min_for_dashes: usize,
 ) {
     let Some(start) = run_start.take() else {
         return;
     };
     let count = std::mem::replace(run_space_count, 0);
-    if !(left_is_node && right_is_graph && count >= min_for_dashes) {
+    if !(seen_node && right_is_graph && count > 0) {
         return;
     }
     let original: Vec<u8> = out[start..].to_vec();
     out.truncate(start);
-    for _ in 0..margin {
-        out.push(b' ');
-    }
     out.extend_from_slice(&c.dim_on);
-    for _ in 0..(count - 2 * margin) {
-        out.extend_from_slice(c.dash.as_bytes());
+    let head_cap = c.dash_margin == 0 && left_was_node && !c.dash_start.is_empty();
+    for idx in 0..count {
+        if head_cap && idx == 0 {
+            out.extend_from_slice(c.dash_start.as_bytes());
+        } else {
+            out.extend_from_slice(c.dash.as_bytes());
+        }
     }
     out.extend_from_slice(FG_RESET);
-    for _ in 0..margin {
-        out.push(b' ');
-    }
     // CSI bytes never contain literal space, so keeping non-space bytes
     // preserves any colour setup that was buffered between the spaces.
     for &b in &original {
@@ -822,5 +857,12 @@ mod tests {
     fn dim_strips_fg_color_around_mutable_node() {
         let out = run_emit(b"\x1b[38;5;14m\xe2\x97\x8b\x1b[39m", false, false);
         assert_eq!(out, darken(DEFAULT_MUTABLE_ICON.as_bytes()));
+    }
+
+    #[test]
+    fn graph_tail_is_node_detects_trailing_node() {
+        assert!(graph_tail_is_node("│ │ ○".as_bytes()));
+        assert!(!graph_tail_is_node("○ │ │".as_bytes()));
+        assert!(!graph_tail_is_node("├─╯".as_bytes()));
     }
 }
