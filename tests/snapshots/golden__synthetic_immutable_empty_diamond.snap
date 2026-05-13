@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: ◆ + empty + divergent markers — uses EMPTY_IMMUTABLE_ICON.
 expression: visualize(&output)
 ---
-\e[38;5;245m\e[39m  abc  desc
+\e[38;5;245m\e[39m  abc desc

@@ -353,7 +353,17 @@ pub fn write_stripping_marker(content: &[u8], out: &mut Vec<u8>) {
     let mut i = 0;
     while i < content.len() {
         if let Some(skip) = match_marker(content, i, &markers) {
-            i += skip;
+            let next = i + skip;
+            // Avoid leaving doubled spaces where the marker was wedged
+            // between two single spaces in the source. Consume the trailing
+            // space when both sides were spaces.
+            let prev_is_space = out.last() == Some(&b' ');
+            let next_is_space = content.get(next) == Some(&b' ');
+            if prev_is_space && next_is_space {
+                i = next + 1;
+            } else {
+                i = next;
+            }
             continue;
         }
         out.push(content[i]);
@@ -687,6 +697,35 @@ mod tests {
         let mut out = Vec::new();
         write_stripping_marker(&buf, &mut out);
         assert_eq!(out, b"startmidend");
+    }
+
+    #[test]
+    fn strip_collapses_surrounding_single_spaces() {
+        let mut buf = b"260513 ".to_vec();
+        buf.extend_from_slice(EMPTY_MARKER_BYTES);
+        buf.extend_from_slice(b" no description");
+        let mut out = Vec::new();
+        write_stripping_marker(&buf, &mut out);
+        assert_eq!(out, b"260513 no description");
+    }
+
+    #[test]
+    fn strip_keeps_lone_leading_space() {
+        let mut buf = b"abc ".to_vec();
+        buf.extend_from_slice(EMPTY_MARKER_BYTES);
+        buf.extend_from_slice(b"xyz");
+        let mut out = Vec::new();
+        write_stripping_marker(&buf, &mut out);
+        assert_eq!(out, b"abc xyz");
+    }
+
+    #[test]
+    fn strip_keeps_lone_trailing_space() {
+        let mut buf = EMPTY_MARKER_BYTES.to_vec();
+        buf.extend_from_slice(b" xyz");
+        let mut out = Vec::new();
+        write_stripping_marker(&buf, &mut out);
+        assert_eq!(out, b" xyz");
     }
 
     #[test]
