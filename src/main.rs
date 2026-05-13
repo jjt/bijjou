@@ -60,8 +60,9 @@ CONFIGURATION
     $XDG_CONFIG_HOME/bijjou/config.toml
     $HOME/.config/bijjou/config.toml
 
-  Env vars: prefix BIJJOU__, replace '.' with '__'.
-    e.g. BIJJOU__graph__nodes__chars__working-copy=X
+  Env vars: prefix BIJJOU__, replace '.' with '__' and '-' with '_'.
+    Uppercase is the canonical form; lowercase is also accepted.
+    e.g. BIJJOU__GRAPH__NODES__CHARS__WORKING_COPY=X
 
   CLI flags: --<key>=<value>, replace '.' with '__'.
     e.g. --graph__nodes__chars__working-copy=X

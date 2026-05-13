@@ -269,6 +269,13 @@ fn parse_bool_str(s: &str) -> Result<bool, String> {
     }
 }
 
+// Env-var convention: uppercase, `__` separates config-path segments
+// (becomes `.`), and single `_` becomes `-`. The lowercase / hyphenated
+// form is accepted unchanged.
+fn env_key_to_config_key(name: &str) -> String {
+    name.replace("__", ".").replace('_', "-").to_lowercase()
+}
+
 fn parse_color_str(s: &str) -> Result<Vec<u8>, String> {
     if let Some(hex) = s.strip_prefix('#') {
         if hex.len() != 6 {
@@ -309,7 +316,7 @@ impl Config {
             .collect();
         vars.sort_by(|a, b| a.0.cmp(&b.0));
         for (k, v) in vars {
-            let key = k["BIJJOU__".len()..].replace("__", ".");
+            let key = env_key_to_config_key(&k["BIJJOU__".len()..]);
             self.apply_kv(&key, &v, "env")?;
         }
         Ok(())
@@ -724,6 +731,32 @@ edge = 200
     fn apply_kv_unknown_key_errors() {
         let mut cfg = Config::default();
         assert!(cfg.apply_kv("nope.x", "v", "env").is_err());
+    }
+
+    #[test]
+    fn env_key_uppercase_lowercases() {
+        assert_eq!(env_key_to_config_key("ACTIVATE"), "activate");
+    }
+
+    #[test]
+    fn env_key_double_underscore_becomes_dot() {
+        assert_eq!(
+            env_key_to_config_key("GRAPH__NODES__CHARS__WORKING_COPY"),
+            "graph.nodes.chars.working-copy"
+        );
+    }
+
+    #[test]
+    fn env_key_lowercase_hyphen_form_unchanged() {
+        assert_eq!(
+            env_key_to_config_key("graph__nodes__chars__working-copy"),
+            "graph.nodes.chars.working-copy"
+        );
+    }
+
+    #[test]
+    fn env_key_single_underscore_becomes_hyphen() {
+        assert_eq!(env_key_to_config_key("LAYOUT__DASH_MARGIN"), "layout.dash-margin");
     }
 
     #[test]

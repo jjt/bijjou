@@ -82,10 +82,11 @@ Config file paths (first match wins):
 If no file is present, bijjou writes a default one to the XDG path on
 first run.
 
-Env vars: prefix `BIJJOU__`, replace `.` with `__`.
+Env vars: prefix `BIJJOU__`, replace `.` with `__` and `-` with `_`.
+Uppercase is canonical; lowercase is accepted too.
 
 ```sh
-BIJJOU__graph__nodes__chars__working-copy=X jj log | bijjou
+BIJJOU__GRAPH__NODES__CHARS__WORKING_COPY=X jj log | bijjou
 ```
 
 CLI flags: `--<key>=<value>`, replace `.` with `__`.

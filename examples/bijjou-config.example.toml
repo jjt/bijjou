@@ -10,8 +10,9 @@
 # (inline `# ...` after a value is not supported).
 #
 # Overrides (low → high precedence): config file < env vars < CLI flags.
-#   Env: prefix `BIJJOU__`, replace `.` with `__`.
-#     e.g. `graph.nodes.chars.working-copy` → `BIJJOU__graph__nodes__chars__working-copy`
+#   Env: prefix `BIJJOU__`, replace `.` with `__` and `-` with `_`.
+#     Uppercase is canonical; lowercase also accepted.
+#     e.g. `graph.nodes.chars.working-copy` → `BIJJOU__GRAPH__NODES__CHARS__WORKING_COPY`
 #   CLI: `--<key>=<value>`, replace `.` with `__`.
 #     e.g. `--graph__nodes__chars__working-copy=X`
 #   `--activate` with no value is shorthand for `--activate=auto`.
