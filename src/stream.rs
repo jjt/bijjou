@@ -1,15 +1,15 @@
 use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 
-use crate::config::{cfg, Activate, Pager};
+use crate::config::{cfg, Activate, BatchSize, Pager, DEFAULT_STREAM_BATCH_SIZE};
 use crate::render::{contains_bytes, emit_line, find_boundary, parse_content_columns, strip_trailing_nl};
 
 pub fn run() -> io::Result<()> {
     let c = cfg();
-    let batch_size = c.stream_batch_size.max(1);
+    let (first_size, rest_size) = resolve_batch_sizes(&c.stream_batch_size);
     let mut sink = OutputSink::open();
     let mut reader = BufReader::new(io::stdin().lock());
 
-    let first = read_batch(&mut reader, batch_size)?;
+    let first = read_batch(&mut reader, first_size)?;
     if first.is_empty() {
         return sink.close();
     }
@@ -35,7 +35,7 @@ pub fn run() -> io::Result<()> {
     process_batch(&first, &mut state, &mut sink)?;
 
     loop {
-        let batch = read_batch(&mut reader, batch_size)?;
+        let batch = read_batch(&mut reader, rest_size)?;
         if batch.is_empty() {
             break;
         }
@@ -43,6 +43,64 @@ pub fn run() -> io::Result<()> {
     }
 
     sink.close()
+}
+
+fn resolve_batch_sizes(bs: &BatchSize) -> (usize, usize) {
+    match bs {
+        BatchSize::Fixed(n) => {
+            let n = (*n).max(1);
+            (n, n)
+        }
+        BatchSize::HalfPager => {
+            let h = terminal_height().unwrap_or(DEFAULT_STREAM_BATCH_SIZE);
+            let first = h.saturating_sub(1).max(1);
+            let rest = (first / 2).max(1);
+            (first, rest)
+        }
+    }
+}
+
+#[cfg(unix)]
+fn terminal_height() -> Option<usize> {
+    use std::os::unix::io::AsRawFd;
+
+    #[repr(C)]
+    struct WinSize {
+        ws_row: u16,
+        ws_col: u16,
+        ws_xpixel: u16,
+        ws_ypixel: u16,
+    }
+
+    #[cfg(target_os = "macos")]
+    const TIOCGWINSZ: u64 = 0x40087468;
+    #[cfg(target_os = "linux")]
+    const TIOCGWINSZ: u64 = 0x5413;
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    const TIOCGWINSZ: u64 = 0x5413;
+
+    extern "C" {
+        fn ioctl(fd: i32, req: u64, arg: *mut WinSize) -> i32;
+    }
+
+    let fds = [
+        io::stderr().as_raw_fd(),
+        io::stdout().as_raw_fd(),
+        io::stdin().as_raw_fd(),
+    ];
+    for fd in fds {
+        let mut ws = WinSize { ws_row: 0, ws_col: 0, ws_xpixel: 0, ws_ypixel: 0 };
+        let r = unsafe { ioctl(fd, TIOCGWINSZ, &mut ws as *mut WinSize) };
+        if r == 0 && ws.ws_row > 0 {
+            return Some(ws.ws_row as usize);
+        }
+    }
+    std::env::var("LINES").ok().and_then(|s| s.parse().ok())
+}
+
+#[cfg(not(unix))]
+fn terminal_height() -> Option<usize> {
+    std::env::var("LINES").ok().and_then(|s| s.parse().ok())
 }
 
 #[derive(Default)]

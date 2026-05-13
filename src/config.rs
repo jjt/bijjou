@@ -34,6 +34,18 @@ pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
 pub const DEFAULT_EMPTY_MARKER: &str = "(empty)";
 pub const DEFAULT_DIVERGENT_MARKER: &str = "(divergent)";
 pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BatchSize {
+    Fixed(usize),
+    HalfPager,
+}
+
+impl Default for BatchSize {
+    fn default() -> Self {
+        BatchSize::Fixed(DEFAULT_STREAM_BATCH_SIZE)
+    }
+}
 pub const DEFAULT_ALIGN_ENABLED: bool = true;
 pub const DEFAULT_ALIGN_GAP: usize = 2;
 
@@ -120,7 +132,7 @@ pub struct Config {
     pub pager: Pager,
     pub hide_vertical_only_lines: bool,
     pub stream_enabled: bool,
-    pub stream_batch_size: usize,
+    pub stream_batch_size: BatchSize,
     pub align_enabled: bool,
     pub align_gap: usize,
 }
@@ -163,7 +175,7 @@ impl Default for Config {
             pager: Pager::default(),
             hide_vertical_only_lines: false,
             stream_enabled: true,
-            stream_batch_size: DEFAULT_STREAM_BATCH_SIZE,
+            stream_batch_size: BatchSize::default(),
             align_enabled: DEFAULT_ALIGN_ENABLED,
             align_gap: DEFAULT_ALIGN_GAP,
         }
@@ -274,6 +286,19 @@ fn parse_bool_str(s: &str) -> Result<bool, String> {
 // form is accepted unchanged.
 fn env_key_to_config_key(name: &str) -> String {
     name.replace("__", ".").replace('_', "-").to_lowercase()
+}
+
+fn parse_batch_size(s: &str) -> Result<BatchSize, String> {
+    if s == "half-pager" {
+        return Ok(BatchSize::HalfPager);
+    }
+    let n: i64 = s
+        .parse()
+        .map_err(|_| format!("expected integer >= 1 or \"half-pager\", got {:?}", s))?;
+    if n < 1 {
+        return Err(format!("expected integer >= 1, got {}", n));
+    }
+    Ok(BatchSize::Fixed(n as usize))
 }
 
 fn parse_color_str(s: &str) -> Result<Vec<u8>, String> {
@@ -402,13 +427,7 @@ impl Config {
             }
             "stream.enabled" => self.stream_enabled = parse_bool_str(value).map_err(mkerr)?,
             "stream.batch-size" => {
-                let n: i64 = value
-                    .parse()
-                    .map_err(|_| mkerr(format!("expected integer >= 1, got {:?}", value)))?;
-                if n < 1 {
-                    return Err(mkerr(format!("expected integer >= 1, got {}", n)));
-                }
-                self.stream_batch_size = n as usize;
+                self.stream_batch_size = parse_batch_size(value).map_err(mkerr)?;
             }
             "layout.align" => self.align_enabled = parse_bool_str(value).map_err(mkerr)?,
             "layout.gap" => {
@@ -767,7 +786,7 @@ edge = 200
     fn stream_defaults() {
         let cfg = Config::from_toml("").unwrap();
         assert!(cfg.stream_enabled);
-        assert_eq!(cfg.stream_batch_size, DEFAULT_STREAM_BATCH_SIZE);
+        assert_eq!(cfg.stream_batch_size, BatchSize::Fixed(DEFAULT_STREAM_BATCH_SIZE));
     }
 
     #[test]
@@ -775,7 +794,7 @@ edge = 200
         let s = "[stream]\nenabled = true\nbatch-size = 64\n";
         let cfg = Config::from_toml(s).unwrap();
         assert!(cfg.stream_enabled);
-        assert_eq!(cfg.stream_batch_size, 64);
+        assert_eq!(cfg.stream_batch_size, BatchSize::Fixed(64));
     }
 
     #[test]
@@ -824,7 +843,7 @@ edge = 200
         let mut cfg = Config::default();
         cfg.apply_cli(args(&["--stream", "--stream__batch-size=32"])).unwrap();
         assert!(cfg.stream_enabled);
-        assert_eq!(cfg.stream_batch_size, 32);
+        assert_eq!(cfg.stream_batch_size, BatchSize::Fixed(32));
     }
 
     #[test]
@@ -837,6 +856,20 @@ edge = 200
     fn cli_stream_batch_size_non_integer_errors() {
         let mut cfg = Config::default();
         assert!(cfg.apply_cli(args(&["--stream__batch-size=abc"])).is_err());
+    }
+
+    #[test]
+    fn stream_toml_batch_size_half_pager() {
+        let s = "[stream]\nbatch-size = \"half-pager\"\n";
+        let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(cfg.stream_batch_size, BatchSize::HalfPager);
+    }
+
+    #[test]
+    fn cli_stream_batch_size_half_pager() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--stream__batch-size=half-pager"])).unwrap();
+        assert_eq!(cfg.stream_batch_size, BatchSize::HalfPager);
     }
 
     #[test]

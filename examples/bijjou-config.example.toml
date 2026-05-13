@@ -181,7 +181,14 @@ activation-marker = "BIJJOU_ACTIVATE"
 # passed through byte-for-byte without further processing. Set
 # `activate = "always"` to skip the scan entirely.
 #
+# `batch-size` accepts a positive integer or the string "half-pager", which
+# sizes the first batch to (terminal_rows - 1) and each subsequent batch to
+# floor((terminal_rows - 1) / 2) — useful with a pager so the first paint
+# fills a screen and follow-up batches stream in half-screens. Falls back to
+# the default integer when no terminal size is detectable.
+#
 # Defaults: enabled = true, batch-size = 128
 #
 # enabled    = true
 # batch-size = 128
+# batch-size = "half-pager"
