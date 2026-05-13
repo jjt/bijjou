@@ -32,17 +32,51 @@ pub fn run() -> io::Result<()> {
     }
 
     let mut state = StreamState::default();
-    process_batch(&first, &mut state, &mut sink)?;
+    let use_lookahead = matches!(c.stream_batch_size, BatchSize::HalfPager);
 
-    loop {
-        let batch = read_batch(&mut reader, rest_size)?;
-        if batch.is_empty() {
-            break;
+    if use_lookahead {
+        let mut pending = first;
+        loop {
+            let next = read_batch(&mut reader, rest_size)?;
+            scan_widths(&pending, &mut state);
+            scan_widths(&next, &mut state);
+            process_batch(&pending, &mut state, &mut sink)?;
+            if next.is_empty() {
+                break;
+            }
+            pending = next;
         }
-        process_batch(&batch, &mut state, &mut sink)?;
+    } else {
+        process_batch(&first, &mut state, &mut sink)?;
+        loop {
+            let batch = read_batch(&mut reader, rest_size)?;
+            if batch.is_empty() {
+                break;
+            }
+            process_batch(&batch, &mut state, &mut sink)?;
+        }
     }
 
     sink.close()
+}
+
+fn scan_widths(batch: &[Vec<u8>], state: &mut StreamState) {
+    for line in batch {
+        let body = strip_trailing_nl(line).0;
+        if let Some(p) = find_boundary(body) {
+            if p.graph_col > state.graph_max {
+                state.graph_max = p.graph_col;
+            }
+            if let Some(cols) = parse_content_columns(&body[p.content_start..]) {
+                if cols.changeid_width > state.changeid_max {
+                    state.changeid_max = cols.changeid_width;
+                }
+                if cols.author_width > state.author_max {
+                    state.author_max = cols.author_width;
+                }
+            }
+        }
+    }
 }
 
 fn resolve_batch_sizes(bs: &BatchSize) -> (usize, usize) {
