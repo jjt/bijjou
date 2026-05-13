@@ -60,7 +60,14 @@ fn write_gap(out: &mut Vec<u8>, p: &Parsed, target_col: usize, dashed: bool, lef
 
 // Render one input line into `out`. Returns true if a line was emitted, false
 // if the configured filter dropped it.
-pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, target_col: usize, out: &mut Vec<u8>) -> bool {
+pub fn emit_line(
+    line: &[u8],
+    parsed: Option<&Parsed>,
+    target_col: usize,
+    max_changeid_w: usize,
+    max_author_w: usize,
+    out: &mut Vec<u8>,
+) -> bool {
     let (body, trailing_nl) = strip_trailing_nl(line);
     let c = cfg();
 
@@ -76,7 +83,8 @@ pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, target_col: usize, out: &
             let dashed = has_node_char(graph);
             let tail_is_node = graph_tail_is_node(graph);
             write_gap(out, p, target_col, dashed, tail_is_node);
-            write_stripping_marker(&body[p.content_start..], out);
+            let content = &body[p.content_start..];
+            write_padded_content(content, max_changeid_w, max_author_w, out);
         }
         None if has_graph_char(body) => {
             let (is_empty, is_divergent) = line_flags(body);
@@ -91,6 +99,24 @@ pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, target_col: usize, out: &
     true
 }
 
+fn write_padded_content(content: &[u8], max_cid: usize, max_auth: usize, out: &mut Vec<u8>) {
+    let Some(cols) = parse_content_columns(content) else {
+        write_stripping_marker(content, out);
+        return;
+    };
+    let cid_pad = max_cid.saturating_sub(cols.changeid_width);
+    let auth_pad = max_auth.saturating_sub(cols.author_width);
+    write_stripping_marker(&content[..cols.pad_after_changeid], out);
+    for _ in 0..cid_pad {
+        out.push(b' ');
+    }
+    write_stripping_marker(&content[cols.pad_after_changeid..cols.pad_after_author], out);
+    for _ in 0..auth_pad {
+        out.push(b' ');
+    }
+    write_stripping_marker(&content[cols.pad_after_author..], out);
+}
+
 const WC_CP: u32 = 0x40; // @
 const MUTABLE_CP: u32 = 0x25CB; // ○
 const ALTERNATE_CP: u32 = 0x25CF; // ●
@@ -102,6 +128,73 @@ pub struct Parsed {
     pub graph_end: usize,
     pub content_start: usize,
     pub graph_col: usize,
+}
+
+// Visible widths and byte offsets of the first two whitespace-separated
+// tokens in commit content (typically changeid + author for
+// builtin_log_oneline, or changeid + commitid for builtin_log). The pad
+// offsets are positions inside the content slice where padding spaces
+// should be inserted to widen the trailing gap of each token.
+pub struct ContentCols {
+    pub changeid_width: usize,
+    pub author_width: usize,
+    pub pad_after_changeid: usize,
+    pub pad_after_author: usize,
+}
+
+pub fn parse_content_columns(content: &[u8]) -> Option<ContentCols> {
+    let mut i = 0;
+    while let Some(after) = skip_csi(content, i) {
+        i = after;
+    }
+    if i >= content.len() || !content[i].is_ascii_lowercase() {
+        return None;
+    }
+
+    let mut cid_w = 0;
+    while i < content.len() {
+        if let Some(after) = skip_csi(content, i) {
+            i = after;
+            continue;
+        }
+        if content[i] == b' ' {
+            break;
+        }
+        let (_, len) = decode_utf8(content, i);
+        cid_w += 1;
+        i += len;
+    }
+    if i >= content.len() {
+        return None;
+    }
+    i += 1; // consume the separator space
+    let pad_after_changeid = i;
+
+    let mut auth_w = 0;
+    while i < content.len() {
+        if let Some(after) = skip_csi(content, i) {
+            i = after;
+            continue;
+        }
+        if content[i] == b' ' {
+            break;
+        }
+        let (_, len) = decode_utf8(content, i);
+        auth_w += 1;
+        i += len;
+    }
+    if i >= content.len() {
+        return None;
+    }
+    i += 1;
+    let pad_after_author = i;
+
+    Some(ContentCols {
+        changeid_width: cid_w,
+        author_width: auth_w,
+        pad_after_changeid,
+        pad_after_author,
+    })
 }
 
 fn is_graph_char(cp: u32) -> bool {
@@ -896,6 +989,38 @@ mod tests {
     fn dim_strips_fg_color_around_mutable_node() {
         let out = run_emit(b"\x1b[38;5;14m\xe2\x97\x8b\x1b[39m", false, false);
         assert_eq!(out, darken(DEFAULT_MUTABLE_ICON.as_bytes()));
+    }
+
+    #[test]
+    fn parse_content_columns_basic() {
+        let cols = parse_content_columns(b"lvqnlxzv thomasa88 2026 desc").unwrap();
+        assert_eq!(cols.changeid_width, 8);
+        assert_eq!(cols.author_width, 9);
+    }
+
+    #[test]
+    fn parse_content_columns_with_slash_suffix() {
+        let cols = parse_content_columns(b"qwvkvytr/0 msta 2026 desc").unwrap();
+        assert_eq!(cols.changeid_width, 10);
+        assert_eq!(cols.author_width, 4);
+    }
+
+    #[test]
+    fn parse_content_columns_rejects_non_changeid_prefix() {
+        assert!(parse_content_columns(b"(elided revisions)").is_none());
+        assert!(parse_content_columns(b"123 abc").is_none());
+    }
+
+    #[test]
+    fn parse_content_columns_skips_csi_around_tokens() {
+        let cols = parse_content_columns(b"\x1b[31mabcd\x1b[39m \x1b[34mxy\x1b[39m rest").unwrap();
+        assert_eq!(cols.changeid_width, 4);
+        assert_eq!(cols.author_width, 2);
+    }
+
+    #[test]
+    fn parse_content_columns_returns_none_on_single_token() {
+        assert!(parse_content_columns(b"onlyone").is_none());
     }
 
     #[test]

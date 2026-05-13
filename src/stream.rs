@@ -1,7 +1,7 @@
 use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 
 use crate::config::{cfg, Activate, Pager};
-use crate::render::{contains_bytes, emit_line, find_boundary, strip_trailing_nl};
+use crate::render::{contains_bytes, emit_line, find_boundary, parse_content_columns, strip_trailing_nl};
 
 pub fn run() -> io::Result<()> {
     let c = cfg();
@@ -31,18 +31,25 @@ pub fn run() -> io::Result<()> {
         }
     }
 
-    let mut running_max = 0usize;
-    process_batch(&first, &mut running_max, &mut sink)?;
+    let mut state = StreamState::default();
+    process_batch(&first, &mut state, &mut sink)?;
 
     loop {
         let batch = read_batch(&mut reader, batch_size)?;
         if batch.is_empty() {
             break;
         }
-        process_batch(&batch, &mut running_max, &mut sink)?;
+        process_batch(&batch, &mut state, &mut sink)?;
     }
 
     sink.close()
+}
+
+#[derive(Default)]
+struct StreamState {
+    graph_max: usize,
+    changeid_max: usize,
+    author_max: usize,
 }
 
 fn read_batch<R: BufRead>(reader: &mut R, batch_size: usize) -> io::Result<Vec<Vec<u8>>> {
@@ -58,31 +65,47 @@ fn read_batch<R: BufRead>(reader: &mut R, batch_size: usize) -> io::Result<Vec<V
     Ok(out)
 }
 
-// Per-line monotonic widening: running_max bumps the moment a wider
-// graph_col is seen and the new target_col takes effect on that same line.
-// Batching is purely flush-cadence — `batch_size` does not affect column
-// alignment. This intentionally diverges from main.rs's batch path, which
-// applies one global max to every line.
+// Per-line monotonic widening: graph_max, changeid_max, and author_max all
+// bump the moment a wider value is seen and the new target widths take
+// effect on that same line. Batching is purely flush-cadence — `batch_size`
+// does not affect column alignment. This intentionally diverges from
+// main.rs's batch path, which applies one global max to every line.
 fn process_batch(
     batch: &[Vec<u8>],
-    running_max: &mut usize,
+    state: &mut StreamState,
     sink: &mut OutputSink,
 ) -> io::Result<()> {
     let c = cfg();
     let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 8).sum());
     for line in batch {
-        let parsed = find_boundary(strip_trailing_nl(line).0);
+        let body = strip_trailing_nl(line).0;
+        let parsed = find_boundary(body);
         if let Some(p) = &parsed {
-            if p.graph_col > *running_max {
-                *running_max = p.graph_col;
+            if p.graph_col > state.graph_max {
+                state.graph_max = p.graph_col;
+            }
+            if let Some(cols) = parse_content_columns(&body[p.content_start..]) {
+                if cols.changeid_width > state.changeid_max {
+                    state.changeid_max = cols.changeid_width;
+                }
+                if cols.author_width > state.author_max {
+                    state.author_max = cols.author_width;
+                }
             }
         }
         let target_col = if c.align_enabled {
-            *running_max + c.align_gap
+            state.graph_max + c.align_gap
         } else {
             parsed.as_ref().map(|p| p.graph_col).unwrap_or(0) + c.align_gap
         };
-        emit_line(line, parsed.as_ref(), target_col, &mut out);
+        emit_line(
+            line,
+            parsed.as_ref(),
+            target_col,
+            state.changeid_max,
+            state.author_max,
+            &mut out,
+        );
     }
     sink_write(sink, &out)
 }

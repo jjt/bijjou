@@ -37,7 +37,7 @@ use std::io::{self, Read, Write};
 use crate::config::{cfg, Activate, Config, Pager};
 use crate::output::write_output;
 use crate::render::{
-    contains_bytes, emit_line, find_boundary, strip_trailing_nl, Parsed,
+    contains_bytes, emit_line, find_boundary, parse_content_columns, strip_trailing_nl, Parsed,
 };
 
 const HELP: &str = "\
@@ -208,6 +208,18 @@ fn run() -> io::Result<()> {
         .max()
         .unwrap_or(0);
 
+    let (max_cid_w, max_auth_w) = lines
+        .iter()
+        .zip(parsed.iter())
+        .filter_map(|(line, p)| {
+            let p = p.as_ref()?;
+            let body = strip_trailing_nl(line).0;
+            parse_content_columns(&body[p.content_start..])
+        })
+        .fold((0usize, 0usize), |(c, a), cols| {
+            (c.max(cols.changeid_width), a.max(cols.author_width))
+        });
+
     let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 8);
     let mut emitted_lines = 0usize;
 
@@ -217,7 +229,7 @@ fn run() -> io::Result<()> {
         } else {
             p.as_ref().map(|p| p.graph_col).unwrap_or(0) + c.align_gap
         };
-        if emit_line(line, p.as_ref(), target_col, &mut out) {
+        if emit_line(line, p.as_ref(), target_col, max_cid_w, max_auth_w, &mut out) {
             emitted_lines += 1;
         }
     }
