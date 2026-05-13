@@ -20,7 +20,7 @@ fn write_gap(out: &mut Vec<u8>, p: &Parsed, target_col: usize, dashed: bool, lef
     let c = cfg();
     let gap = target_col - p.graph_col;
     let margin = c.dash_margin;
-    let min_for_dashes = 2 * margin + 1;
+    let min_for_dashes = (2 * margin + 1).max(2);
 
     if dashed && gap >= min_for_dashes {
         let fill = gap - 2 * margin;
@@ -118,7 +118,7 @@ fn emit_inter_gap(gap_bytes: &[u8], extra_pad: usize, out: &mut Vec<u8>) {
     let visible = count_visible_spaces(gap_bytes);
     let total = visible + extra_pad;
     let margin = c.dash_margin;
-    let min_for_dashes = 2 * margin + 1;
+    let min_for_dashes = (2 * margin + 1).max(2);
     if total >= min_for_dashes {
         let fill = total - 2 * margin;
         for _ in 0..margin {
