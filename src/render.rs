@@ -106,15 +106,66 @@ fn write_padded_content(content: &[u8], max_cid: usize, max_auth: usize, out: &m
     };
     let cid_pad = max_cid.saturating_sub(cols.changeid_width);
     let auth_pad = max_auth.saturating_sub(cols.author_width);
-    write_stripping_marker(&content[..cols.pad_after_changeid], out);
-    for _ in 0..cid_pad {
-        out.push(b' ');
+    out.extend_from_slice(&content[..cols.cid_end]);
+    emit_inter_gap(&content[cols.cid_end..cols.author_start], cid_pad, out);
+    out.extend_from_slice(&content[cols.author_start..cols.author_end]);
+    emit_inter_gap(&content[cols.author_end..cols.rest_start], auth_pad, out);
+    write_stripping_marker(&content[cols.rest_start..], out);
+}
+
+fn emit_inter_gap(gap_bytes: &[u8], extra_pad: usize, out: &mut Vec<u8>) {
+    let c = cfg();
+    let visible = count_visible_spaces(gap_bytes);
+    let total = visible + extra_pad;
+    let margin = c.dash_margin;
+    let min_for_dashes = 2 * margin + 1;
+    if total >= min_for_dashes {
+        let fill = total - 2 * margin;
+        for _ in 0..margin {
+            out.push(b' ');
+        }
+        out.extend_from_slice(&c.dim_on);
+        for _ in 0..fill {
+            out.extend_from_slice(c.dash.as_bytes());
+        }
+        out.extend_from_slice(FG_RESET);
+        for _ in 0..margin {
+            out.push(b' ');
+        }
+    } else {
+        for _ in 0..total {
+            out.push(b' ');
+        }
     }
-    write_stripping_marker(&content[cols.pad_after_changeid..cols.pad_after_author], out);
-    for _ in 0..auth_pad {
-        out.push(b' ');
+    copy_csi_runs(gap_bytes, out);
+}
+
+fn count_visible_spaces(seg: &[u8]) -> usize {
+    let mut count = 0;
+    let mut i = 0;
+    while i < seg.len() {
+        if let Some(after) = skip_csi(seg, i) {
+            i = after;
+            continue;
+        }
+        if seg[i] == b' ' {
+            count += 1;
+        }
+        i += 1;
     }
-    write_stripping_marker(&content[cols.pad_after_author..], out);
+    count
+}
+
+fn copy_csi_runs(seg: &[u8], out: &mut Vec<u8>) {
+    let mut i = 0;
+    while i < seg.len() {
+        if let Some(after) = skip_csi(seg, i) {
+            out.extend_from_slice(&seg[i..after]);
+            i = after;
+            continue;
+        }
+        i += 1;
+    }
 }
 
 const WC_CP: u32 = 0x40; // @
@@ -132,14 +183,14 @@ pub struct Parsed {
 
 // Visible widths and byte offsets of the first two whitespace-separated
 // tokens in commit content (typically changeid + author for
-// builtin_log_oneline, or changeid + commitid for builtin_log). The pad
-// offsets are positions inside the content slice where padding spaces
-// should be inserted to widen the trailing gap of each token.
+// builtin_log_oneline, or changeid + commitid for builtin_log).
 pub struct ContentCols {
     pub changeid_width: usize,
     pub author_width: usize,
-    pub pad_after_changeid: usize,
-    pub pad_after_author: usize,
+    pub cid_end: usize,
+    pub author_start: usize,
+    pub author_end: usize,
+    pub rest_start: usize,
 }
 
 pub fn parse_content_columns(content: &[u8]) -> Option<ContentCols> {
@@ -167,8 +218,23 @@ pub fn parse_content_columns(content: &[u8]) -> Option<ContentCols> {
     if i >= content.len() {
         return None;
     }
-    i += 1; // consume the separator space
-    let pad_after_changeid = i;
+    let cid_end = i;
+
+    while i < content.len() {
+        if let Some(after) = skip_csi(content, i) {
+            i = after;
+            continue;
+        }
+        if content[i] == b' ' {
+            i += 1;
+            continue;
+        }
+        break;
+    }
+    if i >= content.len() {
+        return None;
+    }
+    let author_start = i;
 
     let mut auth_w = 0;
     while i < content.len() {
@@ -186,14 +252,28 @@ pub fn parse_content_columns(content: &[u8]) -> Option<ContentCols> {
     if i >= content.len() {
         return None;
     }
-    i += 1;
-    let pad_after_author = i;
+    let author_end = i;
+
+    while i < content.len() {
+        if let Some(after) = skip_csi(content, i) {
+            i = after;
+            continue;
+        }
+        if content[i] == b' ' {
+            i += 1;
+            continue;
+        }
+        break;
+    }
+    let rest_start = i;
 
     Some(ContentCols {
         changeid_width: cid_w,
         author_width: auth_w,
-        pad_after_changeid,
-        pad_after_author,
+        cid_end,
+        author_start,
+        author_end,
+        rest_start,
     })
 }
 
