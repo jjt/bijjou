@@ -31,8 +31,8 @@ pub const DEFAULT_GRAPH_TEE_UP: &str = "𜹀";
 pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
-pub const DEFAULT_EMPTY_MARKER: &str = "𝙴";
-pub const DEFAULT_IMMUTABLE_MARKER: &str = "𝙸";
+pub const DEFAULT_EMPTY_MARKER: &str = "(empty)";
+pub const DEFAULT_DIVERGENT_MARKER: &str = "(divergent)";
 pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
 pub const DEFAULT_ALIGN_ENABLED: bool = true;
 pub const DEFAULT_ALIGN_GAP: usize = 2;
@@ -115,7 +115,7 @@ pub struct Config {
     pub mutable_node_color: Vec<u8>,
     pub activation_marker: String,
     pub empty_marker: String,
-    pub immutable_marker: String,
+    pub divergent_marker: String,
     pub activate: Activate,
     pub pager: Pager,
     pub hide_vertical_only_lines: bool,
@@ -158,7 +158,7 @@ impl Default for Config {
             mutable_node_color: DEFAULT_MUTABLE_NODE_COLOR.to_vec(),
             activation_marker: DEFAULT_ACTIVATION_MARKER.to_string(),
             empty_marker: DEFAULT_EMPTY_MARKER.to_string(),
-            immutable_marker: DEFAULT_IMMUTABLE_MARKER.to_string(),
+            divergent_marker: DEFAULT_DIVERGENT_MARKER.to_string(),
             activate: Activate::default(),
             pager: Pager::default(),
             hide_vertical_only_lines: false,
@@ -385,7 +385,7 @@ impl Config {
                 self.dash_margin = n as usize;
             }
             "commits.markers.empty" => self.empty_marker = value.to_string(),
-            "commits.markers.immutable" => self.immutable_marker = value.to_string(),
+            "commits.markers.divergent" => self.divergent_marker = value.to_string(),
             "filter.hide-vertical-only-lines" => {
                 self.hide_vertical_only_lines = parse_bool_str(value).map_err(mkerr)?;
             }
@@ -575,25 +575,25 @@ edge = 200
 
     #[test]
     fn toml_commits_markers_override() {
-        let s = "[commits.markers]\nempty = \"E\"\nimmutable = \"I\"\n";
+        let s = "[commits.markers]\nempty = \"E\"\ndivergent = \"D\"\n";
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.empty_marker, "E");
-        assert_eq!(cfg.immutable_marker, "I");
+        assert_eq!(cfg.divergent_marker, "D");
     }
 
     #[test]
     fn toml_commits_markers_empty_disables() {
-        let s = "[commits.markers]\nempty = \"\"\nimmutable = \"\"\n";
+        let s = "[commits.markers]\nempty = \"\"\ndivergent = \"\"\n";
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.empty_marker, "");
-        assert_eq!(cfg.immutable_marker, "");
+        assert_eq!(cfg.divergent_marker, "");
     }
 
     #[test]
     fn toml_default_commits_markers_match_legacy() {
         let cfg = Config::from_toml("").unwrap();
         assert_eq!(cfg.empty_marker, DEFAULT_EMPTY_MARKER);
-        assert_eq!(cfg.immutable_marker, DEFAULT_IMMUTABLE_MARKER);
+        assert_eq!(cfg.divergent_marker, DEFAULT_DIVERGENT_MARKER);
     }
 
     #[test]

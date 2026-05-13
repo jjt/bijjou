@@ -70,17 +70,17 @@ pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, target_col: usize, out: &
 
     match parsed {
         Some(p) => {
-            let (is_empty, is_immutable) = line_flags(body);
+            let (is_empty, is_divergent) = line_flags(body);
             let graph = &body[..p.graph_end];
-            emit_dim_graph(graph, out, is_empty, is_immutable);
+            emit_dim_graph(graph, out, is_empty, is_divergent);
             let dashed = has_node_char(graph);
             let tail_is_node = graph_tail_is_node(graph);
             write_gap(out, p, target_col, dashed, tail_is_node);
             write_stripping_marker(&body[p.content_start..], out);
         }
         None if has_graph_char(body) => {
-            let (is_empty, is_immutable) = line_flags(body);
-            emit_dim_graph(body, out, is_empty, is_immutable);
+            let (is_empty, is_divergent) = line_flags(body);
+            emit_dim_graph(body, out, is_empty, is_divergent);
         }
         None => out.extend_from_slice(body),
     }
@@ -298,9 +298,9 @@ pub fn is_vertical_only_line(body: &[u8]) -> bool {
 pub fn line_flags(body: &[u8]) -> (bool, bool) {
     let c = cfg();
     let em = c.empty_marker.as_bytes();
-    let im = c.immutable_marker.as_bytes();
+    let dm = c.divergent_marker.as_bytes();
     let mut empty = false;
-    let mut immutable = false;
+    let mut divergent = false;
     let mut i = 0;
     while i < body.len() {
         if let Some(after) = skip_csi(body, i) {
@@ -312,15 +312,15 @@ pub fn line_flags(body: &[u8]) -> (bool, bool) {
             i += em.len();
             continue;
         }
-        if !im.is_empty() && body[i..].starts_with(im) {
-            immutable = true;
-            i += im.len();
+        if !dm.is_empty() && body[i..].starts_with(dm) {
+            divergent = true;
+            i += dm.len();
             continue;
         }
         let (_, len) = decode_utf8(body, i);
         i += len;
     }
-    (empty, immutable)
+    (empty, divergent)
 }
 
 fn strip_markers() -> Vec<&'static [u8]> {
@@ -330,9 +330,9 @@ fn strip_markers() -> Vec<&'static [u8]> {
     if !em.is_empty() {
         v.push(em);
     }
-    let im = c.immutable_marker.as_bytes();
-    if !im.is_empty() {
-        v.push(im);
+    let dm = c.divergent_marker.as_bytes();
+    if !dm.is_empty() {
+        v.push(dm);
     }
     let act = c.activation_marker.as_bytes();
     if !act.is_empty() {
@@ -361,17 +361,17 @@ pub fn write_stripping_marker(content: &[u8], out: &mut Vec<u8>) {
     }
 }
 
-fn pick_node_icon(cp: u32, is_empty: bool, is_immutable: bool) -> Option<&'static str> {
+fn pick_node_icon(cp: u32, is_empty: bool, is_divergent: bool) -> Option<&'static str> {
     let c = cfg();
     if is_empty {
         return Some(match cp {
-            WC_CP if is_immutable => c.empty_immutable_icon.as_str(),
+            WC_CP if is_divergent => c.empty_immutable_icon.as_str(),
             WC_CP => c.wc_empty_icon.as_str(),
             IMMUTABLE_CP => c.empty_immutable_icon.as_str(),
             _ => c.empty_icon.as_str(),
         });
     }
-    if cp == WC_CP && is_immutable {
+    if cp == WC_CP && is_divergent {
         return Some(c.immutable_icon.as_str());
     }
     map_node_char(cp)
@@ -382,20 +382,20 @@ fn emit_node(
     raw: &[u8],
     ansi: &[u8],
     is_empty: bool,
-    is_immutable: bool,
+    is_divergent: bool,
     out: &mut Vec<u8>,
 ) {
     let c = cfg();
-    // Mutable (○) and immutable (◆, or @ rendered as immutable) share the
+    // Mutable (○) and immutable (◆, or @ flagged as divergent) share the
     // darker color override; other nodes preserve jj's original ANSI.
-    let darken = cp == MUTABLE_CP || cp == IMMUTABLE_CP || (cp == WC_CP && is_immutable);
+    let darken = cp == MUTABLE_CP || cp == IMMUTABLE_CP || (cp == WC_CP && is_divergent);
     if darken {
         emit_filtered_ansi(ansi, out, is_fg_color_sgr);
         out.extend_from_slice(&c.mutable_node_color);
     } else {
         out.extend_from_slice(ansi);
     }
-    match pick_node_icon(cp, is_empty, is_immutable) {
+    match pick_node_icon(cp, is_empty, is_divergent) {
         Some(icon) => out.extend_from_slice(icon.as_bytes()),
         None => out.extend_from_slice(raw),
     }
@@ -423,7 +423,7 @@ fn emit_edge(cp: u32, raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
 // graph chars (node or edge) is filled with the dash glyph, one dash per
 // space. Runs before the first node, or trailing past the last graph char,
 // stay as plain spaces.
-pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immutable: bool) {
+pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_divergent: bool) {
     let markers = strip_markers();
     let c = cfg();
     let mut i = 0;
@@ -477,7 +477,7 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_immuta
         let cp_is_graph = is_graph_char(cp);
         flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, cp_is_graph, c);
         if is_node_char(cp) {
-            emit_node(cp, raw, ansi, is_empty, is_immutable, out);
+            emit_node(cp, raw, ansi, is_empty, is_divergent, out);
             seen_node = true;
             prev_was_node = true;
         } else {
@@ -533,7 +533,7 @@ fn flush_internal_run(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ansi::{EMPTY_MARKER_BYTES, IMMUTABLE_MARKER_BYTES};
+    use crate::ansi::{EMPTY_MARKER_BYTES, DIVERGENT_MARKER_BYTES};
     use crate::config::{
         DEFAULT_ALTERNATE_ICON, DEFAULT_CONFLICT_ICON, DEFAULT_EDGE_DIM_ON,
         DEFAULT_EMPTY_IMMUTABLE_ICON, DEFAULT_GRAPH_VERTICAL, DEFAULT_IMMUTABLE_ICON,
@@ -622,9 +622,9 @@ mod tests {
     }
 
     #[test]
-    fn line_flags_detects_immutable_marker() {
+    fn line_flags_detects_divergent_marker() {
         let mut buf = b"x".to_vec();
-        buf.extend_from_slice(IMMUTABLE_MARKER_BYTES);
+        buf.extend_from_slice(DIVERGENT_MARKER_BYTES);
         assert_eq!(line_flags(&buf), (false, true));
     }
 
@@ -633,7 +633,7 @@ mod tests {
         let mut buf = Vec::new();
         buf.extend_from_slice(EMPTY_MARKER_BYTES);
         buf.extend_from_slice(b" ");
-        buf.extend_from_slice(IMMUTABLE_MARKER_BYTES);
+        buf.extend_from_slice(DIVERGENT_MARKER_BYTES);
         assert_eq!(line_flags(&buf), (true, true));
     }
 
@@ -669,8 +669,8 @@ mod tests {
     }
 
     #[test]
-    fn strip_immutable_marker_only() {
-        let mut buf = IMMUTABLE_MARKER_BYTES.to_vec();
+    fn strip_divergent_marker_only() {
+        let mut buf = DIVERGENT_MARKER_BYTES.to_vec();
         buf.extend_from_slice(b"x");
         let mut out = Vec::new();
         write_stripping_marker(&buf, &mut out);
@@ -682,7 +682,7 @@ mod tests {
         let mut buf = b"start".to_vec();
         buf.extend_from_slice(EMPTY_MARKER_BYTES);
         buf.extend_from_slice(b"mid");
-        buf.extend_from_slice(IMMUTABLE_MARKER_BYTES);
+        buf.extend_from_slice(DIVERGENT_MARKER_BYTES);
         buf.extend_from_slice(b"end");
         let mut out = Vec::new();
         write_stripping_marker(&buf, &mut out);
@@ -732,9 +732,9 @@ mod tests {
         assert!(find_boundary(b"   abc").is_none());
     }
 
-    fn run_emit(graph: &[u8], is_empty: bool, is_immutable: bool) -> Vec<u8> {
+    fn run_emit(graph: &[u8], is_empty: bool, is_divergent: bool) -> Vec<u8> {
         let mut out = Vec::new();
-        emit_dim_graph(graph, &mut out, is_empty, is_immutable);
+        emit_dim_graph(graph, &mut out, is_empty, is_divergent);
         out
     }
 
@@ -780,7 +780,7 @@ mod tests {
     }
 
     #[test]
-    fn dim_immutable_wc_darkens_and_uses_lock() {
+    fn dim_divergent_wc_darkens_and_uses_lock() {
         let out = run_emit(b"@", false, true);
         assert_eq!(out, darken(DEFAULT_IMMUTABLE_ICON.as_bytes()));
     }
@@ -797,8 +797,8 @@ mod tests {
     }
 
     #[test]
-    fn dim_strips_immutable_marker() {
-        assert_eq!(run_emit(IMMUTABLE_MARKER_BYTES, false, false), b"");
+    fn dim_strips_divergent_marker() {
+        assert_eq!(run_emit(DIVERGENT_MARKER_BYTES, false, false), b"");
     }
 
     #[test]

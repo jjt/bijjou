@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: Empty marker on its own line — non-graph line passes through verbatim.
 expression: visualize(&output)
 ---
-𝙴
+(empty)

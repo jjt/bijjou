@@ -306,7 +306,7 @@ fn config_ascii_compact_log() {
 
 #[test]
 fn synthetic_only_marker_byte() {
-    let input = b"\xf0\x9d\x99\xb4\n";
+    let input = b"(empty)\n";
     snap_bytes(
         "synthetic_only_marker_byte",
         input,
@@ -335,18 +335,18 @@ fn synthetic_mutable_circle_no_color() {
 }
 
 #[test]
-fn synthetic_wc_immutable_lock() {
-    let input = "@  abc \u{1D678}desc\n".as_bytes();
+fn synthetic_wc_divergent_lock() {
+    let input = "@  abc (divergent) desc\n".as_bytes();
     snap_bytes(
-        "synthetic_wc_immutable_lock",
+        "synthetic_wc_divergent_lock",
         input,
-        "@ on a line carrying the immutable marker — lock icon wins over WC visuals.",
+        "@ on a line carrying the divergent marker — lock icon wins over WC visuals.",
     );
 }
 
 #[test]
 fn synthetic_wc_empty() {
-    let input = "@  abc \u{1D674}desc\n".as_bytes();
+    let input = "@  abc (empty) desc\n".as_bytes();
     snap_bytes(
         "synthetic_wc_empty",
         input,
@@ -356,11 +356,11 @@ fn synthetic_wc_empty() {
 
 #[test]
 fn synthetic_immutable_empty_diamond() {
-    let input = "\u{25C6}  abc \u{1D674}\u{1D678}desc\n".as_bytes();
+    let input = "\u{25C6}  abc (empty)(divergent) desc\n".as_bytes();
     snap_bytes(
         "synthetic_immutable_empty_diamond",
         input,
-        "◆ + empty + immutable markers — uses EMPTY_IMMUTABLE_ICON.",
+        "◆ + empty + divergent markers — uses EMPTY_IMMUTABLE_ICON.",
     );
 }
 
@@ -410,7 +410,7 @@ fn synthetic_alignment_dash_filler_non_alphanumeric() {
 
 #[test]
 fn synthetic_marker_inside_csi_segment() {
-    let input = b"@  abc \x1b[38;5;10m\xf0\x9d\x99\xb4\x1b[39mdesc\n";
+    let input = b"@  abc \x1b[38;5;10m(empty)\x1b[39m desc\n";
     snap_bytes(
         "synthetic_marker_inside_csi_segment",
         input,
@@ -490,14 +490,14 @@ fn degenerate_no_trailing_newline() {
 fn degenerate_many_consecutive_markers() {
     let mut buf = b"@  abc ".to_vec();
     for _ in 0..4 {
-        buf.extend_from_slice(b"\xf0\x9d\x99\xb4"); // 𝙴
-        buf.extend_from_slice(b"\xf0\x9d\x99\xb8"); // 𝙸
+        buf.extend_from_slice(b"(empty)");
+        buf.extend_from_slice(b"(divergent)");
     }
     buf.extend_from_slice(b"desc\n");
     snap_bytes(
         "degenerate_many_consecutive_markers",
         &buf,
-        "Stack of 𝙴𝙸 markers — all stripped, no doubled spacing.",
+        "Stack of (empty)(divergent) markers — all stripped, no doubled spacing.",
     );
 }
 
@@ -505,7 +505,7 @@ fn degenerate_many_consecutive_markers() {
 fn degenerate_marker_at_line_start() {
     snap_bytes(
         "degenerate_marker_at_line_start",
-        b"\xf0\x9d\x99\xb4@  abcde desc\n",
+        b"(empty)@  abcde desc\n",
         "Empty marker before the @ glyph — must strip cleanly.",
     );
 }
@@ -571,7 +571,7 @@ fn degenerate_csi_then_newline() {
 fn degenerate_solo_marker_byte_no_newline() {
     snap_bytes(
         "degenerate_solo_marker_byte_no_newline",
-        b"\xf0\x9d\x99\xb4",
+        b"(empty)",
         "Empty marker as the entire input, no newline — non-graph line passes through verbatim.",
     );
 }
@@ -580,7 +580,7 @@ fn degenerate_solo_marker_byte_no_newline() {
 fn degenerate_marker_after_graph_only() {
     snap_bytes(
         "degenerate_marker_after_graph_only",
-        b"\xe2\x97\x8b  \xf0\x9d\x99\xb4\n",
+        b"\xe2\x97\x8b  (empty)\n",
         "Graph + marker but no commit content; marker still stripped.",
     );
 }

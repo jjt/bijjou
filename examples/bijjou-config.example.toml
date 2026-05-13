@@ -50,14 +50,15 @@ activation-marker = "BIJJOU_ACTIVATE"
 # pager = "auto"
 
 [commits.markers]
-# Sentinel chars bijjou looks for to detect commit state. The jj template
-# (see examples/jj-config-snippet.toml) must emit the same bytes. Both are
-# stripped from output. Set either to "" to disable detection of that state.
+# Sentinel strings bijjou looks for to detect commit state. The defaults
+# match jj's native log annotations — no jj template config required.
+# Both are stripped from output. Set either to "" to disable detection of
+# that state.
 #
-# Defaults: empty = "𝙴" (U+1D674), immutable = "𝙸" (U+1D678)
+# Defaults: empty = "(empty)", divergent = "(divergent)"
 #
-# empty     = "𝙴"
-# immutable = "𝙸"
+# empty     = "(empty)"
+# divergent = "(divergent)"
 
 [graph.nodes.chars]
 # Replacement glyphs for the commit-node chars jj prints (@ ○ ◆ × ●).

@@ -1,26 +1,11 @@
-# Add this minimal config to jj config and then pipe jj through bijjou
+# bijjou works out of the box with jj's default log output: it detects the
+# native `(empty)` and `(divergent)` annotations by their literal text and
+# locates the graph column by Unicode codepoint, not by ANSI. No jj-side
+# configuration is required.
 #
-# A single `BIJJOU_ACTIVATE` anywhere in stdin is enough to opt bijjou into
-# processing the whole stream; without it bijjou passes input through unchanged.
+# `ui.color = "always"` is optional. Set it if you want jj's color choices
+# preserved when piping into bijjou (jj otherwise drops color when stdout
+# isn't a tty).
 
-# Optional, but removes the need to add --color=always to jj commands
 [ui]
 color = "always"
-
-# bijjou uses sentinel strings to tell if the commit is empty and/or
-# immutable, and also to activate processing if `activate=auto` is set.
-# These are stripped from the final output.
-#  𝙴 (U+1D674)     - commit is empty        (override via `commits.markers.empty`)
-#  𝙸 (U+1D678)     - commit is immutable    (override via `commits.markers.immutable`)
-# If you change any of these in bijjou's config, mirror the change in the
-# string literals below so the template emits the matching bytes.
-[template-aliases]
-'format_bijjou_markers(commit)' = '''
-separate("",
-  if(commit.empty(), label("empty", "𝙴")),
-  if(commit.immutable(), label("immutable", "𝙸")),
-)
-'''
-
-[templates]
-log = 'format_bijjou_markers(self) ++ builtin_log_oneline(self)'

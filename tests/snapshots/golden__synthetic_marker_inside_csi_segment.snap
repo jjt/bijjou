@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: "Marker bytes wrapped in jj's color envelope — marker stripped without extra spacing from the now-empty SGR pair."
 expression: visualize(&output)
 ---
-  abc \e[38;5;10m\e[39mdesc
+  abc \e[38;5;10m\e[39m desc

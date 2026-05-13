@@ -3,6 +3,6 @@
 ├─╯
 │ ○  [1m[38;5;5mz[0m[38;5;8mpoyuq[39m [1m[38;5;4mf[0m[38;5;8mc8ba8[39m [38;5;3mTU[39m [38;5;6m260509·1455[39m [38;5;5mbranch-x[39m branch-x: common = X
 ├─╯
-[0m[39m◆[0m  [1m[38;5;5mw[0m[38;5;8mosytr[39m [1m[38;5;4me5c[0m[38;5;8m332[39m [38;5;3mTU[39m [38;5;6m260509·1455[39m [38;5;5mmain@origin[39m 𝙸main: edit shared
+[0m[39m◆[0m  [1m[38;5;5mw[0m[38;5;8mosytr[39m [1m[38;5;4me5c[0m[38;5;8m332[39m [38;5;3mTU[39m [38;5;6m260509·1455[39m [38;5;5mmain@origin[39m (divergent)main: edit shared
 │
 ~

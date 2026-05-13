@@ -93,7 +93,7 @@ KEYS
 
   [commits.markers]
     empty                                   string
-    immutable                               string
+    divergent                               string
 
   [graph.nodes.chars]                       string (each)
     working-copy  mutable  immutable  conflict  alternate

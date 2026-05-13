@@ -23,8 +23,6 @@ graph rows — the rest of the stream is passed through byte-for-byte.
 - Nerd Font for the default node icons.
 - A terminal that renders Unicode 16 Large Type Pieces for the default
   edge glyphs (or override them, see config).
-- `jj` configured to emit ANSI color (`ui.color = "always"`), since bijjou
-  uses the color codes to find the graph column.
 
 ## Install
 
@@ -54,10 +52,13 @@ the activation marker (`BIJJOU_ACTIVATE`) somewhere in the stream, and
 passes input through unchanged otherwise. Force-on with `--activate` or
 `--activate=always`; force-off with `--activate=never`.
 
-To wire bijjou into the empty / immutable detection, copy
-[`examples/jj-config-snippet.toml`](examples/jj-config-snippet.toml) into
-your jj config. It sets `ui.color = "always"` and adds a template that
-emits the marker characters bijjou strips back out.
+bijjou detects jj's native `(empty)` and `(divergent)` log annotations out
+of the box — no jj config required. Setting `ui.color = "always"` is
+optional and only useful if you want jj's color choices preserved when
+output is piped (bijjou itself locates the graph column by codepoint, not
+by ANSI). See
+[`examples/jj-config-snippet.toml`](examples/jj-config-snippet.toml) for a
+minimal snippet.
 
 ### Streaming
 
@@ -106,7 +107,7 @@ for every key, default, and explanatory comment. Quick reference:
 | `[layout]`            | `align`, `gap`, `dash`, `dash-arrow`, `dash-margin`                                                 |
 | `[filter]`            | `hide-vertical-only-lines`                                                                          |
 | `[stream]`            | `enabled`, `batch-size`                                                                             |
-| `[commits.markers]`   | `empty`, `immutable`                                                                                |
+| `[commits.markers]`   | `empty`, `divergent`                                                                                |
 | `[graph.nodes.chars]` | `working-copy`, `mutable`, `immutable`, `conflict`, `alternate`, `empty`, `working-copy-empty`, `empty-immutable` |
 | `[graph.edges.chars]` | `horizontal`, `vertical`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `tee-right`, `tee-left`, `tee-down`, `tee-up`, `cross`, `elision` |
 | `[colors]`            | `dash-filler`, `edge`, `mutable-node` (int 0–255 or `"#rrggbb"`)                                    |

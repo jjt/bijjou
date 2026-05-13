@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: "@ on a line carrying the immutable marker — lock icon wins over WC visuals."
-expression: visualize(&output)
----
-\e[38;5;245m\e[39m  abc desc
