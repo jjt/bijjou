@@ -125,8 +125,19 @@ fn emit_inter_gap(gap_bytes: &[u8], extra_pad: usize, out: &mut Vec<u8>) {
             out.push(b' ');
         }
         out.extend_from_slice(&c.dim_on);
-        for _ in 0..fill {
-            out.extend_from_slice(c.dash.as_bytes());
+        let use_caps = margin == 0;
+        let head_cap = use_caps && !c.dash_start.is_empty();
+        let tail_cap = use_caps && !c.dash_end.is_empty();
+        for idx in 0..fill {
+            let is_first = idx == 0;
+            let is_last = idx + 1 == fill;
+            if tail_cap && is_last && fill > 1 {
+                out.extend_from_slice(c.dash_end.as_bytes());
+            } else if head_cap && is_first {
+                out.extend_from_slice(c.dash_start.as_bytes());
+            } else {
+                out.extend_from_slice(c.dash.as_bytes());
+            }
         }
         out.extend_from_slice(FG_RESET);
         for _ in 0..margin {
