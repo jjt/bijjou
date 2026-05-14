@@ -32,29 +32,22 @@ pub fn run() -> io::Result<()> {
     }
 
     let mut state = StreamState::default();
-    let use_lookahead = matches!(c.stream_batch_size, BatchSize::HalfPager);
+    let prescan_page = matches!(c.stream_batch_size, BatchSize::HalfPager);
 
-    if use_lookahead {
-        let mut pending = first;
-        loop {
-            let next = read_batch(&mut reader, rest_size)?;
-            scan_widths(&pending, &mut state);
-            scan_widths(&next, &mut state);
-            process_batch(&pending, &mut state, &mut sink)?;
-            if next.is_empty() {
-                break;
-            }
-            pending = next;
+    if prescan_page {
+        scan_widths(&first, &mut state);
+    }
+    process_batch(&first, &mut state, &mut sink)?;
+
+    loop {
+        let batch = read_batch(&mut reader, rest_size)?;
+        if batch.is_empty() {
+            break;
         }
-    } else {
-        process_batch(&first, &mut state, &mut sink)?;
-        loop {
-            let batch = read_batch(&mut reader, rest_size)?;
-            if batch.is_empty() {
-                break;
-            }
-            process_batch(&batch, &mut state, &mut sink)?;
+        if prescan_page {
+            scan_widths(&batch, &mut state);
         }
+        process_batch(&batch, &mut state, &mut sink)?;
     }
 
     sink.close()
