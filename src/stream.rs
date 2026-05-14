@@ -1,7 +1,7 @@
 use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 
 use crate::ansi::strip_sgr;
-use crate::config::{cfg, color_enabled, Activate, BatchSize, Pager, DEFAULT_STREAM_BATCH_SIZE};
+use crate::config::{cfg, color_enabled, Activate, BatchSize, Pager};
 use crate::render::{
     contains_bytes, emit_line, find_boundary, is_vertical_only_line, parse_content_columns,
     strip_trailing_nl,
@@ -116,7 +116,11 @@ fn resolve_batch_sizes(bs: &BatchSize) -> (usize, usize) {
             (n, n)
         }
         BatchSize::HalfPager => {
-            let h = terminal_height().unwrap_or(DEFAULT_STREAM_BATCH_SIZE);
+            // Fallback to a small page when terminal_height can't be detected
+            // (no TTY available). DEFAULT_STREAM_BATCH_SIZE (128) is too big
+            // here — half-pager only makes sense at screen-scale, and a huge
+            // first batch flattens column alignment across the whole log.
+            let h = terminal_height().unwrap_or(24);
             let first = h.saturating_sub(1).max(1);
             let rest = (first / 2).max(1);
             (first, rest)
@@ -147,14 +151,21 @@ fn terminal_height() -> Option<usize> {
         fn ioctl(fd: i32, req: u64, arg: *mut WinSize) -> i32;
     }
 
-    let fds = [
+    let std_fds = [
         io::stderr().as_raw_fd(),
         io::stdout().as_raw_fd(),
         io::stdin().as_raw_fd(),
     ];
-    for fd in fds {
+    for fd in std_fds {
         let mut ws = WinSize { ws_row: 0, ws_col: 0, ws_xpixel: 0, ws_ypixel: 0 };
         let r = unsafe { ioctl(fd, TIOCGWINSZ, &mut ws as *mut WinSize) };
+        if r == 0 && ws.ws_row > 0 {
+            return Some(ws.ws_row as usize);
+        }
+    }
+    if let Ok(file) = std::fs::OpenOptions::new().read(true).write(true).open("/dev/tty") {
+        let mut ws = WinSize { ws_row: 0, ws_col: 0, ws_xpixel: 0, ws_ypixel: 0 };
+        let r = unsafe { ioctl(file.as_raw_fd(), TIOCGWINSZ, &mut ws as *mut WinSize) };
         if r == 0 && ws.ws_row > 0 {
             return Some(ws.ws_row as usize);
         }
