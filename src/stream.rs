@@ -1,15 +1,19 @@
 use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 
 use crate::config::{cfg, Activate, BatchSize, Pager, DEFAULT_STREAM_BATCH_SIZE};
-use crate::render::{contains_bytes, emit_line, find_boundary, parse_content_columns, strip_trailing_nl};
+use crate::render::{
+    contains_bytes, emit_line, find_boundary, is_vertical_only_line, parse_content_columns,
+    strip_trailing_nl,
+};
 
 pub fn run() -> io::Result<()> {
     let c = cfg();
     let (first_size, rest_size) = resolve_batch_sizes(&c.stream_batch_size);
+    let count_visible = matches!(c.stream_batch_size, BatchSize::HalfPager);
     let mut sink = OutputSink::open();
     let mut reader = BufReader::new(io::stdin().lock());
 
-    let first = read_batch(&mut reader, first_size)?;
+    let first = read_batch_with_mode(&mut reader, first_size, count_visible)?;
     if first.is_empty() {
         return sink.close();
     }
@@ -40,7 +44,7 @@ pub fn run() -> io::Result<()> {
     process_batch(&first, &mut state, &mut sink)?;
 
     loop {
-        let batch = read_batch(&mut reader, rest_size)?;
+        let batch = read_batch_with_mode(&mut reader, rest_size, count_visible)?;
         if batch.is_empty() {
             break;
         }
@@ -51,6 +55,36 @@ pub fn run() -> io::Result<()> {
     }
 
     sink.close()
+}
+
+fn read_batch_with_mode<R: BufRead>(
+    reader: &mut R,
+    target_visible: usize,
+    count_visible: bool,
+) -> io::Result<Vec<Vec<u8>>> {
+    if !count_visible {
+        return read_batch(reader, target_visible);
+    }
+    let c = cfg();
+    let mut out = Vec::with_capacity(target_visible);
+    let mut visible = 0usize;
+    while visible < target_visible {
+        let mut buf = Vec::new();
+        let n = reader.read_until(b'\n', &mut buf)?;
+        if n == 0 {
+            break;
+        }
+        let body = strip_trailing_nl(&buf).0;
+        let parsed = find_boundary(body);
+        let filtered = c.hide_vertical_only_lines
+            && parsed.is_none()
+            && is_vertical_only_line(body);
+        if !filtered {
+            visible += 1;
+        }
+        out.push(buf);
+    }
+    Ok(out)
 }
 
 fn scan_widths(batch: &[Vec<u8>], state: &mut StreamState) {
