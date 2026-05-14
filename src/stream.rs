@@ -36,9 +36,10 @@ pub fn run() -> io::Result<()> {
     }
 
     let mut state = StreamState::default();
-    let prescan_page = matches!(c.stream_batch_size, BatchSize::HalfPager);
+    let per_page = matches!(c.stream_batch_size, BatchSize::HalfPager);
 
-    if prescan_page {
+    if per_page {
+        state = StreamState::default();
         scan_widths(&first, &mut state);
     }
     process_batch(&first, &mut state, &mut sink)?;
@@ -48,7 +49,8 @@ pub fn run() -> io::Result<()> {
         if batch.is_empty() {
             break;
         }
-        if prescan_page {
+        if per_page {
+            state = StreamState::default();
             scan_widths(&batch, &mut state);
         }
         process_batch(&batch, &mut state, &mut sink)?;
