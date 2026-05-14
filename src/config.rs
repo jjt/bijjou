@@ -153,6 +153,7 @@ pub struct Config {
     pub stream_batch_size: BatchSize,
     pub align_enabled: bool,
     pub align_gap: usize,
+    pub debug_force_screen_height: Option<usize>,
 }
 
 impl Default for Config {
@@ -197,6 +198,7 @@ impl Default for Config {
             stream_batch_size: BatchSize::default(),
             align_enabled: DEFAULT_ALIGN_ENABLED,
             align_gap: DEFAULT_ALIGN_GAP,
+            debug_force_screen_height: None,
         }
     }
 }
@@ -470,6 +472,15 @@ impl Config {
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.mutable-node" => self.mutable_node_color = parse_color_str(value).map_err(mkerr)?,
+            "debug.force-screen-height" => {
+                let n: i64 = value
+                    .parse()
+                    .map_err(|_| mkerr(format!("expected integer >= 1, got {:?}", value)))?;
+                if n < 1 {
+                    return Err(mkerr(format!("expected integer >= 1, got {}", n)));
+                }
+                self.debug_force_screen_height = Some(n as usize);
+            }
             other => return Err(format!("{}unknown key: {}", prefix, other)),
         }
         Ok(())

@@ -120,7 +120,10 @@ fn resolve_batch_sizes(bs: &BatchSize) -> (usize, usize) {
             // (no TTY available). DEFAULT_STREAM_BATCH_SIZE (128) is too big
             // here — half-pager only makes sense at screen-scale, and a huge
             // first batch flattens column alignment across the whole log.
-            let h = terminal_height().unwrap_or(24);
+            let h = cfg()
+                .debug_force_screen_height
+                .or_else(terminal_height)
+                .unwrap_or(24);
             let first = h.saturating_sub(1).max(1);
             let rest = (first / 2).max(1);
             (first, rest)
