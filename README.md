@@ -52,6 +52,10 @@ Set `--activate=auto` to gate processing on the presence of the activation
 marker (`BIJJOU_ACTIVATE`) in stdin, or `--activate=never` to force
 byte-for-byte passthrough.
 
+Color output defaults to `auto` (emit when stdout is a terminal, strip
+otherwise). Override with `--color=always` or `--color=never`, or set
+`[ui] color = "..."` in the config file.
+
 bijjou detects jj's native `(empty)` and `(divergent)` log annotations out
 of the box — no jj config required. Setting `ui.color = "always"` is
 optional and only useful if you want jj's color choices preserved when
@@ -100,7 +104,8 @@ for every key, default, and explanatory comment. Quick reference:
 
 | Section               | Keys                                                                                                |
 | --------------------- | --------------------------------------------------------------------------------------------------- |
-| (top level)           | `activate`, `activation-marker`                                                                     |
+| (top level)           | `activate`, `activation-marker`, `pager`                                                            |
+| `[ui]`                | `color` (auto\|always\|never)                                                                       |
 | `[layout]`            | `align`, `gap`, `dash`, `dash-arrow`, `dash-margin`                                                 |
 | `[filter]`            | `hide-vertical-only-lines`                                                                          |
 | `[stream]`            | `enabled`, `batch-size`                                                                             |

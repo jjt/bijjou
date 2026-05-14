@@ -24,9 +24,27 @@ fn config_path(name: &str) -> PathBuf {
 
 fn run_bijjou_with_config(input: &[u8], config: &str) -> Vec<u8> {
     let path = config_path(config);
+    // Default golden harness: force ui.color=always so snapshots are
+    // stable regardless of whether the test runner is a TTY. Tests that
+    // exercise ui.color itself use run_bijjou_with_config_raw.
     Command::cargo_bin("bijjou")
         .expect("binary built")
         .env("BIJJOU_CONFIG", &path)
+        .env("BIJJOU__UI__COLOR", "always")
+        .write_stdin(input)
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone()
+}
+
+fn run_bijjou_with_config_raw(input: &[u8], config: &str) -> Vec<u8> {
+    let path = config_path(config);
+    Command::cargo_bin("bijjou")
+        .expect("binary built")
+        .env("BIJJOU_CONFIG", &path)
+        .env_remove("BIJJOU__UI__COLOR")
         .write_stdin(input)
         .assert()
         .success()
@@ -842,6 +860,72 @@ fn stream_passthrough_when_activate_never() {
         .clone();
     let _ = std::fs::remove_file(&tmp);
     assert_eq!(output, input, "Activate::Never must passthrough regardless of streaming");
+}
+
+// --- ui.color -----------------------------------------------------------
+// ui.color = "never" must strip every SGR (color) sequence from output.
+// "always" forces emission regardless of TTY state (already exercised by
+// every other golden via the harness env var). Auto is TTY-dependent and
+// is exercised by the unit tests.
+
+#[test]
+fn config_no_color_linear_chain() {
+    let input = read_fixture("linear_chain");
+    let output = run_bijjou_with_config_raw(&input, "no_color");
+    insta::with_settings!({description => "linear_chain with [ui] color = \"never\" — every SGR (color) sequence stripped from output."}, {
+        insta::assert_snapshot!("config_no_color_linear_chain", visualize(&output));
+    });
+    assert!(
+        !output.windows(2).any(|w| w == [0x1b, b'[']),
+        "ui.color=never must strip every CSI sequence from output"
+    );
+}
+
+#[test]
+fn config_no_color_branching() {
+    let input = read_fixture("branching");
+    let output = run_bijjou_with_config_raw(&input, "no_color");
+    insta::with_settings!({description => "branching shape with [ui] color = \"never\" — node/edge colors and dash-filler colors all stripped."}, {
+        insta::assert_snapshot!("config_no_color_branching", visualize(&output));
+    });
+}
+
+#[test]
+fn config_no_color_stream_linear_chain() {
+    let input = read_fixture("linear_chain");
+    let output = run_bijjou_with_config_raw(&input, "no_color_stream");
+    insta::with_settings!({description => "linear_chain in streaming mode with [ui] color = \"never\" — same stripped output as the batch path."}, {
+        insta::assert_snapshot!("config_no_color_stream_linear_chain", visualize(&output));
+    });
+    assert!(
+        !output.windows(2).any(|w| w == [0x1b, b'[']),
+        "ui.color=never (stream) must strip every CSI sequence from output"
+    );
+}
+
+#[test]
+fn cli_color_never_strips_colors() {
+    // CLI flag must override env-injected BIJJOU__UI__COLOR=always.
+    let input = read_fixture("linear_chain");
+    let path = config_path("bypass_gate");
+    let output = Command::cargo_bin("bijjou")
+        .expect("binary built")
+        .env("BIJJOU_CONFIG", &path)
+        .env("BIJJOU__UI__COLOR", "always")
+        .args(["--color=never"])
+        .write_stdin(&input[..])
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    insta::with_settings!({description => "linear_chain run with --color=never (CLI wins over env=always) — output contains no CSI sequences."}, {
+        insta::assert_snapshot!("cli_color_never_strips_colors", visualize(&output));
+    });
+    assert!(
+        !output.windows(2).any(|w| w == [0x1b, b'[']),
+        "--color=never must strip every CSI sequence from output"
+    );
 }
 
 #[test]

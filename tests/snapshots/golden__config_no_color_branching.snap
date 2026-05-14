@@ -1,0 +1,11 @@
+---
+source: tests/golden.rs
+description: "branching shape with [ui] color = \"never\" — node/edge colors and dash-filler colors all stripped."
+expression: visualize(&output)
+---
+ ── tyvwoy cd5b3c ME 260509·1007 no description
+ ── nvnoxs 4c3cd2 ME 260509·1007 side commit
+𜸩   upvwzo 4277f5 ME 260509·1007 second
+𜸨𜸟𜹃
+ ── lllmup 7b0dd3 ME 260509·1007 first
+ ── zzzzzz root() 000000

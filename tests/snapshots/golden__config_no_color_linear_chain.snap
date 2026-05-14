@@ -1,0 +1,10 @@
+---
+source: tests/golden.rs
+description: "linear_chain with [ui] color = \"never\" — every SGR (color) sequence stripped from output."
+expression: visualize(&output)
+---
+󰋘  zttznl 14be49 ME 260509·1007 add unit tests for byte-level rendering helpers
+  wnlmpu 96b17d ME 260509·0958 color immutable nodes the same gray as mutable
+  pqvzwp a9efd3 ME 260509·0947 handle immutable revs
+  qwvtur 0f3a01 ME 260508·1630 add notes on combo of rev states, use lock icon
+  zokmtu ff8630 ME 260508·1547 empty on purpose

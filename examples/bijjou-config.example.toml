@@ -50,6 +50,18 @@ activation-marker = "BIJJOU_ACTIVATE"
 #
 # pager = "auto"
 
+[ui]
+# Color output: one of "auto", "always", "never".
+#   auto   — emit color when stdout is a terminal; strip otherwise (default).
+#   always — always emit color sequences.
+#   never  — strip every SGR sequence from the output.
+# The `--color=<auto|always|never>` CLI flag overrides this; `--color` with no
+# value resolves to "auto".
+#
+# Default: "auto"
+#
+# color = "auto"
+
 [commits.markers]
 # Sentinel strings bijjou looks for to detect commit state. The defaults
 # match jj's native log annotations — no jj template config required.

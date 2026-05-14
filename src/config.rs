@@ -83,6 +83,23 @@ pub fn parse_pager(s: &str) -> Result<Pager, String> {
     }
 }
 
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub enum Color {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
+pub fn parse_color(s: &str) -> Result<Color, String> {
+    match s {
+        "auto" => Ok(Color::Auto),
+        "always" => Ok(Color::Always),
+        "never" => Ok(Color::Never),
+        other => Err(format!("expected auto|always|never, got {:?}", other)),
+    }
+}
+
 pub fn validate_activation_marker(m: &str) -> Result<(), String> {
     if m.is_empty() {
         return Err("activation-marker: must not be empty".into());
@@ -130,6 +147,7 @@ pub struct Config {
     pub divergent_marker: String,
     pub activate: Activate,
     pub pager: Pager,
+    pub color: Color,
     pub hide_vertical_only_lines: bool,
     pub stream_enabled: bool,
     pub stream_batch_size: BatchSize,
@@ -173,6 +191,7 @@ impl Default for Config {
             divergent_marker: DEFAULT_DIVERGENT_MARKER.to_string(),
             activate: Activate::default(),
             pager: Pager::default(),
+            color: Color::default(),
             hide_vertical_only_lines: false,
             stream_enabled: true,
             stream_batch_size: BatchSize::default(),
@@ -361,6 +380,14 @@ impl Config {
                 self.apply_kv("stream.enabled", value, "cli")?;
                 continue;
             }
+            if arg == "--color" {
+                self.apply_kv("ui.color", "auto", "cli")?;
+                continue;
+            }
+            if let Some(value) = arg.strip_prefix("--color=") {
+                self.apply_kv("ui.color", value, "cli")?;
+                continue;
+            }
             let rest = arg
                 .strip_prefix("--")
                 .ok_or_else(|| format!("cli: unknown argument: {}", arg))?;
@@ -383,6 +410,7 @@ impl Config {
         match key {
             "activate" => self.activate = parse_activate(value).map_err(mkerr)?,
             "pager" => self.pager = parse_pager(value).map_err(mkerr)?,
+            "ui.color" => self.color = parse_color(value).map_err(mkerr)?,
             "activation-marker" => {
                 validate_activation_marker(value).map_err(mkerr)?;
                 self.activation_marker = value.to_string();
@@ -520,6 +548,15 @@ static CONFIG: OnceLock<Config> = OnceLock::new();
 
 pub fn cfg() -> &'static Config {
     CONFIG.get_or_init(Config::default)
+}
+
+pub fn color_enabled() -> bool {
+    use std::io::IsTerminal;
+    match cfg().color {
+        Color::Always => true,
+        Color::Never => false,
+        Color::Auto => std::io::stdout().is_terminal(),
+    }
 }
 
 pub fn init(c: Config) {
@@ -677,6 +714,63 @@ edge = 200
         let mut cfg = Config::default();
         cfg.apply_cli(args(&["--pager=never"])).unwrap();
         assert_eq!(cfg.pager, Pager::Never);
+    }
+
+    #[test]
+    fn toml_color_default_is_auto() {
+        let cfg = Config::from_toml("").unwrap();
+        assert_eq!(cfg.color, Color::Auto);
+    }
+
+    #[test]
+    fn toml_color_accepts_each_variant() {
+        for (s, want) in [
+            ("auto", Color::Auto),
+            ("always", Color::Always),
+            ("never", Color::Never),
+        ] {
+            let cfg = Config::from_toml(&format!("[ui]\ncolor = \"{}\"\n", s)).unwrap();
+            assert_eq!(cfg.color, want);
+        }
+    }
+
+    #[test]
+    fn toml_color_rejects_bad_value() {
+        assert!(Config::from_toml("[ui]\ncolor = \"sometimes\"\n").is_err());
+    }
+
+    #[test]
+    fn cli_bare_color_sets_auto() {
+        let mut cfg = Config::default();
+        cfg.color = Color::Never;
+        cfg.apply_cli(args(&["--color"])).unwrap();
+        assert_eq!(cfg.color, Color::Auto);
+    }
+
+    #[test]
+    fn cli_color_value() {
+        for (s, want) in [
+            ("auto", Color::Auto),
+            ("always", Color::Always),
+            ("never", Color::Never),
+        ] {
+            let mut cfg = Config::default();
+            cfg.apply_cli(args(&[&format!("--color={}", s)])).unwrap();
+            assert_eq!(cfg.color, want);
+        }
+    }
+
+    #[test]
+    fn cli_color_invalid_value_errors() {
+        let mut cfg = Config::default();
+        assert!(cfg.apply_cli(args(&["--color=sometimes"])).is_err());
+    }
+
+    #[test]
+    fn cli_color_nested_form() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--ui__color=never"])).unwrap();
+        assert_eq!(cfg.color, Color::Never);
     }
 
     #[test]

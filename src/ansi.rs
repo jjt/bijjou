@@ -67,6 +67,14 @@ pub fn is_fg_color_sgr(params: &str) -> bool {
     }
 }
 
+// Drop every SGR (`CSI ... m`) sequence in `bytes`. Other CSI sequences and
+// plain bytes pass through unchanged.
+pub fn strip_sgr(bytes: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(bytes.len());
+    emit_filtered_ansi(bytes, &mut out, |_| true);
+    out
+}
+
 // Emit ANSI sequences from `bytes`, optionally filtering params.
 // `filter` returns true for params we should DROP.
 pub fn emit_filtered_ansi(bytes: &[u8], out: &mut Vec<u8>, filter: impl Fn(&str) -> bool) {
@@ -202,6 +210,20 @@ mod tests {
         let mut out = Vec::new();
         emit_filtered_ansi(b"plain", &mut out, is_fg_color_sgr);
         assert_eq!(out, b"plain");
+    }
+
+    #[test]
+    fn strip_sgr_removes_all_sgr_keeps_text() {
+        assert_eq!(
+            strip_sgr(b"\x1b[1m\x1b[31mfoo\x1b[39m\x1b[0m bar"),
+            b"foo bar"
+        );
+    }
+
+    #[test]
+    fn strip_sgr_preserves_non_sgr_csi() {
+        // Cursor move (CSI H) is not SGR and must pass through.
+        assert_eq!(strip_sgr(b"\x1b[Hhello\x1b[31m!\x1b[0m"), b"\x1b[Hhello!");
     }
 
     #[test]

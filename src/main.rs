@@ -49,6 +49,7 @@ USAGE
 OPTIONS
   -h, --help                show this help and exit
   --activate[=MODE]         processing mode (auto|always|never); default always; bare flag = auto
+  --color[=MODE]            color output (auto|always|never); default auto; bare flag = auto
   --stream[=BOOL]           streaming mode (default on); bare flag = true; --stream=false disables
   --<key>=<value>           override any config key; replace '.' with '__'
 
@@ -77,6 +78,9 @@ KEYS
   activate                                  auto|always|never
   activation-marker                         string
   pager                                     auto|always|never
+
+  [ui]
+    color                                   auto|always|never
 
   [filter]
     hide-vertical-only-lines                bool

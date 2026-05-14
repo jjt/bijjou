@@ -1,6 +1,7 @@
 use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 
-use crate::config::{cfg, Activate, BatchSize, Pager, DEFAULT_STREAM_BATCH_SIZE};
+use crate::ansi::strip_sgr;
+use crate::config::{cfg, color_enabled, Activate, BatchSize, Pager, DEFAULT_STREAM_BATCH_SIZE};
 use crate::render::{
     contains_bytes, emit_line, find_boundary, is_vertical_only_line, parse_content_columns,
     strip_trailing_nl,
@@ -228,7 +229,11 @@ fn process_batch(
             &mut out,
         );
     }
-    sink_write(sink, &out)
+    if color_enabled() {
+        sink_write(sink, &out)
+    } else {
+        sink_write(sink, &strip_sgr(&out))
+    }
 }
 
 fn passthrough<R: Read>(reader: &mut R, sink: &mut OutputSink) -> io::Result<()> {

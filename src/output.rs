@@ -1,8 +1,16 @@
+use std::borrow::Cow;
 use std::io::{self, IsTerminal, Write};
 
-use crate::config::{cfg, Pager};
+use crate::ansi::strip_sgr;
+use crate::config::{cfg, color_enabled, Pager};
 
 pub fn write_output(buf: &[u8], _line_count: usize) -> io::Result<()> {
+    let filtered: Cow<[u8]> = if color_enabled() {
+        Cow::Borrowed(buf)
+    } else {
+        Cow::Owned(strip_sgr(buf))
+    };
+    let buf = filtered.as_ref();
     let stdout = io::stdout();
     if should_page(stdout.is_terminal()) {
         if let Some(()) = try_pager(buf)? {
