@@ -40,7 +40,6 @@ pub fn run() -> io::Result<()> {
     let per_page = matches!(c.stream_batch_size, BatchSize::HalfPager);
 
     if per_page {
-        state = StreamState::default();
         scan_widths(&first, &mut state);
     }
     process_batch(&first, &mut state, &mut sink)?;
@@ -51,7 +50,9 @@ pub fn run() -> io::Result<()> {
             break;
         }
         if per_page {
-            state = StreamState::default();
+            if !c.monotonic_alignment {
+                state = StreamState::default();
+            }
             scan_widths(&batch, &mut state);
         }
         process_batch(&batch, &mut state, &mut sink)?;

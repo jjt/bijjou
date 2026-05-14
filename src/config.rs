@@ -48,6 +48,7 @@ impl Default for BatchSize {
 }
 pub const DEFAULT_ALIGN_ENABLED: bool = true;
 pub const DEFAULT_ALIGN_GAP: usize = 2;
+pub const DEFAULT_MONOTONIC_ALIGNMENT: bool = true;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum Activate {
@@ -153,6 +154,7 @@ pub struct Config {
     pub stream_batch_size: BatchSize,
     pub align_enabled: bool,
     pub align_gap: usize,
+    pub monotonic_alignment: bool,
     pub debug_force_screen_height: Option<usize>,
 }
 
@@ -198,6 +200,7 @@ impl Default for Config {
             stream_batch_size: BatchSize::default(),
             align_enabled: DEFAULT_ALIGN_ENABLED,
             align_gap: DEFAULT_ALIGN_GAP,
+            monotonic_alignment: DEFAULT_MONOTONIC_ALIGNMENT,
             debug_force_screen_height: None,
         }
     }
@@ -460,6 +463,9 @@ impl Config {
                 self.stream_batch_size = parse_batch_size(value).map_err(mkerr)?;
             }
             "layout.align" => self.align_enabled = parse_bool_str(value).map_err(mkerr)?,
+            "layout.monotonic-alignment" => {
+                self.monotonic_alignment = parse_bool_str(value).map_err(mkerr)?;
+            }
             "layout.gap" => {
                 let n: i64 = value
                     .parse()
