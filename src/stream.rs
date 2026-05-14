@@ -152,7 +152,10 @@ fn terminal_height() -> Option<usize> {
     const TIOCGWINSZ: u64 = 0x5413;
 
     extern "C" {
-        fn ioctl(fd: i32, req: u64, arg: *mut WinSize) -> i32;
+        // ioctl is variadic on macOS/Linux; declaring a fixed third arg
+        // uses the wrong ABI on ARM64 (the pointer lands in the wrong slot
+        // and ws_row stays 0). Keep it variadic to match libc.
+        fn ioctl(fd: i32, req: u64, ...) -> i32;
     }
 
     let std_fds = [
