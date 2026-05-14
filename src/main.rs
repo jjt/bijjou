@@ -68,11 +68,12 @@ CONFIGURATION
   CLI flags: --<key>=<value>, replace '.' with '__'.
     e.g. --graph__nodes__chars__working-copy=X
 
-  Streaming mode flushes output in batches as input arrives. Graph width is
-  tracked across the whole stream and grows monotonically the moment a wider
-  graph column appears; alignment never shifts backwards. In streaming `auto`
-  activation mode the marker scan is limited to the first batch; if the
-  marker isn't there, the rest of stdin is passed through verbatim.
+  Streaming mode flushes output in batches as input arrives. The first batch
+  is pre-scanned so every line in it shares the batch-wide max graph_col.
+  Subsequent batches widen monotonically per-line as wider rows arrive, and
+  alignment never shifts backwards. In streaming `auto` activation mode the
+  marker scan is limited to the first batch; if the marker isn't there, the
+  rest of stdin is passed through verbatim.
 
 KEYS
   activate                                  auto|always|never

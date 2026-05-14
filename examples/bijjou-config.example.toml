@@ -183,10 +183,10 @@ activation-marker = "BIJJOU_ACTIVATE"
 # Note: streaming and non-streaming intentionally differ here. Non-streaming
 # has the whole input up front and aligns every line to the global max
 # graph_col, so early narrow rows get dash filler that extends to the widest
-# point of the log. Streaming can't see the future, so early narrow rows stay
-# narrow and the alignment steps right at the first row that widens. Same
-# input → different output between the two modes for any log that fans out
-# after the first row.
+# point of the log. Streaming pre-scans the first batch so every line in it
+# shares the batch-wide max; subsequent batches widen monotonically per-line
+# as wider rows arrive (and never shrink). Same input → different output
+# between the two modes for any log that fans out after the first batch.
 #
 # When `activate = "auto"` and streaming is on, the activation-marker scan is
 # limited to the first batch. If the marker isn't there, the rest of stdin is

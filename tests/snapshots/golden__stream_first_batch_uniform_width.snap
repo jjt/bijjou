@@ -1,0 +1,11 @@
+---
+source: tests/golden.rs
+assertion_line: 773
+description: "First batch pre-scan: all 5 lines emit at the batch-wide max target, narrow rows backfilled with dashes."
+expression: visualize(&output)
+---
+\e[38;5;245m\e[39m \e[38;5;240m──\e[39m a
+\e[38;5;245m\e[39m \e[38;5;240m──\e[39m b
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  c
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  d
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  e

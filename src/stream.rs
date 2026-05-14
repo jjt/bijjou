@@ -39,9 +39,10 @@ pub fn run() -> io::Result<()> {
     let mut state = StreamState::default();
     let per_page = matches!(c.stream_batch_size, BatchSize::HalfPager);
 
-    if per_page {
-        scan_widths(&first, &mut state);
-    }
+    // Pre-scan the first batch so its target_col is set from the whole batch's
+    // widest graph_col rather than growing per-line. Subsequent batches keep
+    // bumping monotonically per-line — only the first batch is uniform.
+    scan_widths(&first, &mut state);
     process_batch(&first, &mut state, &mut sink)?;
 
     loop {

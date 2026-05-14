@@ -751,18 +751,17 @@ fn config_hide_vertical_only_megamerge_conflict() {
 }
 
 // --- Streaming mode -----------------------------------------------------
-// Streaming flushes output in batches; graph-column width is updated
-// per-line as wider graph columns are seen and only grows monotonically.
-// The widening takes effect starting at the exact line whose graph_col
-// exceeds the running max, not at the batch boundary. (This differs from
-// batch mode, which applies the global max uniformly to every line.)
+// Streaming flushes output in batches. The first batch is pre-scanned so
+// every line in it shares the batch-wide max graph_col. Subsequent batches
+// keep bumping the running max per-line as wider graph columns arrive, and
+// the max only ever grows. (Batch mode, by contrast, applies one global max
+// to every line in the whole input.)
 
 #[test]
-fn stream_per_line_widening_within_single_batch() {
-    // All 5 lines fit in one batch (batch-size = 1000000). Widening must
-    // still happen line-by-line: lines 1-2 emit at the narrow target, line
-    // 3 onward at the wider one — even though they share one batch and one
-    // flush.
+fn stream_first_batch_uniform_width() {
+    // All 5 lines fit in one batch (batch-size = 1000000). The pre-scan
+    // sets target_col from the widest row, so lines 1-2 get dash filler
+    // even though their own graph is narrower than lines 3-5.
     let input = b"\
 \xe2\x97\x8b  a\n\
 \xe2\x97\x8b  b\n\
@@ -770,8 +769,8 @@ fn stream_per_line_widening_within_single_batch() {
 \xe2\x94\x82 \xe2\x97\x8b  d\n\
 \xe2\x94\x82 \xe2\x97\x8b  e\n";
     let output = run_bijjou_with_config(input, "stream-huge");
-    insta::with_settings!({description => "Widening within a single batch: lines 1-2 emit at narrow target, lines 3-5 at the wider one."}, {
-        insta::assert_snapshot!("stream_per_line_widening_within_single_batch", visualize(&output));
+    insta::with_settings!({description => "First batch pre-scan: all 5 lines emit at the batch-wide max target, narrow rows backfilled with dashes."}, {
+        insta::assert_snapshot!("stream_first_batch_uniform_width", visualize(&output));
     });
 }
 
