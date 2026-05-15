@@ -294,6 +294,15 @@ fn remote_bookmarks() {
 }
 
 #[test]
+fn col_align_h_40() {
+    let input = read_fixture("col_align_h_40");
+    let output = run_bijjou_with_config_raw(&input, "col_align_h_40");
+    insta::with_settings!({description => "col align test on a 40 char tall screen"}, {
+        insta::assert_snapshot!("col_align_h_40", visualize(&output));
+    });
+}
+
+#[test]
 fn compact_log() {
     snapshot(
         "compact_log",

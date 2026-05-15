@@ -1,0 +1,11 @@
+activate = "always"
+
+[ui]
+color = "never"
+
+[stream]
+enabled = true
+batch-size = "half-pager"
+
+[debug]
+force-screen-height = 41

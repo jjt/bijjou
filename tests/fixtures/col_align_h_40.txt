@@ -1,0 +1,144 @@
+○  vpwtwn b099d4 ME 260510·1549 docs: graph decoration config and bijjou preset
+○  ypzpmz f79ec4 ME 260510·1548 tests: graph decoration integration tests
+○  mvwlsu 8c36be ME 260510·1541 graph_decorator: preserve template ANSI around node icon, strip fg for mutable nodes
+○  qmvluq 304476 ME 260510·1536 config: default graph decoration off
+○  vnwxnq 89e7d4 ME 260510·1536 config-schema: graph decoration options
+○  syzypo d26332 ME 260510·1535 evolog: compute NodeState (empty + working_copy) per entry
+○  zwwvtq 147f4a ME 260510·1534 log: compute NodeState (empty + working_copy) per commit
+○  rrsvkw c2f8d0 ME 260510·1531 graph_decorator: full-buffer separator splicer
+○  uptmqo 6b2002 ME 260510·1529 graph_decorator: streaming separator splicer
+○  rruplr 43ef17 ME 260510·1527 graph_decorator: boundary finder
+○  msquky 019bf7 ME 260510·1525 graphlog: wire decorator + buffering
+○  yxntyw 8a3f50 ME 260510·1520 graphlog: thread NodeState through add_node
+○  wtrutz 4f52dc ME 260510·1517 graph_decorator: full config loading
+○  nqtxsw 00cb6f ME 260510·1513 graph_decorator: build_glyph_table
+○  qkumpm 47cfa8 ME 260510·1512 graph_decorator: icon selector
+○  zrvulz 20520a ME 260510·1509 cli: add graph_decorator module skeleton
+○  twvlpx 8da5c0 ME 260510·1508 renderdag: add BoxDrawingRenderer::with_custom_glyphs
+○  wrktzq 19de55 ME 260510·1506 renderdag: convert BoxDrawingRenderer glyphs to enum
+○  ktwmrs 0bc379 ME 260510·1504 vendor: import sapling-renderdag 0.1.0
+○  ptwutu 701f14 ME 260510·1449 docs: graph decoration implementation plan
+○  ykontr c8d3a6 ME 260510·1445 docs: graph decoration design spec
+○  royqwv 033bbc ME 260510·1340 jjt/rnqwnsyvnyum* cli: add new wc only to workspaces that became immutable this tx
+○  rnqwns 718b27 ME 260510·1340 cli: extract find_immutable_commit_with helper
+◆  zqwpky 2416ff PM 260510·1753 pm/zqwpkyxvkwxl@upstream docs: Clarify the expectations around design docs a bit more
+◆  lmlyqt 7925fa DR 260510·0839 push-lmlyqtzxzunk@upstream lib: op_walk function to find all common ancestors.
+◆  szyskn a4e9e4 DR 260510·0839 push-szysknluvxms@upstream cli:converge: new jj converge command
+◆  zzsvlm 60e4fd DR 260510·0839 lib: Implement converge_trees
+◆  lvsyyx 484950 DR 260510·0839 lib: Implement converge_parents
+◆  srovxs ee24f9 DR 260510·0839 lib: converge.rs: implement find_dominator_value
+◆  ksyxoo d0cecf DR 260510·0839 lib: Implement TruncatedEvolutionGraph::new
+◆  kkpwtn ee1856 DR 260510·0839 lib: New converge.rs library with functionality for jj converge CLI
+◆  zymvuw 476622 DR 260510·0839 lib: logic to create value flow graphs and finding the value dominator
+◆  rnoumw f93f4a DR 260510·0837 push-rnoumwkkstou@upstream lib: new CommitEvolutionEntry::for_root_commit convenience function
+◆  knrxou c68e43 DR 260510·0837 push-qxxvzuxwsxno@upstream cli: new fn: run_mergetool_external_single_materialized_file
+◆  zmtvrx 72d98e DR 260510·0837 cli: Refactor run_mergetool_external_single_file
+◆  youszt 5322ef DR 260510·0837 cli: minor refactoring run_mergetool_external_single_file
+◆  qxxvzu 70da6b DR 260510·0837 lib: Extract a new update_from_materialized_content function
+◆  vxwkxo f3bd53 DR 260510·0837 push-vxwkxoutnqrw@upstream docs: update jj converge design
+◆  ltwnko 2da917 Mv 260510·0808 mz/lzszuoyomsws@upstream dag_walk_async: merge candidates and non_closest
+◆  xzztqs 56204e Mv 260509·2335 transaction: do recursive merge of operations in criss-cross case
+◆  lzszuo 2e5661 Mv 260509·2335 dag_walk_async: make closest_common_node() return all matching nodes
+◆  yqpqvn 3a7efb Mv 260509·2335 test_view: add test of criss-cross operation merge
+◆  nzvtwm d67c15 Mv 260509·2335 dag_walk_async: add some tests with a bad heuristic
+◆  xtwolu 46a632 DR 260510·0541 lib: Utility for finding closest common dominator in directed graphs
+◆  skmnsr f603c8 DR 260510·0541 lib: graph_dominators.rs: SimpleDirectedGraph
+◆  uwxvmp a61bf6 t  260509·0011 cli: bookmark forget: only report counts that reflect actual changes
+◆  krltyk 227a13 Mv 260507·1408 workspace: test auto-update-stale with dirty working copy
+◆  oqvsyx 9a9967 Mv 260507·1333 revset: make commit_change_ids() return a stream
+◆  osslvr b34cd4 Mv 260507·1239 git: explain that `jj git fetch/import` may abandon commits
+◆  psomoy 9b9656 Mv 260507·1238 cli_util: make workspace_helper*() async
+◆  zqyxrz 413f53 AS 260507·1210 v0.41.0 release: 0.41.0
+◆  ruxvzn afd921 Mv 260507·0130 lib: use ordering heuristic in dag_walk_async::closest_common_node
+◆  yzlxrp 500d65 Mv 260507·0130 op_walk: add closest_common_ancestor() helper
+◆  sytumk e86b2b d  260507·0049 cargo: bump gix-fs from 0.21.0 to 0.21.1
+◆  uorrqw 15e274 RS 260506·2351 ci: allow macos-x86_64 to fail
+│ ◆  kootmk 053f3d RS 260507·0209 senekor/kootmkxwzrkm@upstream config: use XDG_DATA_DIR for secure configuration
+├─╯
+◆  wutwku 49d466 RS 260506·2043 mise: add task to generate protobuf definitions
+◆  nwrpzo 32c690 d  260506·2013 github: bump the github-dependencies group with 2 updates
+◆  lmpyrs e9bdea Mv 260506·1608 dag_walk_async: add a test of another tricky closest_common_node() case
+│ ◆  osqpvq c3eb5f RS 260507·0013 senekor/osqpvquwvnyp@upstream git: move remote head to view object
+├─╯
+◆  uyymyx 2c70ab YN 260506·1305 cli: git: update generated repo config on remote rename/remove
+│ ◆  klsvvn 498a6f SJ 260412·0227 sami@upstream merge: workspace-cli + PR #9068 (LFS ignore-filters) + PR #8719 fixes (gitattr filter)
+│ ├─┬─┬─╮
+│ │ │ │ ◆  pwpnvy 2f9bc1 SJ 260412·0227 ci: add sami-build workflow caller
+├───────╯
+│ │ │ ◆  tzzzst 9dcae5 SJ 260411·2249 merge: PR #8719 (gitattr filter) + main
+╭─────┤
+│ │ │ ◆  onzyzp 587d64 SJ 260313·1909 config: document git.filter settings
+│ │ │ ◆  wymwyv 35445d SJ 260313·1907 config: move CommandNameAndArgs into jj-lib
+│ │ │ ◆  svystx 479e3d SJ 260313·1850 gitattributes: add filter regression coverage
+│ │ │ ◆  ospkuq 2c60b2 KL 260313·1055 cli: report filter errors
+│ │ │ ◆  krqnyn 5da532 KL 260313·1055 filter: read user settings
+│ │ │ ◆  xomtyq 356d8d KL 260313·1055 gitattributes: filter support
+│ │ │ ◆  wlrnxq b75902 KL 260313·1055 tests: remove `Eq`, `PartialEq` from `CheckoutStats`
+│ │ │ ◆  nqyzly 2f26e0 KL 260313·1055 tests: change the length of test change id to 20 bytes
+│ │ │ ◆  rlxkom bdcf65 KL 260313·1055 gitattributes: read gitattributes files
+│ │ ◆ │  oqrysr 47d28f SJ 260411·2205 merge: PR #9068 (LFS ignore-filters) + main
+╭───┤ │
+│ │ ◆ │  qwpmty 5e3a5a GI 260313·0240 git-lfs: access git attributes to ignore filtered files
+│ │ ◆ │  rwkort b0ab9c GI 260313·0239 git-lfs: add ignore filters option
+│ │ ◆ │  muppnu 26f3ff GI 260313·0239 git-attributes: add git attributes file support
+│ │ ├─╯
+│ ◆ │  pssyur 0b6c35 SJ 260411·2137 workspace-cli@upstream workspace forget: clean up Git worktree when forgetting colocated workspace
+│ ◆ │  psknup 69de8c SJ 260411·2134 op_store: add per-workspace git_head tracking
+│ ◆ │  snzxlp d0f058 SJ 260411·2047 git import: check all worktrees' HEAD for external changes
+│ ◆ │  lkoulo 456a77 SJ 260411·2047 workspace add --colocate: create Git worktree for colocated workspace
+│ ◆ │  xmuwus 6944e2 CR 260411·2047 colocated-workspaces@upstream workspace: Add worktree support to MaybeColocatedGitRepo
+│ ◆ │  lpqwzu 4a71c7 CR 260411·1936 cli: fix 'collocated' typo in doc comment
+│ ◆ │  tqutrm 2a266e CR 260411·1936 git: make GitBackend colocation-aware
+│ ◆ │  vtstut 590566 CR 260411·1936 git: Add MaybeColocatedGitRepo helper
+│ ◆ │  powyrs 1d6a19 CR 260411·1936 git: box all `gix::open::Error` as clippy keeps warning about it
+│ ◆ │  wuxxsv d87de2 CR 260411·1936 workspace: Reload the repo from disk in `workspace add`
+│ ◆ │  ylnvzx b650bb CR 260411·1936 workspace: Make backend factories aware of the workspace root
+├─╯ │
+│ ◆ │  uypoqp d3fc09 a  260411·2230 ase/uypoqpqkxklz@upstream progress with fast path etc
+├─╯ │
+◆   │  kkwtko 8df450 Mv 260411·1530 arrange: make rows as high as needed for template
+◆   │  ysprrm fdf9f5 r  260410·1952 cli: support line range based file fixing for 'jj fix'.
+◆   │  yqkzyv be85bb r  260410·1952 fix: implement core logic for formatting only modified lines
+◆   │  vykynp 9a6bcd r  260410·1952 tests: update TestFileFixer to use explicit replacements map.
+◆   │  qsxrqv 6a52e6 PM 260410·1828 core_tenets: Clarify the "having as few states as possible" one
+│ ◆ │  mqxwqt 86ea1f PM 260410·2049 push-mqxwqtnwnpts@upstream run: Flesh out a bare implementation of `jj run`
+├─╯ │
+◆   │  vyzruw 0879d2 YN 260409·2322 cli: git-push: push tracked tags in default/specified revsets
+◆   │  wmzuml 53e5ea FG 260409·2158 status: filter untracked paths by fileset
+◆   │  pyxrlq 0e9f7b GL 260409·2059 github: suppress github-env zizmor warning in setup-windows action
+◆   │  xzklsx c62044 GL 260409·2059 github: suppress dangerous-triggers zizmor warning in pr workflow
+◆   │  syxoqk 9a3159 GL 260409·2059 github: fix bot-conditions zizmor warning in dependabot workflow
+◆   │  srzoxm 3eea1e MG 260409·1203 docs: fix setting name for Gerrit remote
+◆   │  xyxkkm f2e1e0 d  260409·0322 github: bump taiki-e/install-action in the github-dependencies group
+◆   │  kuyltu 85461a YN 260409·0114 cli: git-push: add --tag=NAME flag, push tracked tags
+◆   │  zpttln dea4df YN 260409·0114 cli: git-push: extract remote_symbol variable to save vertical space
+◆   │  xqqtrl a27336 YN 260409·0114 cli: git-push: pass around GitPushRefTargets, loop over bookmarks and tags
+◆   │  tlpptp e1aadd YN 260409·0114 cli: git-push: rephrase stats messages for ease of constructing programmatically
+◆   │  ktlxmw 98619c YN 260409·0114 cli: git-push: move clap ArgGroup configuration to field attributes
+◆   │  ukwwyy 0c9604 j  260408·1901 gitignore: Switch to the gix-ignore library
+│ ◆ │  spmrpk/4 5f9fce PM 260408·1741 (divergent) pm/spmrpksxmyvz@upstream transaction: Add `maybe_publish`
+├─╯ │
+◆   │  wzytul f7bbff Mv 260408·1509 description_util: delete unused field TextEditor::dir
+◆   │  zyvulp ae6edd RP 260408·0607 git: expand allowed branch keys to include rebase
+◆   │  nmqnlr 4a9101 d  260408·0017 build(deps): bump vite from 6.4.1 to 6.4.2 in /web/docs
+◆   │  zvlypl eb3bc7 LG 260407·2307 docs: Describe how to view a `change-id` header using `git` itself.
+◆   │  rtzpoq 2bfceb LG 260407·2307 docs: Update `git` compatibility to make it clear that the change ID is written by default.
+◆   │  zwtxrv/0 8e5e0b a  260407·1711 (divergent) docs: rename 'Settings' to 'Configuration' in menu #7011
+◆   │  trxykk cc11f3 BT 260407·1230 repo: make some functions async
+◆   │  skvvym 6ec075 BT 260407·1230 evolution: make some functions async
+◆   │  xqovsn 222ebf BT 260407·1230 dag_walk_async: make `topo_order_*` functions async
+◆   │  kzylyu c38d69 Mv 260407·0517 templater: deprecate `Operation.tags()` in favor of `.attributes()`
+◆   │  qlpnnz 901421 d  260407·0138 cargo: bump the cargo-dependencies group with 5 updates
+◆   │  yosluw ff85aa h  260406·2230 docs: add JayJay to community tools page
+│ ◆ │  zwtxrv/1 a4d54f a  260407·1810 (divergent) ase/zwtxrvyrkyox@upstream docs: rename 'Settings' to 'Configuration' in menu #7011
+├─╯ │
+◆   │  mkzksr 8129f4 JR 260406·1814 gitignore: switch matching to non-recursive
+◆   │  qwqorq 09ede0 j  260406·1810 diff.git: Add a show-path-prefix option to disable a/ and b/ prefixes
+│ ◆ │  rlsskl 0d0adf JS 260406·1037 push-rlssklskvqsl@upstream dag_walk_async: silence clippy redundant closure warnings
+├─╯ │
+◆   │  xnlvqw 984dd2 Mv 260406·1429 log: rely on revset engine for intersection of prioritized revset
+◆   │  qzknxu 773896 YN 260405·2311 git: add tags handling to push_refs()
+◆   │  zslytw 91a144 YN 260405·2311 git: parameterize remote matcher of find_git_tag_oid_to_copy()
+◆   │  stozqm 733bae YN 260405·2311 git: use gix::ObjectId in low-level push functions
+◆   │  rxpqxv 2d19df YN 260405·2311 git: extract and use helper to convert CommitId to gix::ObjectId
+◆   │  wlmpoz 62aa9f Mv 260405·1712 dag_walk_async: make heads() async and concurrent
