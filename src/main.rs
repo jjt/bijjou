@@ -48,8 +48,8 @@ USAGE
 
 OPTIONS
   -h, --help                show this help and exit
-  --activate[=MODE]         processing mode (auto|always|never); default always; bare flag = auto
-  --color[=MODE]            color output (auto|always|never); default auto; bare flag = auto
+  --activate[=MODE]         processing mode (auto|always|never); default always; bare flag = always
+  --color[=MODE]            color output (auto|always|never); default auto; bare flag = always
   --stream[=BOOL]           streaming mode (default on); bare flag = true; --stream=false disables
   --<key>=<value>           override any config key; replace '.' with '__'
 

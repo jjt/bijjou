@@ -374,7 +374,7 @@ impl Config {
     pub fn apply_cli<I: IntoIterator<Item = String>>(&mut self, args: I) -> Result<(), String> {
         for arg in args {
             if arg == "--activate" {
-                self.apply_kv("activate", "auto", "cli")?;
+                self.apply_kv("activate", "always", "cli")?;
                 continue;
             }
             if arg == "--stream" {
@@ -386,7 +386,7 @@ impl Config {
                 continue;
             }
             if arg == "--color" {
-                self.apply_kv("ui.color", "auto", "cli")?;
+                self.apply_kv("ui.color", "always", "cli")?;
                 continue;
             }
             if let Some(value) = arg.strip_prefix("--color=") {
@@ -757,11 +757,11 @@ edge = 200
     }
 
     #[test]
-    fn cli_bare_color_sets_auto() {
+    fn cli_bare_color_sets_always() {
         let mut cfg = Config::default();
         cfg.color = Color::Never;
         cfg.apply_cli(args(&["--color"])).unwrap();
-        assert_eq!(cfg.color, Color::Auto);
+        assert_eq!(cfg.color, Color::Always);
     }
 
     #[test]
@@ -802,11 +802,11 @@ edge = 200
     }
 
     #[test]
-    fn cli_bare_activate_sets_auto() {
+    fn cli_bare_activate_sets_always() {
         let mut cfg = Config::default();
         cfg.activate = Activate::Never;
         cfg.apply_cli(args(&["--activate"])).unwrap();
-        assert_eq!(cfg.activate, Activate::Auto);
+        assert_eq!(cfg.activate, Activate::Always);
     }
 
     #[test]
