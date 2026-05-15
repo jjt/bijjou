@@ -39,7 +39,7 @@
 # Pair with a jj template that emits the marker — see
 # examples/jj-config-snippet.toml.
 #
-activation-marker = "BIJJOU_ACTIVATE"
+# activation-marker = "BIJJOU_ACTIVATE"
 
 # Pager mode: one of "auto", "always", "never".
 #   auto   — page only when $PAGER is set and stdout is a terminal (default).
