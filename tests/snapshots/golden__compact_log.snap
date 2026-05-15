@@ -3,17 +3,17 @@ source: tests/golden.rs
 description: "Captured from `jj log -T builtin_log_compact` — two-line records per commit; continuation `│` lines have edges but no node, so dash filler must NOT appear on them."
 expression: visualize(&output)
 ---
-\e[1m\e[38;5;2m󰋘\e[0m \e[38;5;240m──\e[39m \e[1m\e[38;5;13mo\e[38;5;8muswro\e[39m \e[38;5;240m────\e[39m \e[38;5;3mjason@jjt.io\e[39m \e[38;5;14m2026-05-12 11:29:02\e[39m \e[38;5;12m6\e[38;5;8m01bc2\e[39m\e[0m
+\e[1m\e[38;5;2m󰋘\e[0m\e[38;5;240m╶──╴\e[39m\e[1m\e[38;5;13mo\e[38;5;8muswro\e[39m\e[38;5;240m╶────╴\e[39m\e[38;5;3mjason@jjt.io\e[39m \e[38;5;14m2026-05-12 11:29:02\e[39m \e[38;5;12m6\e[38;5;8m01bc2\e[39m\e[0m
 \e[38;5;240m𜸩\e[39m    \e[1m\e[38;5;3m(no description set)\e[39m\e[0m
-\e[38;5;245m\e[39m \e[38;5;240m──\e[39m \e[1m\e[38;5;5mz\e[0m\e[38;5;8mwlplq\e[39m \e[38;5;240m────\e[39m \e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-12 11:25:23\e[39m \e[1m\e[38;5;4m3e\e[0m\e[38;5;8m1f9c\e[39m
-\e[38;5;240m𜸩\e[39m    add \e[38;5;240m───────\e[39m --activate \e[38;5;240m─\e[39m flag and `activate` config option
-\e[38;5;245m\e[39m \e[38;5;240m──\e[39m \e[1m\e[38;5;5mx\e[0m\e[38;5;8mwxzuz\e[39m \e[38;5;240m────\e[39m \e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-12 10:51:28\e[39m \e[1m\e[38;5;4mc\e[0m\e[38;5;8mbaac8\e[39m
-\e[38;5;240m𜸩\e[39m    restructure config \e[38;5;240m─────\e[39m keys; make commit markers configurable
-\e[0m\e[38;5;245m\e[39m\e[0m \e[38;5;240m──\e[39m \e[1m\e[38;5;5mkw\e[0m\e[38;5;8mnwzw\e[39m \e[38;5;240m────\e[39m \e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-11 23:29:51\e[39m \e[38;5;5mmain\e[39m \e[1m\e[38;5;4m0\e[0m\e[38;5;8m912dd\e[39m
-\e[38;5;240m𜸩\e[39m    create \e[38;5;240m────\e[39m config \e[38;5;240m─────\e[39m if none exists
+\e[38;5;245m\e[39m\e[38;5;240m╶──╴\e[39m\e[1m\e[38;5;5mz\e[0m\e[38;5;8mwlplq\e[39m\e[38;5;240m╶────╴\e[39m\e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-12 11:25:23\e[39m \e[1m\e[38;5;4m3e\e[0m\e[38;5;8m1f9c\e[39m
+\e[38;5;240m𜸩\e[39m    add\e[38;5;240m╶───────╴\e[39m--activate\e[38;5;240m╶─╴\e[39mflag and `activate` config option
+\e[38;5;245m\e[39m\e[38;5;240m╶──╴\e[39m\e[1m\e[38;5;5mx\e[0m\e[38;5;8mwxzuz\e[39m\e[38;5;240m╶────╴\e[39m\e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-12 10:51:28\e[39m \e[1m\e[38;5;4mc\e[0m\e[38;5;8mbaac8\e[39m
+\e[38;5;240m𜸩\e[39m    restructure config\e[38;5;240m╶─────╴\e[39mkeys; make commit markers configurable
+\e[0m\e[38;5;245m\e[39m\e[0m\e[38;5;240m╶──╴\e[39m\e[1m\e[38;5;5mkw\e[0m\e[38;5;8mnwzw\e[39m\e[38;5;240m╶────╴\e[39m\e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-11 23:29:51\e[39m \e[38;5;5mmain\e[39m \e[1m\e[38;5;4m0\e[0m\e[38;5;8m912dd\e[39m
+\e[38;5;240m𜸩\e[39m    create\e[38;5;240m╶────╴\e[39mconfig\e[38;5;240m╶─────╴\e[39mif none exists
 \e[38;5;240m𜹀\e[39m    \e[38;5;8m(elided revisions)\e[39m
-\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  \e[1m\e[38;5;5mm\e[0m\e[38;5;8mpoqps\e[39m \e[38;5;240m────\e[39m \e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-11 23:29:51\e[39m \e[1m\e[38;5;4m2\e[0m\e[38;5;8m30ac1\e[39m
-\e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m  graph: \e[38;5;240m────\e[39m opt-in \e[38;5;240m─────\e[39m connect_overlapping_edges promotes corners/Ts above verticals
-\e[0m\e[38;5;245m\e[39m\e[0m \e[38;5;240m──\e[39m \e[1m\e[38;5;5mku\e[0m\e[38;5;8mutyp\e[39m \e[38;5;240m────\e[39m \e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-11 23:29:51\e[39m \e[1m\e[38;5;4m32\e[0m\e[38;5;8md010\e[39m
-\e[38;5;240m𜸩\e[39m    fix: \e[38;5;240m──────\e[39m pass \e[38;5;240m───────\e[39m non-graph lines through verbatim, even when activation marker is present
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;5mm\e[0m\e[38;5;8mpoqps\e[39m\e[38;5;240m╶────╴\e[39m\e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-11 23:29:51\e[39m \e[1m\e[38;5;4m2\e[0m\e[38;5;8m30ac1\e[39m
+\e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m  graph:\e[38;5;240m╶────╴\e[39mopt-in\e[38;5;240m╶─────╴\e[39mconnect_overlapping_edges promotes corners/Ts above verticals
+\e[0m\e[38;5;245m\e[39m\e[0m\e[38;5;240m╶──╴\e[39m\e[1m\e[38;5;5mku\e[0m\e[38;5;8mutyp\e[39m\e[38;5;240m╶────╴\e[39m\e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-11 23:29:51\e[39m \e[1m\e[38;5;4m32\e[0m\e[38;5;8md010\e[39m
+\e[38;5;240m𜸩\e[39m    fix:\e[38;5;240m╶──────╴\e[39mpass\e[38;5;240m╶───────╴\e[39mnon-graph lines through verbatim, even when activation marker is present
 \e[38;5;240m𜹀\e[39m

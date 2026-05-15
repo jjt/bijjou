@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: "@ on a line carrying the divergent marker — lock icon wins over WC visuals."
 expression: visualize(&output)
 ---
-\e[38;5;245m\e[39m  abc (divergent) desc
+\e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39mabc (divergent) desc

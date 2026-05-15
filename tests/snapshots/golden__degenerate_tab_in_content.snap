@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: Tabs inside the description column — pass through unchanged.
 expression: visualize(&output)
 ---
-󰋘  abcde 12345 ME 260509 desc\x09with\x09tabs
+󰋘\e[38;5;240m╶╴\e[39mabcde 12345 ME 260509 desc\x09with\x09tabs

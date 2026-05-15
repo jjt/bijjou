@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: ◆ with no surrounding color — must darken and swap glyph to lock.
 expression: visualize(&output)
 ---
-\e[38;5;245m\e[39m  zzzzz root() 000000
+\e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39mzzzzz root() 000000

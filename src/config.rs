@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 
 pub const DEFAULT_DASH: &str = "─";
 pub const DEFAULT_DASH_ARROW: &str = "";
-pub const DEFAULT_DASH_MARGIN: usize = 1;
+pub const DEFAULT_DASH_MARGIN: usize = 0;
 pub const DEFAULT_DASH_START: &str = "╶";
 pub const DEFAULT_DASH_END: &str = "╴";
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;240m";
@@ -512,7 +512,7 @@ impl Config {
     }
 }
 
-const EXAMPLE_CONFIG: &str = include_str!("../examples/bijjou-config.example.toml");
+const EXAMPLE_CONFIG: &str = include_str!("../config.default.toml");
 
 fn default_config_target() -> Option<PathBuf> {
     if let Ok(v) = std::env::var("XDG_CONFIG_HOME") {

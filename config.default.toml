@@ -148,13 +148,13 @@
 # precedence over `dash-end`.
 #
 # Defaults: align = true, gap = 2, dash = "─", dash-arrow = "" (no arrow),
-# dash-margin = 1, dash-start = "╶", dash-end = "╴"
+# dash-margin = 0, dash-start = "╶", dash-end = "╴"
 #
 # align       = true
 # gap         = 2
 # dash        = "─"
 # dash-arrow  = "▶"
-# dash-margin = 1
+# dash-margin = 0
 # dash-start  = "╶"
 # dash-end    = "╴"
 

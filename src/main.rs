@@ -114,7 +114,7 @@ KEYS
   [colors]                                  int 0-255 | \"#rrggbb\"
     dash-filler  edge  mutable-node
 
-See examples/bijjou-config.example.toml for defaults and discussion.
+See config.default.toml for defaults and discussion.
 ";
 
 fn main() {

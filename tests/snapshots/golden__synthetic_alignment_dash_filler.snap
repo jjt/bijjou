@@ -3,5 +3,5 @@ source: tests/golden.rs
 description: Tall + short graph rows — short row pads with dash filler when content begins with a change-id.
 expression: visualize(&output)
 ---
-\e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  abcde 12345
-\e[38;5;245m\e[39m \e[38;5;240m────\e[39m fghij 67890
+\e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39mabcde 12345
+\e[38;5;245m\e[39m\e[38;5;240m╶────╴\e[39mfghij 67890

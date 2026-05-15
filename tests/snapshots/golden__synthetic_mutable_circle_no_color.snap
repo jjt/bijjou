@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: "○ alone, no color — must darken (override of jj's default fg)."
 expression: visualize(&output)
 ---
-\e[38;5;245m\e[39m  abcde 12345 desc
+\e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39mabcde 12345 desc

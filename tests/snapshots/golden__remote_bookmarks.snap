@@ -3,11 +3,11 @@ source: tests/golden.rs
 description: "Local main ahead of origin: `main*` (locally-modified) and `main@origin` (remote-tracking) on different commits."
 expression: visualize(&output)
 ---
-\e[38;5;245m\e[39m \e[38;5;240m──\e[39m \e[1m\e[38;5;5my\e[0m\e[38;5;8mkklqv\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m2a58d\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1455\e[39m \e[38;5;5mmain*\e[39m local-only commit on main
-\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  \e[1m\e[38;5;5msp\e[0m\e[38;5;8mmvuu\e[39m \e[1m\e[38;5;4md6\e[0m\e[38;5;8m7ecc\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1455\e[39m \e[38;5;5mbranch-y\e[39m branch-y: common = Y
+\e[38;5;245m\e[39m\e[38;5;240m╶──╴\e[39m\e[1m\e[38;5;5my\e[0m\e[38;5;8mkklqv\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m2a58d\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1455\e[39m \e[38;5;5mmain*\e[39m local-only commit on main
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;5msp\e[0m\e[38;5;8mmvuu\e[39m \e[1m\e[38;5;4md6\e[0m\e[38;5;8m7ecc\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1455\e[39m \e[38;5;5mbranch-y\e[39m branch-y: common = Y
 \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m  \e[1m\e[38;5;5mz\e[0m\e[38;5;8mpoyuq\e[39m \e[1m\e[38;5;4mf\e[0m\e[38;5;8mc8ba8\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1455\e[39m \e[38;5;5mbranch-x\e[39m branch-x: common = X
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;5mz\e[0m\e[38;5;8mpoyuq\e[39m \e[1m\e[38;5;4mf\e[0m\e[38;5;8mc8ba8\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1455\e[39m \e[38;5;5mbranch-x\e[39m branch-x: common = X
 \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-\e[0m\e[38;5;245m\e[39m\e[0m \e[38;5;240m──\e[39m \e[1m\e[38;5;5mw\e[0m\e[38;5;8mosytr\e[39m \e[1m\e[38;5;4me5c\e[0m\e[38;5;8m332\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1455\e[39m \e[38;5;5mmain@origin\e[39m main: edit shared
+\e[0m\e[38;5;245m\e[39m\e[0m\e[38;5;240m╶──╴\e[39m\e[1m\e[38;5;5mw\e[0m\e[38;5;8mosytr\e[39m \e[1m\e[38;5;4me5c\e[0m\e[38;5;8m332\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1455\e[39m \e[38;5;5mmain@origin\e[39m main: edit shared
 \e[38;5;240m𜸩\e[39m
 \e[38;5;240m𜹀\e[39m

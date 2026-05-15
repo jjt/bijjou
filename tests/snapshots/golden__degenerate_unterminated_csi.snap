@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: CSI cut off without final byte — parser must consume to EOF without panic.
 expression: visualize(&output)
 ---
-󰋘  abc\e[38;5;
+󰋘\e[38;5;240m╶╴\e[39mabc\e[38;5;

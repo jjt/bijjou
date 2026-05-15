@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: × alone — conflict icon; fg color preserved (no darken).
 expression: visualize(&output)
 ---
-  abc desc
+\e[38;5;240m╶╴\e[39mabc desc
