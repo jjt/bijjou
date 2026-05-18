@@ -193,6 +193,15 @@ fn plain_text_passthrough() {
 }
 
 #[test]
+fn diff_summary_align() {
+    snapshot(
+        "diff_summary",
+        "jj diff --summary lines under a working-copy commit. Pencil icon \
+         should land in the same column as the change-id's first letter.",
+    );
+}
+
+#[test]
 fn branching_graph() {
     snapshot(
         "branching",

@@ -1,0 +1,8 @@
+@  wqsumo bd67c1 ME 260518·1045 no description
+│  M README.md
+│  M config.default.toml
+│  M src/config.rs
+│  M src/main.rs
+│  M src/render.rs
+│  M tests/golden.rs
+│  M tests/snapshots/golden__plain_text.snap
