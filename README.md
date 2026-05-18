@@ -16,6 +16,9 @@ graph rows — the rest of the stream is passed through byte-for-byte.
   preserving jj's original color for the working copy and conflict nodes.
 - Aligns commit content across rows so every change id starts at the same
   column.
+- Replaces `jj diff --summary` status letters (`M A D R C`) with Nerd Font
+  icons, optionally colorizing the path to match. Strips `{}` braces from
+  rename/copy lines.
 - Streams output as input arrives, or processes the whole input at once.
 
 ## Requirements
@@ -71,7 +74,7 @@ width is tracked across the whole stream and grows monotonically —
 alignment never shifts backwards. Disable with `--stream=false` to fall
 back to the buffered path, which aligns every line to the widest graph
 column in the input at the cost of waiting for EOF. See the comment in
-`examples/bijjou-config.example.toml` for the trade-off.
+[`config.default.toml`](config.default.toml) for the trade-off.
 
 ## Configuration
 
@@ -99,8 +102,8 @@ CLI flags: `--<key>=<value>`, replace `.` with `__`.
 jj log | bijjou --graph__nodes__chars__working-copy=X
 ```
 
-See [`examples/bijjou-config.example.toml`](examples/bijjou-config.example.toml)
-for every key, default, and explanatory comment. Quick reference:
+See [`config.default.toml`](config.default.toml) for every key, default,
+and explanatory comment. Quick reference:
 
 | Section               | Keys                                                                                                |
 | --------------------- | --------------------------------------------------------------------------------------------------- |
@@ -108,6 +111,7 @@ for every key, default, and explanatory comment. Quick reference:
 | `[ui]`                | `color` (auto\|always\|never)                                                                       |
 | `[layout]`            | `align`, `gap`, `dash`, `dash-arrow`, `dash-margin`                                                 |
 | `[filter]`            | `hide-vertical-only-lines`                                                                          |
+| `[status]`            | `colorize-path`                                                                                     |
 | `[stream]`            | `enabled`, `batch-size`                                                                             |
 | `[commits.markers]`   | `empty`, `divergent`                                                                                |
 | `[graph.nodes.chars]` | `working-copy`, `mutable`, `immutable`, `conflict`, `alternate`, `empty`, `working-copy-empty`, `empty-immutable` |
