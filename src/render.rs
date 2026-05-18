@@ -75,16 +75,36 @@ pub fn emit_line(
         return false;
     }
 
+    if let Some(s) = parse_status_summary(body) {
+        emit_dim_graph(&body[..s.graph_prefix_end], out, false, false);
+        let section = &body[s.graph_prefix_end..s.status_section_end];
+        out.extend_from_slice(section);
+        if section.contains(&0x1b) {
+            out.extend_from_slice(b"\x1b[0m");
+        }
+        let stripped = crate::ansi::strip_sgr(&body[s.status_section_end..]);
+        out.extend_from_slice(&stripped);
+        if trailing_nl {
+            out.push(b'\n');
+        }
+        return true;
+    }
+
     match parsed {
         Some(p) => {
             let (is_empty, is_divergent) = line_flags(body);
             let graph = &body[..p.graph_end];
-            emit_dim_graph(graph, out, is_empty, is_divergent);
-            let dashed = has_node_char(graph);
-            let tail_is_node = graph_tail_is_node(graph);
-            write_gap(out, p, target_col, dashed, tail_is_node);
-            let content = &body[p.content_start..];
-            write_padded_content(content, max_changeid_w, max_author_w, out);
+            if graph_only_vertical(graph) {
+                emit_dim_graph(graph, out, is_empty, is_divergent);
+                out.extend_from_slice(&body[p.graph_end..]);
+            } else {
+                emit_dim_graph(graph, out, is_empty, is_divergent);
+                let dashed = has_node_char(graph);
+                let tail_is_node = graph_tail_is_node(graph);
+                write_gap(out, p, target_col, dashed, tail_is_node);
+                let content = &body[p.content_start..];
+                write_padded_content(content, max_changeid_w, max_author_w, out);
+            }
         }
         None if has_graph_char(body) => {
             let (is_empty, is_divergent) = line_flags(body);
@@ -449,6 +469,73 @@ fn graph_tail_is_node(body: &[u8]) -> bool {
         i += len;
     }
     last_was_node
+}
+
+pub struct StatusSummary {
+    pub graph_prefix_end: usize,
+    pub status_section_end: usize,
+}
+
+pub fn parse_status_summary(body: &[u8]) -> Option<StatusSummary> {
+    let mut i = 0;
+    loop {
+        let csi_start = i;
+        while let Some(after) = skip_csi(body, i) {
+            i = after;
+        }
+        if i >= body.len() {
+            return None;
+        }
+        let b = body[i];
+        if b == b' ' {
+            i += 1;
+            continue;
+        }
+        let (cp, len) = decode_utf8(body, i);
+        if cp == VERTICAL_CP {
+            i += len;
+            continue;
+        }
+        if !matches!(b, b'M' | b'A' | b'D' | b'R' | b'C') {
+            return None;
+        }
+        let mut j = i + 1;
+        while let Some(after) = skip_csi(body, j) {
+            j = after;
+        }
+        if j >= body.len() || body[j] != b' ' {
+            return None;
+        }
+        return Some(StatusSummary {
+            graph_prefix_end: csi_start,
+            status_section_end: j + 1,
+        });
+    }
+}
+
+pub fn graph_only_vertical(graph: &[u8]) -> bool {
+    let mut i = 0;
+    let mut had_vertical = false;
+    while i < graph.len() {
+        if let Some(after) = skip_csi(graph, i) {
+            i = after;
+            continue;
+        }
+        if graph[i] == b' ' {
+            i += 1;
+            continue;
+        }
+        let (cp, len) = decode_utf8(graph, i);
+        if cp == VERTICAL_CP {
+            had_vertical = true;
+            i += len;
+        } else if is_graph_char(cp) {
+            return false;
+        } else {
+            i += len;
+        }
+    }
+    had_vertical
 }
 
 pub fn is_vertical_only_line(body: &[u8]) -> bool {
@@ -1134,6 +1221,88 @@ mod tests {
     #[test]
     fn parse_content_columns_returns_none_on_single_token() {
         assert!(parse_content_columns(b"onlyone").is_none());
+    }
+
+    #[test]
+    fn status_summary_plain_leading_char() {
+        let s = parse_status_summary(b"M path/to/file").unwrap();
+        assert_eq!(s.graph_prefix_end, 0);
+        assert_eq!(s.status_section_end, 2);
+    }
+
+    #[test]
+    fn status_summary_all_chars() {
+        for c in [b'M', b'A', b'D', b'R', b'C'] {
+            let line = [c, b' ', b'x'];
+            assert!(parse_status_summary(&line).is_some(), "char {}", c as char);
+        }
+    }
+
+    #[test]
+    fn status_summary_rejects_lowercase() {
+        assert!(parse_status_summary(b"m path").is_none());
+    }
+
+    #[test]
+    fn status_summary_rejects_non_status_letter() {
+        assert!(parse_status_summary(b"X path").is_none());
+    }
+
+    #[test]
+    fn status_summary_requires_following_space() {
+        assert!(parse_status_summary(b"Modify").is_none());
+        assert!(parse_status_summary(b"M").is_none());
+    }
+
+    #[test]
+    fn status_summary_with_vertical_prefix() {
+        let s = parse_status_summary("│ M path".as_bytes()).unwrap();
+        assert_eq!(s.graph_prefix_end, 4);
+        assert_eq!(s.status_section_end, 6);
+    }
+
+    #[test]
+    fn status_summary_with_csi_wrapped_status() {
+        let line = b"\x1b[38;5;3mM\x1b[39m path";
+        let s = parse_status_summary(line).unwrap();
+        assert_eq!(s.graph_prefix_end, 0);
+        assert_eq!(s.status_section_end, line.len() - 4);
+    }
+
+    #[test]
+    fn status_summary_with_graph_and_color() {
+        let mut line = b"\x1b[38;5;240m".to_vec();
+        line.extend_from_slice("│".as_bytes());
+        line.extend_from_slice(b"\x1b[39m \x1b[38;5;3mM\x1b[39m path");
+        let s = parse_status_summary(&line).unwrap();
+        assert_eq!(s.graph_prefix_end, 11 + 3 + 5 + 1);
+    }
+
+    #[test]
+    fn status_summary_rejects_empty_or_blank() {
+        assert!(parse_status_summary(b"").is_none());
+        assert!(parse_status_summary(b"   ").is_none());
+        assert!(parse_status_summary("│ │ │".as_bytes()).is_none());
+    }
+
+    #[test]
+    fn graph_only_vertical_accepts_pipes() {
+        assert!(graph_only_vertical("│".as_bytes()));
+        assert!(graph_only_vertical("│ │ │".as_bytes()));
+        assert!(graph_only_vertical(b"\x1b[38;5;8m\xe2\x94\x82\x1b[39m"));
+    }
+
+    #[test]
+    fn graph_only_vertical_rejects_other_graph_chars() {
+        assert!(!graph_only_vertical("│ ○".as_bytes()));
+        assert!(!graph_only_vertical("├─╯".as_bytes()));
+        assert!(!graph_only_vertical("~".as_bytes()));
+    }
+
+    #[test]
+    fn graph_only_vertical_rejects_pure_spaces() {
+        assert!(!graph_only_vertical(b""));
+        assert!(!graph_only_vertical(b"   "));
     }
 
     #[test]
