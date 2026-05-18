@@ -1,0 +1,17 @@
+@  yumzkk 02d836 ME 260518·1156 aorsetn
+│  M src/render.rs
+│  A tests/fixtures/diff_summary_branched.txt
+│  M tests/golden.rs
+│  A tests/snapshots/golden__diff_summary_branched.snap
+│ ○  lmnvvt 3e4c4f ME 260518·1110 (empty) testo
+╭─┤
+○ │  womyno 7d38d4 ME 260518·1105 Sync README with current diff --summary handling
+├─╯
+│ ○      osnnxn 935807 ME 260518·1124 (empty) testo
+│ ├─┬─╮
+│ │ │ ○  pkmklp 02efec ME 260518·1110 (empty) testo
+├────╯
+○ │ │  stxnsy b1149b ME 260518·1105 Lock in diff --summary alignment with an insta test
+│ │ ○  rwxork dc84b2 ME 260518·1110 (empty) testo
+├───╯
+○ │  wqsumo 39c0d3 ME 260518·1105 Add status.colorize-path an

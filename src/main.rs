@@ -238,7 +238,14 @@ fn run() -> io::Result<()> {
         } else {
             p.as_ref().map(|p| p.graph_col).unwrap_or(0) + c.align_gap
         };
-        if emit_line(line, p.as_ref(), target_col, max_cid_w, max_auth_w, &mut out) {
+        if emit_line(
+            line,
+            p.as_ref(),
+            target_col,
+            max_cid_w,
+            max_auth_w,
+            &mut out,
+        ) {
             emitted_lines += 1;
         }
     }

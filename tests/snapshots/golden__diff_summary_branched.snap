@@ -1,0 +1,11 @@
+---
+source: tests/golden.rs
+description: "diff --summary on a branched graph: the path on the status row must align with the change-id column of the commit rows above."
+expression: visualize(&output)
+---
+\e[38;5;245m\e[39m\e[38;5;240m╶────╴\e[39mosnnxn 42ebe6 ME 260518·1110 testo
+\e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸠\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸤\e[39m
+\e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39mpkmklp 02efec ME 260518·1110 testo
+\e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m\e[38;5;240m╶\e[39m\e[38;5;240m𜸩\e[39m\e[38;5;240m─╴\e[39mrwxork dc84b2 ME 260518·1110 testo
+󰋘\e[38;5;240m╶\e[39m\e[38;5;240m𜸩\e[39m\e[38;5;240m─\e[39m\e[38;5;240m𜸩\e[39m\e[38;5;240m─╴\e[39myumzkk 1224ef ME 260518·1109 aorsetn
+\e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m   testo\e[0m

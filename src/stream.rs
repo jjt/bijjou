@@ -218,7 +218,7 @@ fn process_batch(
 ) -> io::Result<()> {
     let c = cfg();
     let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 8).sum());
-    for line in batch {
+    for line in batch.iter() {
         let body = strip_trailing_nl(line).0;
         let parsed = find_boundary(body);
         if let Some(p) = &parsed {

@@ -16,7 +16,13 @@ pub fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
     haystack.windows(needle.len()).any(|w| w == needle)
 }
 
-fn write_gap(out: &mut Vec<u8>, p: &Parsed, target_col: usize, dashed: bool, left_is_node: bool) {
+fn write_gap(
+    out: &mut Vec<u8>,
+    p: &Parsed,
+    target_col: usize,
+    dashed: bool,
+    left_is_node: bool,
+) {
     let c = cfg();
     let gap = target_col - p.graph_col;
     let margin = c.dash_margin;
@@ -85,11 +91,12 @@ pub fn emit_line(
         let kept_spaces = trailing_spaces.min(1);
         let prefix_end = trimmed_end + kept_spaces;
         emit_dim_graph(&body[..prefix_end], out, false, false);
+
+        let collapsed = trailing_spaces.saturating_sub(kept_spaces);
+        let aligned_col = target_col + c.status_align_offset;
+
         if s.had_vertical {
-            let collapsed = trailing_spaces.saturating_sub(kept_spaces);
-            let pad = (target_col + c.status_align_offset)
-                .saturating_sub(s.graph_col)
-                .saturating_sub(collapsed);
+            let pad = (aligned_col + collapsed).saturating_sub(s.graph_col);
             for _ in 0..pad {
                 out.push(b' ');
             }
