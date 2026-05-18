@@ -654,8 +654,8 @@ fn gate_passes_through_non_graph_lines_even_when_marker_present() {
         "non-graph line containing marker must passthrough verbatim"
     );
     assert!(
-        output.windows(b"M src/main.rs\n".len()).any(|w| w == b"M src/main.rs\n"),
-        "plain-text status line must passthrough verbatim"
+        output.windows(b" src/main.rs\n".len()).any(|w| w == b" src/main.rs\n"),
+        "status line path must be preserved (status char gets icon-substituted)"
     );
 }
 

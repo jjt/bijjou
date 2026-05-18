@@ -77,9 +77,10 @@ pub fn emit_line(
 
     if let Some(s) = parse_status_summary(body) {
         emit_dim_graph(&body[..s.graph_prefix_end], out, false, false);
-        let section = &body[s.graph_prefix_end..s.status_section_end];
-        out.extend_from_slice(section);
-        if section.contains(&0x1b) {
+        out.extend_from_slice(&body[s.graph_prefix_end..s.status_byte_idx]);
+        out.extend_from_slice(status_icon(body[s.status_byte_idx]).as_bytes());
+        out.extend_from_slice(&body[s.status_byte_idx + 1..s.status_section_end]);
+        if body[s.graph_prefix_end..s.status_section_end].contains(&0x1b) {
             out.extend_from_slice(b"\x1b[0m");
         }
         let stripped = crate::ansi::strip_sgr(&body[s.status_section_end..]);
@@ -471,8 +472,24 @@ fn graph_tail_is_node(body: &[u8]) -> bool {
     last_was_node
 }
 
+fn status_icon(b: u8) -> &'static str {
+    use crate::config::{
+        DEFAULT_STATUS_ADDED_ICON, DEFAULT_STATUS_COPIED_ICON, DEFAULT_STATUS_DELETED_ICON,
+        DEFAULT_STATUS_MODIFIED_ICON, DEFAULT_STATUS_RENAMED_ICON,
+    };
+    match b {
+        b'M' => DEFAULT_STATUS_MODIFIED_ICON,
+        b'A' => DEFAULT_STATUS_ADDED_ICON,
+        b'D' => DEFAULT_STATUS_DELETED_ICON,
+        b'R' => DEFAULT_STATUS_RENAMED_ICON,
+        b'C' => DEFAULT_STATUS_COPIED_ICON,
+        _ => "",
+    }
+}
+
 pub struct StatusSummary {
     pub graph_prefix_end: usize,
+    pub status_byte_idx: usize,
     pub status_section_end: usize,
 }
 
@@ -508,6 +525,7 @@ pub fn parse_status_summary(body: &[u8]) -> Option<StatusSummary> {
         }
         return Some(StatusSummary {
             graph_prefix_end: csi_start,
+            status_byte_idx: i,
             status_section_end: j + 1,
         });
     }
