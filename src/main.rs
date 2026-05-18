@@ -93,6 +93,10 @@ KEYS
     dash-arrow                              string
     dash-margin                             int >= 0 (default 1)
 
+  [status]
+    colorize-path                           bool (default true)
+    align-offset                            int >= 0 (default 0)
+
   [stream]
     enabled                                 bool (default true)
     batch-size                              int >= 1 (default 128)

@@ -170,6 +170,28 @@
 # edge         = "#5f5f5f"
 # mutable-node = 245
 
+[status]
+# Controls how bijjou renders `jj diff --summary` style status lines —
+# lines whose graph prefix (if any) is just `│` and spaces, followed by an
+# uppercase M/A/D/R/C, a space, and a path. bijjou replaces the status
+# letter with a Nerd Font icon and strips SGR from the path bytes.
+#
+# `colorize-path` — when true (default), the path inherits the status
+# char's foreground color. When false, the path is rendered with no color.
+# For R/C lines, the surrounding `{` and `}` braces around the
+# `old => new` spec are stripped in both modes.
+#
+# `align-offset` — extra columns past the change-id column where the
+# status icon should land, for lines whose graph prefix has any
+# vertical edges. With offset = 0 (default), the icon sits at the
+# change-id column; offset = 1 shifts it one column further right,
+# and so on. Lines with no graph prefix are not padded.
+#
+# Defaults: colorize-path = true, align-offset = 0
+#
+# colorize-path = true
+# align-offset  = 0
+
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of
 # `batch-size` lines. The graph-column width is tracked across the whole

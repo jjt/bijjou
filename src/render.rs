@@ -76,15 +76,42 @@ pub fn emit_line(
     }
 
     if let Some(s) = parse_status_summary(body) {
-        emit_dim_graph(&body[..s.graph_prefix_end], out, false, false);
-        out.extend_from_slice(&body[s.graph_prefix_end..s.status_byte_idx]);
-        out.extend_from_slice(status_icon(body[s.status_byte_idx]).as_bytes());
-        out.extend_from_slice(&body[s.status_byte_idx + 1..s.status_section_end]);
-        if body[s.graph_prefix_end..s.status_section_end].contains(&0x1b) {
-            out.extend_from_slice(b"\x1b[0m");
+        let mut trimmed_end = s.graph_prefix_end;
+        let mut trailing_spaces = 0;
+        while trimmed_end > 0 && body[trimmed_end - 1] == b' ' {
+            trailing_spaces += 1;
+            trimmed_end -= 1;
         }
-        let stripped = crate::ansi::strip_sgr(&body[s.status_section_end..]);
-        out.extend_from_slice(&stripped);
+        let kept_spaces = trailing_spaces.min(1);
+        let prefix_end = trimmed_end + kept_spaces;
+        emit_dim_graph(&body[..prefix_end], out, false, false);
+        if s.had_vertical {
+            let collapsed = trailing_spaces.saturating_sub(kept_spaces);
+            let pad = (target_col + c.status_align_offset)
+                .saturating_sub(s.graph_col)
+                .saturating_sub(collapsed);
+            for _ in 0..pad {
+                out.push(b' ');
+            }
+        }
+        out.extend_from_slice(&body[s.graph_prefix_end..s.status_byte_idx]);
+        let status_byte = body[s.status_byte_idx];
+        out.extend_from_slice(status_icon(status_byte).as_bytes());
+        let mut stripped = crate::ansi::strip_sgr(&body[s.status_section_end..]);
+        if matches!(status_byte, b'R' | b'C') {
+            stripped.retain(|b| *b != b'{' && *b != b'}');
+        }
+        if c.status_colorize_path {
+            out.push(b' ');
+            out.extend_from_slice(&stripped);
+            out.extend_from_slice(b"\x1b[0m");
+        } else {
+            out.extend_from_slice(&body[s.status_byte_idx + 1..s.status_section_end]);
+            if body[s.graph_prefix_end..s.status_section_end].contains(&0x1b) {
+                out.extend_from_slice(b"\x1b[0m");
+            }
+            out.extend_from_slice(&stripped);
+        }
         if trailing_nl {
             out.push(b'\n');
         }
@@ -491,12 +518,17 @@ pub struct StatusSummary {
     pub graph_prefix_end: usize,
     pub status_byte_idx: usize,
     pub status_section_end: usize,
+    pub graph_col: usize,
+    pub had_vertical: bool,
 }
 
 pub fn parse_status_summary(body: &[u8]) -> Option<StatusSummary> {
     let mut i = 0;
+    let mut vis_col: usize = 0;
+    let mut had_vertical = false;
     loop {
         let csi_start = i;
+        let csi_start_col = vis_col;
         while let Some(after) = skip_csi(body, i) {
             i = after;
         }
@@ -506,11 +538,14 @@ pub fn parse_status_summary(body: &[u8]) -> Option<StatusSummary> {
         let b = body[i];
         if b == b' ' {
             i += 1;
+            vis_col += 1;
             continue;
         }
         let (cp, len) = decode_utf8(body, i);
         if cp == VERTICAL_CP {
+            had_vertical = true;
             i += len;
+            vis_col += 1;
             continue;
         }
         if !matches!(b, b'M' | b'A' | b'D' | b'R' | b'C') {
@@ -527,6 +562,8 @@ pub fn parse_status_summary(body: &[u8]) -> Option<StatusSummary> {
             graph_prefix_end: csi_start,
             status_byte_idx: i,
             status_section_end: j + 1,
+            graph_col: csi_start_col,
+            had_vertical,
         });
     }
 }

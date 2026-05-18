@@ -18,9 +18,11 @@ pub const DEFAULT_MUTABLE_ICON: &str = "";
 pub const DEFAULT_IMMUTABLE_ICON: &str = "";
 pub const DEFAULT_CONFLICT_ICON: &str = "";
 pub const DEFAULT_ALTERNATE_ICON: &str = "";
+pub const DEFAULT_STATUS_COLORIZE_PATH: bool = true;
+pub const DEFAULT_STATUS_ALIGN_OFFSET: usize = 0;
 pub const DEFAULT_STATUS_MODIFIED_ICON: &str = "\u{f040}";
-pub const DEFAULT_STATUS_ADDED_ICON: &str = "\u{f0fe}";
-pub const DEFAULT_STATUS_DELETED_ICON: &str = "\u{f146}";
+pub const DEFAULT_STATUS_ADDED_ICON: &str = "\u{f067}";
+pub const DEFAULT_STATUS_DELETED_ICON: &str = "\u{f068}";
 pub const DEFAULT_STATUS_RENAMED_ICON: &str = "\u{f061}";
 pub const DEFAULT_STATUS_COPIED_ICON: &str = "\u{f018f}";
 pub const DEFAULT_GRAPH_HORIZONTAL: &str = "𜸟";
@@ -161,6 +163,8 @@ pub struct Config {
     pub align_gap: usize,
     pub monotonic_alignment: bool,
     pub debug_force_screen_height: Option<usize>,
+    pub status_colorize_path: bool,
+    pub status_align_offset: usize,
 }
 
 impl Default for Config {
@@ -207,6 +211,8 @@ impl Default for Config {
             align_gap: DEFAULT_ALIGN_GAP,
             monotonic_alignment: DEFAULT_MONOTONIC_ALIGNMENT,
             debug_force_screen_height: None,
+            status_colorize_path: DEFAULT_STATUS_COLORIZE_PATH,
+            status_align_offset: DEFAULT_STATUS_ALIGN_OFFSET,
         }
     }
 }
@@ -460,6 +466,18 @@ impl Config {
             }
             "commits.markers.empty" => self.empty_marker = value.to_string(),
             "commits.markers.divergent" => self.divergent_marker = value.to_string(),
+            "status.colorize-path" => {
+                self.status_colorize_path = parse_bool_str(value).map_err(mkerr)?;
+            }
+            "status.align-offset" => {
+                let n: i64 = value
+                    .parse()
+                    .map_err(|_| mkerr(format!("expected integer >= 0, got {:?}", value)))?;
+                if n < 0 {
+                    return Err(mkerr(format!("expected integer >= 0, got {}", n)));
+                }
+                self.status_align_offset = n as usize;
+            }
             "filter.hide-vertical-only-lines" => {
                 self.hide_vertical_only_lines = parse_bool_str(value).map_err(mkerr)?;
             }
@@ -482,7 +500,9 @@ impl Config {
             }
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
-            "colors.mutable-node" => self.mutable_node_color = parse_color_str(value).map_err(mkerr)?,
+            "colors.mutable-node" => {
+                self.mutable_node_color = parse_color_str(value).map_err(mkerr)?
+            }
             "debug.force-screen-height" => {
                 let n: i64 = value
                     .parse()
@@ -832,8 +852,11 @@ edge = 200
     #[test]
     fn cli_color_int_and_hex() {
         let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--colors__edge=200", "--colors__mutable-node=#aabbcc"]))
-            .unwrap();
+        cfg.apply_cli(args(&[
+            "--colors__edge=200",
+            "--colors__mutable-node=#aabbcc",
+        ]))
+        .unwrap();
         assert_eq!(cfg.edge_dim_on, b"\x1b[38;5;200m".to_vec());
         assert_eq!(cfg.mutable_node_color, b"\x1b[38;2;170;187;204m".to_vec());
     }
@@ -895,14 +918,20 @@ edge = 200
 
     #[test]
     fn env_key_single_underscore_becomes_hyphen() {
-        assert_eq!(env_key_to_config_key("LAYOUT__DASH_MARGIN"), "layout.dash-margin");
+        assert_eq!(
+            env_key_to_config_key("LAYOUT__DASH_MARGIN"),
+            "layout.dash-margin"
+        );
     }
 
     #[test]
     fn stream_defaults() {
         let cfg = Config::from_toml("").unwrap();
         assert!(cfg.stream_enabled);
-        assert_eq!(cfg.stream_batch_size, BatchSize::Fixed(DEFAULT_STREAM_BATCH_SIZE));
+        assert_eq!(
+            cfg.stream_batch_size,
+            BatchSize::Fixed(DEFAULT_STREAM_BATCH_SIZE)
+        );
     }
 
     #[test]
@@ -957,7 +986,8 @@ edge = 200
     #[test]
     fn cli_stream_batch_size() {
         let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--stream", "--stream__batch-size=32"])).unwrap();
+        cfg.apply_cli(args(&["--stream", "--stream__batch-size=32"]))
+            .unwrap();
         assert!(cfg.stream_enabled);
         assert_eq!(cfg.stream_batch_size, BatchSize::Fixed(32));
     }
@@ -984,7 +1014,8 @@ edge = 200
     #[test]
     fn cli_stream_batch_size_half_pager() {
         let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--stream__batch-size=half-pager"])).unwrap();
+        cfg.apply_cli(args(&["--stream__batch-size=half-pager"]))
+            .unwrap();
         assert_eq!(cfg.stream_batch_size, BatchSize::HalfPager);
     }
 
