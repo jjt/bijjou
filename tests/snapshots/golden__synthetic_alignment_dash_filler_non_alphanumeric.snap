@@ -4,4 +4,4 @@ description: "Tall + short rows; short row's graph is `~` (no node) — gap is p
 expression: visualize(&output)
 ---
 \e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39mabcde 12345
-\e[38;5;240m𜹀\e[39m      (elided revisions)
+\e[38;5;240m𜹀\e[39m

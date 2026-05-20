@@ -134,16 +134,25 @@ pub fn emit_line(
         Some(p) => {
             let (is_empty, is_divergent) = line_flags(body);
             let graph = &body[..p.graph_end];
-            if graph_only_vertical(graph) {
-                emit_dim_graph(graph, out, is_empty, is_divergent);
-                out.extend_from_slice(&body[p.graph_end..]);
-            } else {
-                emit_dim_graph(graph, out, is_empty, is_divergent);
-                let dashed = has_node_char(graph);
+            emit_dim_graph(graph, out, is_empty, is_divergent);
+            if has_node_char(graph) {
                 let tail_is_node = graph_tail_is_node(graph);
-                write_gap(out, p, target_col, dashed, tail_is_node);
+                write_gap(out, p, target_col, true, tail_is_node);
                 let content = &body[p.content_start..];
                 write_padded_content(content, max_changeid_w, max_author_w, out);
+            } else if has_elision_char(graph) {
+                write_stripping_marker_with(
+                    &body[p.content_start..],
+                    &[ELIDED_REVISIONS_MARKER],
+                    out,
+                );
+            } else {
+                let aligned = target_col + c.details_align_offset;
+                let pad = aligned.saturating_sub(p.graph_col);
+                for _ in 0..pad {
+                    out.push(b' ');
+                }
+                write_stripping_marker(&body[p.content_start..], out);
             }
         }
         None if has_graph_char(body) => {
@@ -490,6 +499,22 @@ pub fn has_node_char(body: &[u8]) -> bool {
     false
 }
 
+pub fn has_elision_char(body: &[u8]) -> bool {
+    let mut i = 0;
+    while i < body.len() {
+        if let Some(after) = skip_csi(body, i) {
+            i = after;
+            continue;
+        }
+        let (cp, len) = decode_utf8(body, i);
+        if cp == ELISION_CP {
+            return true;
+        }
+        i += len;
+    }
+    false
+}
+
 fn graph_tail_is_node(body: &[u8]) -> bool {
     let mut i = 0;
     let mut last_was_node = false;
@@ -580,31 +605,6 @@ pub fn parse_status_summary(body: &[u8]) -> Option<StatusSummary> {
     }
 }
 
-pub fn graph_only_vertical(graph: &[u8]) -> bool {
-    let mut i = 0;
-    let mut had_vertical = false;
-    while i < graph.len() {
-        if let Some(after) = skip_csi(graph, i) {
-            i = after;
-            continue;
-        }
-        if graph[i] == b' ' {
-            i += 1;
-            continue;
-        }
-        let (cp, len) = decode_utf8(graph, i);
-        if cp == VERTICAL_CP {
-            had_vertical = true;
-            i += len;
-        } else if is_graph_char(cp) {
-            return false;
-        } else {
-            i += len;
-        }
-    }
-    had_vertical
-}
-
 pub fn is_vertical_only_line(body: &[u8]) -> bool {
     let markers = strip_markers();
     let mut i = 0;
@@ -686,8 +686,15 @@ fn match_marker<'a>(bytes: &[u8], i: usize, markers: &'a [&'a [u8]]) -> Option<u
         .map(|m| m.len())
 }
 
+pub const ELIDED_REVISIONS_MARKER: &[u8] = b"(elided revisions)";
+
 pub fn write_stripping_marker(content: &[u8], out: &mut Vec<u8>) {
-    let markers = strip_markers();
+    write_stripping_marker_with(content, &[], out);
+}
+
+pub fn write_stripping_marker_with(content: &[u8], extra: &[&[u8]], out: &mut Vec<u8>) {
+    let mut markers = strip_markers();
+    markers.extend_from_slice(extra);
     let mut i = 0;
     let mut last_visible: Option<u8> = out.last().copied();
     while i < content.len() {
@@ -1350,26 +1357,6 @@ mod tests {
         assert!(parse_status_summary(b"").is_none());
         assert!(parse_status_summary(b"   ").is_none());
         assert!(parse_status_summary("│ │ │".as_bytes()).is_none());
-    }
-
-    #[test]
-    fn graph_only_vertical_accepts_pipes() {
-        assert!(graph_only_vertical("│".as_bytes()));
-        assert!(graph_only_vertical("│ │ │".as_bytes()));
-        assert!(graph_only_vertical(b"\x1b[38;5;8m\xe2\x94\x82\x1b[39m"));
-    }
-
-    #[test]
-    fn graph_only_vertical_rejects_other_graph_chars() {
-        assert!(!graph_only_vertical("│ ○".as_bytes()));
-        assert!(!graph_only_vertical("├─╯".as_bytes()));
-        assert!(!graph_only_vertical("~".as_bytes()));
-    }
-
-    #[test]
-    fn graph_only_vertical_rejects_pure_spaces() {
-        assert!(!graph_only_vertical(b""));
-        assert!(!graph_only_vertical(b"   "));
     }
 
     #[test]
