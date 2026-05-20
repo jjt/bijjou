@@ -3,7 +3,7 @@ source: tests/golden.rs
 description: diff --summary lines under a working-copy commit that sits in a megamerge — the icon must align with the WC change-id column even when other rows in the log have wider graph prefixes.
 expression: visualize(&output)
 ---
-󰋘\e[38;5;240m╶──────╴\e[39myumzkk 02d836 ME 260518·1156 aorsetn
+■\e[38;5;240m╶──────╴\e[39myumzkk 02d836 ME 260518·1156 aorsetn
 \e[38;5;240m𜸩\e[39m           \e[38;5;15msrc/render.rs\e[39m
 \e[38;5;240m𜸩\e[39m           \e[38;5;15mtests/fixtures/diff_summary_branched.txt\e[39m
 \e[38;5;240m𜸩\e[39m           \e[38;5;15mtests/golden.rs\e[39m

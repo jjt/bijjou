@@ -3,7 +3,7 @@ source: tests/golden.rs
 description: Megamerge where one parent is conflicted.
 expression: visualize(&output)
 ---
-\e[1m\e[38;5;1m󰋘\e[0m\e[38;5;240m╶────╴\e[39m\e[1m\e[38;5;13mp\e[38;5;8mlxxku\e[39m \e[38;5;12m0\e[38;5;8m38231\e[39m \e[38;5;3mTU\e[39m \e[38;5;14m260509·1439\e[39m \e[38;5;10mdefault@\e[39m conflicted megamerge\e[0m
+\e[1m\e[38;5;1m■\e[0m\e[38;5;240m╶────╴\e[39m\e[1m\e[38;5;13mp\e[38;5;8mlxxku\e[39m \e[38;5;12m0\e[38;5;8m38231\e[39m \e[38;5;3mTU\e[39m \e[38;5;14m260509·1439\e[39m \e[38;5;10mdefault@\e[39m conflicted megamerge\e[0m
 \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸠\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸤\e[39m
 \e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;5msu\e[0m\e[38;5;8mqspv\e[39m \e[1m\e[38;5;4mbc\e[0m\e[38;5;8m651b\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1439\e[39m \e[38;5;5mbranch-z\e[39m branch-z: common = Z
 \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m\e[38;5;240m╶\e[39m\e[38;5;240m𜸩\e[39m\e[38;5;240m─╴\e[39m\e[1m\e[38;5;5msp\e[0m\e[38;5;8mmvuu\e[39m \e[1m\e[38;5;4m7\e[0m\e[38;5;8m0c622\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1439\e[39m \e[38;5;5mbranch-y\e[39m branch-y: common = Y

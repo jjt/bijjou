@@ -3,7 +3,7 @@ source: tests/golden.rs
 description: "Captured from `jj log -T builtin_log_compact` — two-line records per commit; continuation `│` lines have edges but no node, so dash filler must NOT appear on them."
 expression: visualize(&output)
 ---
-\e[1m\e[38;5;2m󰋘\e[0m\e[38;5;240m╶──╴\e[39m\e[1m\e[38;5;13mo\e[38;5;8muswro\e[39m\e[38;5;240m╶────╴\e[39m\e[38;5;3mjason@jjt.io\e[39m \e[38;5;14m2026-05-12 11:29:02\e[39m \e[38;5;12m6\e[38;5;8m01bc2\e[39m\e[0m
+\e[1m\e[38;5;2m■\e[0m\e[38;5;240m╶──╴\e[39m\e[1m\e[38;5;13mo\e[38;5;8muswro\e[39m\e[38;5;240m╶────╴\e[39m\e[38;5;3mjason@jjt.io\e[39m \e[38;5;14m2026-05-12 11:29:02\e[39m \e[38;5;12m6\e[38;5;8m01bc2\e[39m\e[0m
 \e[38;5;240m𜸩\e[39m      \e[1m\e[38;5;3m(no description set)\e[39m\e[0m
 \e[38;5;245m\e[39m\e[38;5;240m╶──╴\e[39m\e[1m\e[38;5;5mz\e[0m\e[38;5;8mwlplq\e[39m\e[38;5;240m╶────╴\e[39m\e[38;5;3mjason@jjt.io\e[39m \e[38;5;6m2026-05-12 11:25:23\e[39m \e[1m\e[38;5;4m3e\e[0m\e[38;5;8m1f9c\e[39m
 \e[38;5;240m𜸩\e[39m      add --activate flag and `activate` config option

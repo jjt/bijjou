@@ -663,7 +663,7 @@ pub fn line_flags(body: &[u8]) -> (bool, bool) {
 
 fn strip_markers() -> Vec<&'static [u8]> {
     let c = cfg();
-    let mut v: Vec<&'static [u8]> = Vec::with_capacity(3);
+    let mut v: Vec<&'static [u8]> = Vec::with_capacity(4);
     let em = c.empty_marker.as_bytes();
     if !em.is_empty() {
         v.push(em);
@@ -671,6 +671,10 @@ fn strip_markers() -> Vec<&'static [u8]> {
     let dm = c.divergent_marker.as_bytes();
     if !dm.is_empty() {
         v.push(dm);
+    }
+    let cm = c.conflict_marker.as_bytes();
+    if !cm.is_empty() {
+        v.push(cm);
     }
     let act = c.activation_marker.as_bytes();
     if !act.is_empty() {
@@ -900,7 +904,7 @@ fn flush_internal_run(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ansi::{EMPTY_MARKER_BYTES, DIVERGENT_MARKER_BYTES};
+    use crate::ansi::{CONFLICT_MARKER_BYTES, DIVERGENT_MARKER_BYTES, EMPTY_MARKER_BYTES};
     use crate::config::{
         DEFAULT_ALTERNATE_ICON, DEFAULT_CONFLICT_ICON, DEFAULT_EDGE_DIM_ON,
         DEFAULT_EMPTY_IMMUTABLE_ICON, DEFAULT_GRAPH_VERTICAL, DEFAULT_IMMUTABLE_ICON,
@@ -1038,6 +1042,15 @@ mod tests {
     #[test]
     fn strip_divergent_marker_only() {
         let mut buf = DIVERGENT_MARKER_BYTES.to_vec();
+        buf.extend_from_slice(b"x");
+        let mut out = Vec::new();
+        write_stripping_marker(&buf, &mut out);
+        assert_eq!(out, b"x");
+    }
+
+    #[test]
+    fn strip_conflict_marker_only() {
+        let mut buf = CONFLICT_MARKER_BYTES.to_vec();
         buf.extend_from_slice(b"x");
         let mut out = Vec::new();
         write_stripping_marker(&buf, &mut out);

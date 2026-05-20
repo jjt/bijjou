@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: "@ on an empty line — uses WC_EMPTY_ICON."
 expression: visualize(&output)
 ---
-\e[38;5;240m╶╴\e[39mabc (empty) desc
+□\e[38;5;240m╶╴\e[39mabc (empty) desc

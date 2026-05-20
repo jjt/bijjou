@@ -11,9 +11,9 @@ pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;240m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
 pub const DEFAULT_MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
 pub const DEFAULT_EMPTY_ICON: &str = "";
-pub const DEFAULT_WC_EMPTY_ICON: &str = "";
+pub const DEFAULT_WC_EMPTY_ICON: &str = "□";
 pub const DEFAULT_EMPTY_IMMUTABLE_ICON: &str = "";
-pub const DEFAULT_WC_ICON: &str = "󰋘";
+pub const DEFAULT_WC_ICON: &str = "■";
 pub const DEFAULT_MUTABLE_ICON: &str = "";
 pub const DEFAULT_IMMUTABLE_ICON: &str = "";
 pub const DEFAULT_CONFLICT_ICON: &str = "";
@@ -40,6 +40,7 @@ pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
 pub const DEFAULT_EMPTY_MARKER: &str = "(empty)";
 pub const DEFAULT_DIVERGENT_MARKER: &str = "(divergent)";
+pub const DEFAULT_CONFLICT_MARKER: &str = "(conflict)";
 pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -153,6 +154,7 @@ pub struct Config {
     pub activation_marker: String,
     pub empty_marker: String,
     pub divergent_marker: String,
+    pub conflict_marker: String,
     pub activate: Activate,
     pub pager: Pager,
     pub color: Color,
@@ -201,6 +203,7 @@ impl Default for Config {
             activation_marker: DEFAULT_ACTIVATION_MARKER.to_string(),
             empty_marker: DEFAULT_EMPTY_MARKER.to_string(),
             divergent_marker: DEFAULT_DIVERGENT_MARKER.to_string(),
+            conflict_marker: DEFAULT_CONFLICT_MARKER.to_string(),
             activate: Activate::default(),
             pager: Pager::default(),
             color: Color::default(),
@@ -481,6 +484,7 @@ impl Config {
             }
             "commits.markers.empty" => self.empty_marker = value.to_string(),
             "commits.markers.divergent" => self.divergent_marker = value.to_string(),
+            "commits.markers.conflict" => self.conflict_marker = value.to_string(),
             "details.diffsummary-path-color" => {
                 self.details_diffsummary_path_color = parse_path_color(value).map_err(mkerr)?;
             }
