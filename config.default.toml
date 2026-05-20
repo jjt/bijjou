@@ -170,27 +170,32 @@
 # edge         = "#5f5f5f"
 # mutable-node = 245
 
-[status]
-# Controls how bijjou renders `jj diff --summary` style status lines —
-# lines whose graph prefix (if any) is just `│` and spaces, followed by an
-# uppercase M/A/D/R/C, a space, and a path. bijjou replaces the status
-# letter with a Nerd Font icon and strips SGR from the path bytes.
+[details]
+# Controls how bijjou renders detail rows that follow a commit — currently
+# `jj diff --summary` style status lines: lines whose graph prefix (if any)
+# is just `│` and spaces, followed by an uppercase M/A/D/R/C, a space, and
+# a path. bijjou replaces the status letter with a Nerd Font icon and
+# strips SGR from the path bytes.
 #
-# `colorize-path` — when true (default), the path inherits the status
-# char's foreground color. When false, the path is rendered with no color.
+# `diffsummary-path-color` — color applied to the path after the status
+# icon. Accepts an integer 0-255 (256-color palette), a "#rrggbb" hex
+# string, or the literal "original" to inherit the input's status-letter
+# foreground color. Default 240 (a muted grey).
 # For R/C lines, the surrounding `{` and `}` braces around the
-# `old => new` spec are stripped in both modes.
+# `old => new` spec are stripped regardless of the color setting.
 #
 # `align-offset` — extra columns past the change-id column where the
-# status icon should land, for lines whose graph prefix has any
+# detail icon should land, for lines whose graph prefix has any
 # vertical edges. With offset = 0 (default), the icon sits at the
 # change-id column; offset = 1 shifts it one column further right,
 # and so on. Lines with no graph prefix are not padded.
 #
-# Defaults: colorize-path = true, align-offset = 0
+# Defaults: diffsummary-path-color = 240, align-offset = 0
 #
-# colorize-path = true
-# align-offset  = 0
+# diffsummary-path-color = 240
+# diffsummary-path-color = "#5f5f5f"
+# diffsummary-path-color = "original"
+# align-offset           = 0
 
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of

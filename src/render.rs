@@ -93,7 +93,7 @@ pub fn emit_line(
         emit_dim_graph(&body[..prefix_end], out, false, false);
 
         let collapsed = trailing_spaces.saturating_sub(kept_spaces);
-        let aligned_col = target_col + c.status_align_offset;
+        let aligned_col = target_col + c.details_align_offset;
 
         if s.had_vertical {
             let pad = (aligned_col + collapsed).saturating_sub(s.graph_col);
@@ -108,16 +108,21 @@ pub fn emit_line(
         if matches!(status_byte, b'R' | b'C') {
             stripped.retain(|b| *b != b'{' && *b != b'}');
         }
-        if c.status_colorize_path {
-            out.push(b' ');
-            out.extend_from_slice(&stripped);
-            out.extend_from_slice(b"\x1b[0m");
-        } else {
-            out.extend_from_slice(&body[s.status_byte_idx + 1..s.status_section_end]);
-            if body[s.graph_prefix_end..s.status_section_end].contains(&0x1b) {
+        match &c.details_diffsummary_path_color {
+            crate::config::PathColor::Original => {
+                out.push(b' ');
+                out.extend_from_slice(&stripped);
                 out.extend_from_slice(b"\x1b[0m");
             }
-            out.extend_from_slice(&stripped);
+            crate::config::PathColor::Fixed(color) => {
+                out.extend_from_slice(&body[s.status_byte_idx + 1..s.status_section_end]);
+                if body[s.graph_prefix_end..s.status_section_end].contains(&0x1b) {
+                    out.extend_from_slice(b"\x1b[0m");
+                }
+                out.extend_from_slice(color);
+                out.extend_from_slice(&stripped);
+                out.extend_from_slice(FG_RESET);
+            }
         }
         if trailing_nl {
             out.push(b'\n');

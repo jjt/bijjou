@@ -3,5 +3,5 @@ source: tests/golden.rs
 description: Input with no graph chars — must passthrough unchanged.
 expression: visualize(&output)
 ---
- src/main.rs\e[0m
- tests/golden.rs\e[0m
+ \e[38;5;240msrc/main.rs\e[39m
+ \e[38;5;240mtests/golden.rs\e[39m

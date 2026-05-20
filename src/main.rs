@@ -93,8 +93,8 @@ KEYS
     dash-arrow                              string
     dash-margin                             int >= 0 (default 1)
 
-  [status]
-    colorize-path                           bool (default true)
+  [details]
+    diffsummary-path-color                  int 0-255 | \"#rrggbb\" | \"original\" (default 240)
     align-offset                            int >= 0 (default 0)
 
   [stream]

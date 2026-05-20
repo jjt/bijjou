@@ -18,8 +18,8 @@ pub const DEFAULT_MUTABLE_ICON: &str = "";
 pub const DEFAULT_IMMUTABLE_ICON: &str = "";
 pub const DEFAULT_CONFLICT_ICON: &str = "";
 pub const DEFAULT_ALTERNATE_ICON: &str = "";
-pub const DEFAULT_STATUS_COLORIZE_PATH: bool = true;
-pub const DEFAULT_STATUS_ALIGN_OFFSET: usize = 0;
+pub const DEFAULT_DETAILS_DIFFSUMMARY_PATH_COLOR: &[u8] = b"\x1b[38;5;240m";
+pub const DEFAULT_DETAILS_ALIGN_OFFSET: usize = 0;
 pub const DEFAULT_STATUS_MODIFIED_ICON: &str = "\u{f040}";
 pub const DEFAULT_STATUS_ADDED_ICON: &str = "\u{f067}";
 pub const DEFAULT_STATUS_DELETED_ICON: &str = "\u{f068}";
@@ -163,8 +163,8 @@ pub struct Config {
     pub align_gap: usize,
     pub monotonic_alignment: bool,
     pub debug_force_screen_height: Option<usize>,
-    pub status_colorize_path: bool,
-    pub status_align_offset: usize,
+    pub details_diffsummary_path_color: PathColor,
+    pub details_align_offset: usize,
 }
 
 impl Default for Config {
@@ -211,8 +211,10 @@ impl Default for Config {
             align_gap: DEFAULT_ALIGN_GAP,
             monotonic_alignment: DEFAULT_MONOTONIC_ALIGNMENT,
             debug_force_screen_height: None,
-            status_colorize_path: DEFAULT_STATUS_COLORIZE_PATH,
-            status_align_offset: DEFAULT_STATUS_ALIGN_OFFSET,
+            details_diffsummary_path_color: PathColor::Fixed(
+                DEFAULT_DETAILS_DIFFSUMMARY_PATH_COLOR.to_vec(),
+            ),
+            details_align_offset: DEFAULT_DETAILS_ALIGN_OFFSET,
         }
     }
 }
@@ -334,6 +336,19 @@ fn parse_batch_size(s: &str) -> Result<BatchSize, String> {
         return Err(format!("expected integer >= 1, got {}", n));
     }
     Ok(BatchSize::Fixed(n as usize))
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PathColor {
+    Original,
+    Fixed(Vec<u8>),
+}
+
+fn parse_path_color(s: &str) -> Result<PathColor, String> {
+    if s == "original" {
+        return Ok(PathColor::Original);
+    }
+    parse_color_str(s).map(PathColor::Fixed)
 }
 
 fn parse_color_str(s: &str) -> Result<Vec<u8>, String> {
@@ -466,17 +481,17 @@ impl Config {
             }
             "commits.markers.empty" => self.empty_marker = value.to_string(),
             "commits.markers.divergent" => self.divergent_marker = value.to_string(),
-            "status.colorize-path" => {
-                self.status_colorize_path = parse_bool_str(value).map_err(mkerr)?;
+            "details.diffsummary-path-color" => {
+                self.details_diffsummary_path_color = parse_path_color(value).map_err(mkerr)?;
             }
-            "status.align-offset" => {
+            "details.align-offset" => {
                 let n: i64 = value
                     .parse()
                     .map_err(|_| mkerr(format!("expected integer >= 0, got {:?}", value)))?;
                 if n < 0 {
                     return Err(mkerr(format!("expected integer >= 0, got {}", n)));
                 }
-                self.status_align_offset = n as usize;
+                self.details_align_offset = n as usize;
             }
             "filter.hide-vertical-only-lines" => {
                 self.hide_vertical_only_lines = parse_bool_str(value).map_err(mkerr)?;
