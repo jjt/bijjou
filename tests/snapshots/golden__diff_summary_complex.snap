@@ -4,10 +4,10 @@ description: diff --summary lines under a working-copy commit that sits in a meg
 expression: visualize(&output)
 ---
 󰋘\e[38;5;240m╶──────╴\e[39myumzkk 02d836 ME 260518·1156 aorsetn
-\e[38;5;240m𜸩\e[39m         \e[38;5;240msrc/render.rs\e[39m
-\e[38;5;240m𜸩\e[39m         \e[38;5;240mtests/fixtures/diff_summary_branched.txt\e[39m
-\e[38;5;240m𜸩\e[39m         \e[38;5;240mtests/golden.rs\e[39m
-\e[38;5;240m𜸩\e[39m         \e[38;5;240mtests/snapshots/golden__diff_summary_branched.snap\e[39m
+\e[38;5;240m𜸩\e[39m           \e[38;5;15msrc/render.rs\e[39m
+\e[38;5;240m𜸩\e[39m           \e[38;5;15mtests/fixtures/diff_summary_branched.txt\e[39m
+\e[38;5;240m𜸩\e[39m           \e[38;5;15mtests/golden.rs\e[39m
+\e[38;5;240m𜸩\e[39m           \e[38;5;15mtests/snapshots/golden__diff_summary_branched.snap\e[39m
 \e[38;5;240m𜸩\e[39m \e[38;5;245m\e[39m\e[38;5;240m╶────╴\e[39mlmnvvt 3e4c4f ME 260518·1110 testo
 \e[38;5;240m𜸚\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸶\e[39m
 \e[38;5;245m\e[39m\e[38;5;240m╶\e[39m\e[38;5;240m𜸩\e[39m\e[38;5;240m─────╴\e[39mwomyno 7d38d4 ME 260518·1105 Sync README with current diff --summary handling

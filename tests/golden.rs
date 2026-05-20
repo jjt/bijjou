@@ -280,6 +280,8 @@ fn assert_status_icons_align_with(fixture: &str, wc_changeid: &[u8]) {
             )
         });
     let wc_col = visible_col_of(wc_line, wc_changeid).unwrap();
+    // Mirrors DEFAULT_DETAILS_ALIGN_OFFSET in src/config.rs.
+    let expected_icon_col = wc_col + 2;
 
     // Default modified/added icons; tests use the default config so these
     // are the literal bytes the renderer emits.
@@ -292,10 +294,11 @@ fn assert_status_icons_align_with(fixture: &str, wc_changeid: &[u8]) {
         if let Some(col) = icon_col {
             assert_eq!(
                 col,
-                wc_col,
-                "{}: status icon at col {} but change-id {:?} at col {} — line = {:?}",
+                expected_icon_col,
+                "{}: status icon at col {} but expected col {} (change-id {:?} at col {} + offset 2) — line = {:?}",
                 fixture,
                 col,
+                expected_icon_col,
                 std::str::from_utf8(wc_changeid).unwrap_or("?"),
                 wc_col,
                 String::from_utf8_lossy(line)

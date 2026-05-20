@@ -180,7 +180,7 @@
 # `diffsummary-path-color` — color applied to the path after the status
 # icon. Accepts an integer 0-255 (256-color palette), a "#rrggbb" hex
 # string, or the literal "original" to inherit the input's status-letter
-# foreground color. Default 240 (a muted grey).
+# foreground color. Default 15 (terminal bright white).
 # For R/C lines, the surrounding `{` and `}` braces around the
 # `old => new` spec are stripped regardless of the color setting.
 #
@@ -190,9 +190,9 @@
 # change-id column; offset = 1 shifts it one column further right,
 # and so on. Lines with no graph prefix are not padded.
 #
-# Defaults: diffsummary-path-color = 240, align-offset = 0
+# Defaults: diffsummary-path-color = 15, align-offset = 0
 #
-# diffsummary-path-color = 240
+# diffsummary-path-color = 15
 # diffsummary-path-color = "#5f5f5f"
 # diffsummary-path-color = "original"
 # align-offset           = 0
