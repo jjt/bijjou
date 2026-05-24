@@ -52,9 +52,11 @@ SUBCOMMANDS
                             `templates.log_node`. Drop this into your jj
                             config (or a `--config` file).
   jj-graph-node-config      print `--config templates.log_node=...` flags
-                            with shell + TOML quoting suitable for `eval`.
-                            Use with `eval`, not bare `$(...)`:
-                              eval \"jj log $(bijjou jj-graph-node-config) | bijjou\"
+                            in a form ready for direct `$(...)` expansion:
+                              jj log $(bijjou jj-graph-node-config) | bijjou
+                            Whitespace inside the TOML values is escaped as
+                            `\\u0020` so bash word-splits the line at the
+                            argument boundaries only.
 
 OPTIONS
   -h, --help                show this help and exit
@@ -244,19 +246,25 @@ fn render_jj_config(cfg: &Config) -> String {
     )
 }
 
-// Wrap a string as a TOML basic string (double-quoted, with `\`, `"`, and
-// the usual control chars escaped). The output is a single TOML token that
-// can stand on the right side of `KEY=VALUE` in jj's --config syntax.
-fn toml_basic_string(s: &str) -> String {
+// Wrap a string as a TOML basic string (double-quoted) with every char
+// that would tokenize under bash word-splitting (whitespace) encoded as a
+// `\uXXXX` escape. jj's TOML parser turns the escapes back into the
+// original chars, so the produced token survives `$(…)` substitution as a
+// single argument — no shell quoting and no `eval` needed.
+fn toml_basic_string_space_safe(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 2);
     out.push('"');
     for ch in s.chars() {
         match ch {
             '\\' => out.push_str("\\\\"),
             '"' => out.push_str("\\\""),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
+            // Whitespace must be escaped so $(...) word-splitting does not
+            // chop a value in half.   (space) is the common case;
+            // tabs/newlines/CRs are escaped here too for safety.
+            ' ' => out.push_str("\\u0020"),
+            '\t' => out.push_str("\\u0009"),
+            '\n' => out.push_str("\\u000A"),
+            '\r' => out.push_str("\\u000D"),
             c => out.push(c),
         }
     }
@@ -264,42 +272,15 @@ fn toml_basic_string(s: &str) -> String {
     out
 }
 
-// Wrap a string in POSIX shell single quotes. Embedded single quotes are
-// closed, escaped via backslash, and reopened (`'\''`) so the resulting
-// token survives `eval`.
-fn shell_single_quote(s: &str) -> String {
-    let mut out = String::with_capacity(s.len() + 2);
-    out.push('\'');
-    for ch in s.chars() {
-        if ch == '\'' {
-            out.push_str("'\\''");
-        } else {
-            out.push(ch);
-        }
-    }
-    out.push('\'');
-    out
-}
-
-// Single-line `--config KEY=VAL` arguments for use with `eval`:
-//   eval jj log $(bijjou jj-graph-node-config)
-// Plain `$(...)` substitution will not work — bash does not re-parse the
-// quotes in command output, so the shell-single-quoted wrapper would reach
-// jj literally. `eval` re-tokenizes first, which is the standard pattern
-// (cf. `ssh-agent -s`).
+// Single-line `--config KEY=VAL --config KEY=VAL` ready for direct shell
+// substitution: `jj log $(bijjou jj-graph-node-config) | bijjou`. Values
+// are TOML basic strings whose whitespace is `\u`-escaped so the line
+// word-splits into exactly four args regardless of icon contents.
 fn render_jj_graph_node_config(cfg: &Config) -> String {
-    let template_kv = format!(
-        "templates.log_node={}",
-        toml_basic_string(&render_log_node_template_inline(cfg))
-    );
-    let color_kv = format!(
-        "colors.graph_node={}",
-        toml_basic_string(&cfg.graph_node_color)
-    );
     format!(
-        "--config {} --config {}",
-        shell_single_quote(&template_kv),
-        shell_single_quote(&color_kv),
+        "--config templates.log_node={} --config colors.graph_node={}",
+        toml_basic_string_space_safe(&render_log_node_template_inline(cfg)),
+        toml_basic_string_space_safe(&cfg.graph_node_color),
     )
 }
 

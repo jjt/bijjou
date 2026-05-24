@@ -56,13 +56,14 @@ stdin → activation check → (stream | buffered) → render → output sink �
   substitutes the configured icons for `hidden`, `working-copy[-empty]`,
   `immutable[+empty]`, `empty`, `conflict`, and `mutable` (used for
   non-empty mutable / catch-all).
-- `bijjou jj-graph-node-config` — same template body, but as a one-line
-  `--config templates.log_node='…' --config colors.graph_node='…'` pair
-  with the value TOML-escaped and the whole arg shell-single-quoted, so
-  it survives `eval`:
-    `eval "jj log $(bijjou jj-graph-node-config) | bijjou"`
-  Bare `$(…)` does not work because bash does not re-parse shell quotes
-  in command output (same constraint as `ssh-agent -s`).
+- `bijjou jj-graph-node-config` — same template body, one-line
+  `--config templates.log_node=… --config colors.graph_node=…`. Values
+  are TOML basic strings with every whitespace char encoded as `\uXXXX`,
+  so the line word-splits at argument boundaries when expanded with
+  `$(…)` and jj's TOML parser still sees the original whitespace:
+    `jj log $(bijjou jj-graph-node-config) | bijjou`
+  No shell quoting, no `eval` — this avoids the failure mode where
+  shell quotes embedded in command output reach jj literally.
 
 `[graph.nodes.chars].fallback` is a config-only key: not emitted by the
 default template, but recognized as a node icon in input so a custom

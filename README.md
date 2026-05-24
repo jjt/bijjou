@@ -30,12 +30,14 @@ into `templates.log_node`:
 bijjou jj-config >> ~/.config/jj/config.toml
 ```
 
-Or splice the same template inline via `eval` (bare `$(…)` will not
-work — bash does not re-parse the quoting in command output):
+Or splice the same template inline via shell substitution:
 
 ```sh
-eval "jj log $(bijjou jj-graph-node-config) --color=always | bijjou"
+jj log $(bijjou jj-graph-node-config) --color=always | bijjou
 ```
+
+(whitespace inside the TOML values is `\u`-escaped so `$(…)` word-splits
+the line at the argument boundaries only — no `eval` needed.)
 
 Any icon configured in `[graph.nodes.chars]` is also recognized as a
 node when bijjou parses input, so the alignment math stays correct when
