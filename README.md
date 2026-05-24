@@ -39,6 +39,16 @@ jj log $(bijjou jj-graph-node-config) --color=always | bijjou
 (whitespace inside the TOML values is `\u`-escaped so `$(…)` word-splits
 the line at the argument boundaries only — no `eval` needed.)
 
+The pipe to `bijjou` matters even if you don't want the other
+post-processing. Without it, jj launches its builtin pager
+(`sapling-streampager`), which treats every codepoint whose
+`unicode-width` is 0 (most Private Use Area glyphs, including Nerd
+Font icons) as "unprintable" and renders it as the literal text
+`<U+XXXX>`. Piping to bijjou makes jj's stdout a pipe, which suppresses
+the pager and lets the raw bytes reach the terminal. If you really
+need jj's output directly, pass `--no-pager` (or set
+`ui.paginate = "never"`).
+
 Any icon configured in `[graph.nodes.chars]` is also recognized as a
 node when bijjou parses input, so the alignment math stays correct when
 you swap defaults.

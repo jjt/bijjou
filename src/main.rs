@@ -56,7 +56,9 @@ SUBCOMMANDS
                               jj log $(bijjou jj-graph-node-config) | bijjou
                             Whitespace inside the TOML values is escaped as
                             `\\u0020` so bash word-splits the line at the
-                            argument boundaries only.
+                            argument boundaries only. Pipe through bijjou
+                            (or use --no-pager) — jj's builtin pager
+                            escapes PUA codepoints as `<U+XXXX>` text.
 
 OPTIONS
   -h, --help                show this help and exit
