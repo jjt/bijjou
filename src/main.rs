@@ -52,8 +52,9 @@ SUBCOMMANDS
                             `templates.log_node`. Drop this into your jj
                             config (or a `--config` file).
   jj-graph-node-config      print `--config templates.log_node=...` flags
-                            ready for shell substitution, e.g.
-                            `jj log $(bijjou jj-graph-node-config) | bijjou`.
+                            with shell + TOML quoting suitable for `eval`.
+                            Use with `eval`, not bare `$(...)`:
+                              eval \"jj log $(bijjou jj-graph-node-config) | bijjou\"
 
 OPTIONS
   -h, --help                show this help and exit
@@ -243,13 +244,62 @@ fn render_jj_config(cfg: &Config) -> String {
     )
 }
 
-// Single-line `--config` arguments suitable for `$(bijjou jj-graph-node-config)`
-// in a `jj log` invocation.
+// Wrap a string as a TOML basic string (double-quoted, with `\`, `"`, and
+// the usual control chars escaped). The output is a single TOML token that
+// can stand on the right side of `KEY=VALUE` in jj's --config syntax.
+fn toml_basic_string(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('"');
+    for ch in s.chars() {
+        match ch {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+
+// Wrap a string in POSIX shell single quotes. Embedded single quotes are
+// closed, escaped via backslash, and reopened (`'\''`) so the resulting
+// token survives `eval`.
+fn shell_single_quote(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('\'');
+    for ch in s.chars() {
+        if ch == '\'' {
+            out.push_str("'\\''");
+        } else {
+            out.push(ch);
+        }
+    }
+    out.push('\'');
+    out
+}
+
+// Single-line `--config KEY=VAL` arguments for use with `eval`:
+//   eval jj log $(bijjou jj-graph-node-config)
+// Plain `$(...)` substitution will not work — bash does not re-parse the
+// quotes in command output, so the shell-single-quoted wrapper would reach
+// jj literally. `eval` re-tokenizes first, which is the standard pattern
+// (cf. `ssh-agent -s`).
 fn render_jj_graph_node_config(cfg: &Config) -> String {
+    let template_kv = format!(
+        "templates.log_node={}",
+        toml_basic_string(&render_log_node_template_inline(cfg))
+    );
+    let color_kv = format!(
+        "colors.graph_node={}",
+        toml_basic_string(&cfg.graph_node_color)
+    );
     format!(
-        "--config templates.log_node='{}' --config colors.graph_node='{}'",
-        render_log_node_template_inline(cfg),
-        cfg.graph_node_color,
+        "--config {} --config {}",
+        shell_single_quote(&template_kv),
+        shell_single_quote(&color_kv),
     )
 }
 

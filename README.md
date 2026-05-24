@@ -23,11 +23,18 @@ graph rows — the rest of the stream is passed through byte-for-byte.
 
 Bijjou does not rewrite jj's node glyphs (`@ ○ ◆ × ●`) at render time —
 jj's own template owns that. Run `bijjou jj-config` to emit a TOML
-snippet that wires bijjou's `[graph.nodes.chars]` config into jj's
-`templates.log_node`, or splice the same template inline via:
+snippet for your jj config that wires bijjou's `[graph.nodes.chars]`
+into `templates.log_node`:
 
 ```sh
-jj log $(bijjou jj-graph-node-config) --color=always | bijjou
+bijjou jj-config >> ~/.config/jj/config.toml
+```
+
+Or splice the same template inline via `eval` (bare `$(…)` will not
+work — bash does not re-parse the quoting in command output):
+
+```sh
+eval "jj log $(bijjou jj-graph-node-config) --color=always | bijjou"
 ```
 
 Any icon configured in `[graph.nodes.chars]` is also recognized as a

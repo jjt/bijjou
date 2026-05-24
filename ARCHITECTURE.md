@@ -58,7 +58,11 @@ stdin → activation check → (stream | buffered) → render → output sink �
   non-empty mutable / catch-all).
 - `bijjou jj-graph-node-config` — same template body, but as a one-line
   `--config templates.log_node='…' --config colors.graph_node='…'` pair
-  for `jj log $(bijjou jj-graph-node-config) | bijjou`.
+  with the value TOML-escaped and the whole arg shell-single-quoted, so
+  it survives `eval`:
+    `eval "jj log $(bijjou jj-graph-node-config) | bijjou"`
+  Bare `$(…)` does not work because bash does not re-parse shell quotes
+  in command output (same constraint as `ssh-agent -s`).
 
 `[graph.nodes.chars].fallback` is a config-only key: not emitted by the
 default template, but recognized as a node icon in input so a custom
