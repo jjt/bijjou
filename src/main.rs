@@ -206,12 +206,21 @@ fn split_subcommand(argv: Vec<String>) -> (Option<String>, Vec<String>) {
 }
 
 // Substitute the configured icons into the jj template body the user adds
-// to their jj config (or feeds via --config). The body is identical to the
-// one in `render_jj_graph_node_config` so the two subcommands stay in
-// lockstep — keep them aligned when editing.
+// to their jj config (or feeds via --config). Icons are wrapped in
+// `raw_escape_sequence(...)` so jj's TTY output filter doesn't rewrite
+// Private Use Area glyphs (Nerd Font icons) as `<U+XXXX>` text — the
+// filter ships with recent jj versions to guard against terminal
+// injection from commit text, but trips on legitimate icons we inject
+// from config.
+//
+// The branches are a nested `if(cond, then, else)` chain rather than
+// `coalesce(...)` because `raw_escape_sequence(...)` reads as null inside
+// coalesce, which causes every branch to fall through to the default.
+// Keep this body identical to `render_log_node_template_inline` so the
+// two subcommands stay in lockstep.
 fn render_log_node_template_body(cfg: &Config) -> String {
     format!(
-        "label(\n  separate(\" \",\n    if(self.current_working_copy(), \"working_copy\"),\n    if(self.conflict(), \"conflicted\"),\n    \"graph_node\",\n  ),\n  coalesce(\n    if(!self, \"{hidden}\"),\n    if(current_working_copy && empty, \"{wc_empty}\"),\n    if(current_working_copy, \"{wc}\"),\n    if(immutable && empty, \"{empty_immutable}\"),\n    if(immutable, \"{immutable}\"),\n    if(empty, \"{empty}\"),\n    if(conflict, \"{conflict}\"),\n    \"{mutable}\",\n  )\n)",
+        "label(\n  separate(\" \",\n    if(self.current_working_copy(), \"working_copy\"),\n    if(self.conflict(), \"conflicted\"),\n    \"graph_node\",\n  ),\n  if(!self, raw_escape_sequence(\"{hidden}\"),\n  if(current_working_copy && empty, raw_escape_sequence(\"{wc_empty}\"),\n  if(current_working_copy, raw_escape_sequence(\"{wc}\"),\n  if(immutable && empty, raw_escape_sequence(\"{empty_immutable}\"),\n  if(immutable, raw_escape_sequence(\"{immutable}\"),\n  if(empty, raw_escape_sequence(\"{empty}\"),\n  if(conflict, raw_escape_sequence(\"{conflict}\"),\n     raw_escape_sequence(\"{mutable}\"))))))))\n)",
         hidden = cfg.hidden_icon,
         wc_empty = cfg.wc_empty_icon,
         wc = cfg.wc_icon,
@@ -225,7 +234,7 @@ fn render_log_node_template_body(cfg: &Config) -> String {
 
 fn render_log_node_template_inline(cfg: &Config) -> String {
     format!(
-        "label(separate(\" \", if(self.current_working_copy(), \"working_copy\"), if(self.conflict(), \"conflicted\"), \"graph_node\"), coalesce(if(!self, \"{hidden}\"), if(current_working_copy && empty, \"{wc_empty}\"), if(current_working_copy, \"{wc}\"), if(immutable && empty, \"{empty_immutable}\"), if(immutable, \"{immutable}\"), if(empty, \"{empty}\"), if(conflict, \"{conflict}\"), \"{mutable}\"))",
+        "label(separate(\" \", if(self.current_working_copy(), \"working_copy\"), if(self.conflict(), \"conflicted\"), \"graph_node\"), if(!self, raw_escape_sequence(\"{hidden}\"), if(current_working_copy && empty, raw_escape_sequence(\"{wc_empty}\"), if(current_working_copy, raw_escape_sequence(\"{wc}\"), if(immutable && empty, raw_escape_sequence(\"{empty_immutable}\"), if(immutable, raw_escape_sequence(\"{immutable}\"), if(empty, raw_escape_sequence(\"{empty}\"), if(conflict, raw_escape_sequence(\"{conflict}\"), raw_escape_sequence(\"{mutable}\")))))))))",
         hidden = cfg.hidden_icon,
         wc_empty = cfg.wc_empty_icon,
         wc = cfg.wc_icon,
