@@ -11,15 +11,28 @@ graph rows — the rest of the stream is passed through byte-for-byte.
 
 - Replaces jj's box-drawing graph chars (`│ ╭ ╮ ─` …) with Unicode 16 Large
   Type Pieces by default, or any glyph you configure.
-- Maps commit-node chars (`@ ○ ◆ × ●`) to Nerd Font icons.
-- Dims edges with one color and mutable/immutable nodes with another, while
-  preserving jj's original color for the working copy and conflict nodes.
 - Aligns commit content across rows so every change id starts at the same
-  column.
+  column. Dims edges and fills the gap between the graph and content with
+  a dash run (and optional arrow) for easier eye-tracking.
 - Replaces `jj diff --summary` status letters (`M A D R C`) with Nerd Font
   icons, optionally colorizing the path to match. Strips `{}` braces from
   rename/copy lines.
 - Streams output as input arrives, or processes the whole input at once.
+
+### Node icons
+
+Bijjou does not rewrite jj's node glyphs (`@ ○ ◆ × ●`) at render time —
+jj's own template owns that. Run `bijjou jj-config` to emit a TOML
+snippet that wires bijjou's `[graph.nodes.chars]` config into jj's
+`templates.log_node`, or splice the same template inline via:
+
+```sh
+jj log $(bijjou jj-graph-node-config) --color=always | bijjou
+```
+
+Any icon configured in `[graph.nodes.chars]` is also recognized as a
+node when bijjou parses input, so the alignment math stays correct when
+you swap defaults.
 
 ## Requirements
 
@@ -114,9 +127,9 @@ and explanatory comment. Quick reference:
 | `[details]`           | `diffsummary-path-color`, `align-offset`                                                            |
 | `[stream]`            | `enabled`, `batch-size`                                                                             |
 | `[commits.markers]`   | `empty`, `divergent`                                                                                |
-| `[graph.nodes.chars]` | `working-copy`, `mutable`, `immutable`, `conflict`, `alternate`, `empty`, `working-copy-empty`, `empty-immutable` |
+| `[graph.nodes.chars]` | `working-copy`, `mutable`, `immutable`, `conflict`, `hidden`, `fallback`, `empty`, `working-copy-empty`, `empty-immutable` |
 | `[graph.edges.chars]` | `horizontal`, `vertical`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `tee-right`, `tee-left`, `tee-down`, `tee-up`, `cross`, `elision` |
-| `[colors]`            | `dash-filler`, `edge`, `mutable-node` (int 0–255 or `"#rrggbb"`)                                    |
+| `[colors]`            | `dash-filler`, `edge` (int 0–255 or `"#rrggbb"`); `graph-node` (jj color spec, e.g. `"ansi-color-242"`)                                    |
 
 Run `bijjou --help` for the same reference inline.
 

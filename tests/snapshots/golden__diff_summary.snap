@@ -3,7 +3,7 @@ source: tests/golden.rs
 description: "jj diff --summary lines under a working-copy commit. Pencil icon should land in the same column as the change-id's first letter."
 expression: visualize(&output)
 ---
-■\e[38;5;240m╶╴\e[39mwqsumo bd67c1 ME 260518·1045 no description
+@\e[38;5;240m╶╴\e[39mwqsumo bd67c1 ME 260518·1045 no description
 \e[38;5;240m𜸩\e[39m     \e[38;5;15mREADME.md\e[39m
 \e[38;5;240m𜸩\e[39m     \e[38;5;15mconfig.default.toml\e[39m
 \e[38;5;240m𜸩\e[39m     \e[38;5;15msrc/config.rs\e[39m

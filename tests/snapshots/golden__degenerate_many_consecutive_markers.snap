@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: "Stack of (empty)(divergent) markers — all stripped, no doubled spacing."
 expression: visualize(&output)
 ---
-\e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39mabc desc
+@\e[38;5;240m╶╴\e[39mabc desc

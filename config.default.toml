@@ -74,17 +74,27 @@
 # divergent = "(divergent)"
 
 [graph.nodes.chars]
-# Replacement glyphs for the commit-node chars jj prints (@ ○ ◆ × ●).
-# Many defaults are Nerd Font codepoints.
+# Icons substituted into the jj template emitted by
+# `bijjou jj-config` / `bijjou jj-graph-node-config`. Bijjou itself no
+# longer rewrites node glyphs at render time — jj produces them
+# directly via the template. Every configured icon is also recognized as
+# part of a graph prefix when parsing input, so alignment still works if
+# you swap defaults.
 #
-# working-copy       = "󰋘"
-# mutable            = ""
+# `hidden`   — `!self` branch, i.e. a divergent slot with no commit.
+# `fallback` — additional icon recognized as a node in input but not
+#              emitted by the default template; bump this if you use a
+#              custom jj template that emits something we don’t list.
+#
+# working-copy       = "■"
+# mutable            = "●"
 # immutable          = ""
 # conflict           = ""
-# alternate          = ""
-# empty              = ""
-# working-copy-empty = ""
-# empty-immutable    = ""
+# hidden             = "🮀"
+# fallback           = "●"
+# empty              = ""
+# working-copy-empty = "□"
+# empty-immutable    = ""
 
 [graph.edges.chars]
 # Single-cell replacements for jj's box-drawing graph chars. Defaults are
@@ -159,16 +169,19 @@
 # dash-end    = "╴"
 
 [colors]
-# Either an integer 0-255 (256-color palette) or a "#rrggbb" hex string.
-# Defaults: dash-filler = 240, edge = 240, mutable-node = 245.
+# `dash-filler` / `edge`: integer 0-255 (256-color palette) or "#rrggbb"
+#   hex string. Defaults: dash-filler = 240, edge = 240.
+# `graph-node`: jj color spec (e.g. "ansi-color-242" or "#5f5f5f"), emitted
+#   as `colors.graph_node` by `bijjou jj-config` so jj's `graph_node`
+#   label paints node glyphs in that color. Not used by bijjou itself.
 #
 # dash-filler — color of the dash filler between graph and content.
 # edge        — color of graph edges (lines, corners, tees, crosses).
-# mutable-node — color applied to ○, ◆, and the immutable @ glyph.
+# graph-node  — value substituted into the generated jj config.
 #
 # dash-filler  = 240
 # edge         = "#5f5f5f"
-# mutable-node = 245
+# graph-node   = "ansi-color-242"
 
 [details]
 # Controls how bijjou renders detail rows that follow a commit — currently

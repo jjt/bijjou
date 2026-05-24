@@ -5,7 +5,8 @@ working-copy = "@"
 mutable = "o"
 immutable = "#"
 conflict = "x"
-alternate = "*"
+hidden = "*"
+fallback = "o"
 empty = "."
 working-copy-empty = "_"
 empty-immutable = ":"
@@ -30,7 +31,6 @@ dash = "."
 [colors]
 dash-filler = 244
 edge = 245
-mutable-node = 246
 
 [stream]
 enabled = false

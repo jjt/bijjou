@@ -9,15 +9,16 @@ pub const DEFAULT_DASH_START: &str = "╶";
 pub const DEFAULT_DASH_END: &str = "╴";
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;240m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
-pub const DEFAULT_MUTABLE_NODE_COLOR: &[u8] = b"\x1b[38;5;245m";
+pub const DEFAULT_GRAPH_NODE_COLOR: &str = "ansi-color-242";
 pub const DEFAULT_EMPTY_ICON: &str = "";
 pub const DEFAULT_WC_EMPTY_ICON: &str = "□";
 pub const DEFAULT_EMPTY_IMMUTABLE_ICON: &str = "";
 pub const DEFAULT_WC_ICON: &str = "■";
-pub const DEFAULT_MUTABLE_ICON: &str = "";
+pub const DEFAULT_MUTABLE_ICON: &str = "●";
 pub const DEFAULT_IMMUTABLE_ICON: &str = "";
 pub const DEFAULT_CONFLICT_ICON: &str = "";
-pub const DEFAULT_ALTERNATE_ICON: &str = "";
+pub const DEFAULT_HIDDEN_ICON: &str = "🮀";
+pub const DEFAULT_FALLBACK_ICON: &str = "●";
 pub const DEFAULT_DETAILS_DIFFSUMMARY_PATH_COLOR: &[u8] = b"\x1b[38;5;15m";
 pub const DEFAULT_DETAILS_ALIGN_OFFSET: usize = 2;
 pub const DEFAULT_STATUS_MODIFIED_ICON: &str = "";
@@ -127,7 +128,8 @@ pub struct Config {
     pub mutable_icon: String,
     pub immutable_icon: String,
     pub conflict_icon: String,
-    pub alternate_icon: String,
+    pub hidden_icon: String,
+    pub fallback_icon: String,
     pub empty_icon: String,
     pub wc_empty_icon: String,
     pub empty_immutable_icon: String,
@@ -150,7 +152,7 @@ pub struct Config {
     pub graph_elision: String,
     pub dim_on: Vec<u8>,
     pub edge_dim_on: Vec<u8>,
-    pub mutable_node_color: Vec<u8>,
+    pub graph_node_color: String,
     pub activation_marker: String,
     pub empty_marker: String,
     pub divergent_marker: String,
@@ -176,7 +178,8 @@ impl Default for Config {
             mutable_icon: DEFAULT_MUTABLE_ICON.to_string(),
             immutable_icon: DEFAULT_IMMUTABLE_ICON.to_string(),
             conflict_icon: DEFAULT_CONFLICT_ICON.to_string(),
-            alternate_icon: DEFAULT_ALTERNATE_ICON.to_string(),
+            hidden_icon: DEFAULT_HIDDEN_ICON.to_string(),
+            fallback_icon: DEFAULT_FALLBACK_ICON.to_string(),
             empty_icon: DEFAULT_EMPTY_ICON.to_string(),
             wc_empty_icon: DEFAULT_WC_EMPTY_ICON.to_string(),
             empty_immutable_icon: DEFAULT_EMPTY_IMMUTABLE_ICON.to_string(),
@@ -199,7 +202,7 @@ impl Default for Config {
             graph_elision: DEFAULT_GRAPH_ELISION.to_string(),
             dim_on: DEFAULT_DIM_ON.to_vec(),
             edge_dim_on: DEFAULT_EDGE_DIM_ON.to_vec(),
-            mutable_node_color: DEFAULT_MUTABLE_NODE_COLOR.to_vec(),
+            graph_node_color: DEFAULT_GRAPH_NODE_COLOR.to_string(),
             activation_marker: DEFAULT_ACTIVATION_MARKER.to_string(),
             empty_marker: DEFAULT_EMPTY_MARKER.to_string(),
             divergent_marker: DEFAULT_DIVERGENT_MARKER.to_string(),
@@ -453,7 +456,8 @@ impl Config {
             "graph.nodes.chars.mutable" => self.mutable_icon = value.to_string(),
             "graph.nodes.chars.immutable" => self.immutable_icon = value.to_string(),
             "graph.nodes.chars.conflict" => self.conflict_icon = value.to_string(),
-            "graph.nodes.chars.alternate" => self.alternate_icon = value.to_string(),
+            "graph.nodes.chars.hidden" => self.hidden_icon = value.to_string(),
+            "graph.nodes.chars.fallback" => self.fallback_icon = value.to_string(),
             "graph.nodes.chars.empty" => self.empty_icon = value.to_string(),
             "graph.nodes.chars.working-copy-empty" => self.wc_empty_icon = value.to_string(),
             "graph.nodes.chars.empty-immutable" => self.empty_immutable_icon = value.to_string(),
@@ -519,9 +523,7 @@ impl Config {
             }
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
-            "colors.mutable-node" => {
-                self.mutable_node_color = parse_color_str(value).map_err(mkerr)?
-            }
+            "colors.graph-node" => self.graph_node_color = value.to_string(),
             "debug.force-screen-height" => {
                 let n: i64 = value
                     .parse()
@@ -644,9 +646,9 @@ edge = 200
 
     #[test]
     fn toml_color_hex_string() {
-        let s = "[colors]\nmutable-node = \"#aabbcc\"\n";
+        let s = "[colors]\nedge = \"#aabbcc\"\n";
         let cfg = Config::from_toml(s).unwrap();
-        assert_eq!(cfg.mutable_node_color, b"\x1b[38;2;170;187;204m".to_vec());
+        assert_eq!(cfg.edge_dim_on, b"\x1b[38;2;170;187;204m".to_vec());
     }
 
     #[test]
@@ -873,11 +875,11 @@ edge = 200
         let mut cfg = Config::default();
         cfg.apply_cli(args(&[
             "--colors__edge=200",
-            "--colors__mutable-node=#aabbcc",
+            "--colors__dash-filler=#aabbcc",
         ]))
         .unwrap();
         assert_eq!(cfg.edge_dim_on, b"\x1b[38;5;200m".to_vec());
-        assert_eq!(cfg.mutable_node_color, b"\x1b[38;2;170;187;204m".to_vec());
+        assert_eq!(cfg.dim_on, b"\x1b[38;2;170;187;204m".to_vec());
     }
 
     #[test]

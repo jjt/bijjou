@@ -44,7 +44,16 @@ const HELP: &str = "\
 bijjou - jj log post-processor
 
 USAGE
-  bijjou [OPTIONS] < input
+  bijjou [SUBCOMMAND] [OPTIONS] < input
+
+SUBCOMMANDS
+  jj-config                 print a TOML snippet for jj's config that wires
+                            bijjou's configured node icons into jj's
+                            `templates.log_node`. Drop this into your jj
+                            config (or a `--config` file).
+  jj-graph-node-config      print `--config templates.log_node=...` flags
+                            ready for shell substitution, e.g.
+                            `jj log $(bijjou jj-graph-node-config) | bijjou`.
 
 OPTIONS
   -h, --help                show this help and exit
@@ -106,7 +115,7 @@ KEYS
     divergent                               string
 
   [graph.nodes.chars]                       string (each)
-    working-copy  mutable  immutable  conflict  alternate
+    working-copy  mutable  immutable  conflict  hidden  fallback
     empty  working-copy-empty  empty-immutable
 
   [graph.edges.chars]                       string (each)
@@ -116,7 +125,9 @@ KEYS
     cross  elision
 
   [colors]                                  int 0-255 | \"#rrggbb\"
-    dash-filler  edge  mutable-node
+    dash-filler  edge
+  colors.graph-node                         string (jj color spec, e.g. \"ansi-color-242\" or \"#5f5f5f\");
+                                            used in the `jj-config` / `jj-graph-node-config` output
 
 See config.default.toml for defaults and discussion.
 ";
@@ -127,6 +138,7 @@ fn main() {
         print!("{}", HELP);
         return;
     }
+    let (subcommand, flag_args) = split_subcommand(argv);
     let mut cfg_obj = match Config::load() {
         Ok(c) => c,
         Err(e) => {
@@ -138,9 +150,25 @@ fn main() {
         eprintln!("bijjou: {}", e);
         std::process::exit(2);
     }
-    if let Err(e) = cfg_obj.apply_cli(argv) {
+    if let Err(e) = cfg_obj.apply_cli(flag_args) {
         eprintln!("bijjou: {}", e);
         std::process::exit(2);
+    }
+    if let Some(sub) = subcommand {
+        match sub.as_str() {
+            "jj-config" => {
+                print!("{}", render_jj_config(&cfg_obj));
+                return;
+            }
+            "jj-graph-node-config" => {
+                println!("{}", render_jj_graph_node_config(&cfg_obj));
+                return;
+            }
+            other => {
+                eprintln!("bijjou: unknown subcommand: {}", other);
+                std::process::exit(2);
+            }
+        }
     }
     if cfg_obj.pager == Pager::Always
         && std::env::var("PAGER")
@@ -159,6 +187,70 @@ fn main() {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }
+}
+
+fn split_subcommand(argv: Vec<String>) -> (Option<String>, Vec<String>) {
+    let mut sub: Option<String> = None;
+    let mut flags = Vec::with_capacity(argv.len());
+    for arg in argv {
+        if sub.is_none() && !arg.starts_with('-') {
+            sub = Some(arg);
+        } else {
+            flags.push(arg);
+        }
+    }
+    (sub, flags)
+}
+
+// Substitute the configured icons into the jj template body the user adds
+// to their jj config (or feeds via --config). The body is identical to the
+// one in `render_jj_graph_node_config` so the two subcommands stay in
+// lockstep — keep them aligned when editing.
+fn render_log_node_template_body(cfg: &Config) -> String {
+    format!(
+        "label(\n  separate(\" \",\n    if(self.current_working_copy(), \"working_copy\"),\n    if(self.conflict(), \"conflicted\"),\n    \"graph_node\",\n  ),\n  coalesce(\n    if(!self, \"{hidden}\"),\n    if(current_working_copy && empty, \"{wc_empty}\"),\n    if(current_working_copy, \"{wc}\"),\n    if(immutable && empty, \"{empty_immutable}\"),\n    if(immutable, \"{immutable}\"),\n    if(empty, \"{empty}\"),\n    if(conflict, \"{conflict}\"),\n    \"{mutable}\",\n  )\n)",
+        hidden = cfg.hidden_icon,
+        wc_empty = cfg.wc_empty_icon,
+        wc = cfg.wc_icon,
+        empty_immutable = cfg.empty_immutable_icon,
+        immutable = cfg.immutable_icon,
+        empty = cfg.empty_icon,
+        conflict = cfg.conflict_icon,
+        mutable = cfg.mutable_icon,
+    )
+}
+
+fn render_log_node_template_inline(cfg: &Config) -> String {
+    format!(
+        "label(separate(\" \", if(self.current_working_copy(), \"working_copy\"), if(self.conflict(), \"conflicted\"), \"graph_node\"), coalesce(if(!self, \"{hidden}\"), if(current_working_copy && empty, \"{wc_empty}\"), if(current_working_copy, \"{wc}\"), if(immutable && empty, \"{empty_immutable}\"), if(immutable, \"{immutable}\"), if(empty, \"{empty}\"), if(conflict, \"{conflict}\"), \"{mutable}\"))",
+        hidden = cfg.hidden_icon,
+        wc_empty = cfg.wc_empty_icon,
+        wc = cfg.wc_icon,
+        empty_immutable = cfg.empty_immutable_icon,
+        immutable = cfg.immutable_icon,
+        empty = cfg.empty_icon,
+        conflict = cfg.conflict_icon,
+        mutable = cfg.mutable_icon,
+    )
+}
+
+// Multi-line TOML snippet ready to drop into a jj config file.
+fn render_jj_config(cfg: &Config) -> String {
+    format!(
+        "colors.graph_node = \"{}\"\ntemplates.log_node = '''\n{}\n'''\n",
+        cfg.graph_node_color,
+        render_log_node_template_body(cfg),
+    )
+}
+
+// Single-line `--config` arguments suitable for `$(bijjou jj-graph-node-config)`
+// in a `jj log` invocation.
+fn render_jj_graph_node_config(cfg: &Config) -> String {
+    format!(
+        "--config templates.log_node='{}' --config colors.graph_node='{}'",
+        render_log_node_template_inline(cfg),
+        cfg.graph_node_color,
+    )
 }
 
 fn split_lines(input: &[u8]) -> Vec<&[u8]> {

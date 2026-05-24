@@ -3,7 +3,7 @@ source: tests/golden.rs
 description: "Graph that includes a `~` elision marker for collapsed history."
 expression: visualize(&output)
 ---
-\e[1m\e[38;5;2m■\e[0m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;13mzt\e[38;5;8mtznl\e[39m \e[38;5;12mb\e[38;5;8mb06f5\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;14m260509·1007\e[39m add unit tests for byte-level rendering helpers\e[0m
-\e[38;5;245m\e[39m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;5mwn\e[0m\e[38;5;8mlmpu\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m6b17d\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260509·0958\e[39m color immutable nodes the same gray as mutable
+\e[1m\e[38;5;2m@\e[0m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;13mzt\e[38;5;8mtznl\e[39m \e[38;5;12mb\e[38;5;8mb06f5\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;14m260509·1007\e[39m add unit tests for byte-level rendering helpers\e[0m
+○\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;5mwn\e[0m\e[38;5;8mlmpu\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m6b17d\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260509·0958\e[39m color immutable nodes the same gray as mutable
 \e[38;5;240m𜹀\e[39m\e[38;5;8m\e[39m
-\e[0m\e[38;5;245m\e[39m\e[0m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;5mzz\e[0m\e[38;5;8mzzzz\e[39m \e[38;5;2mroot()\e[39m \e[1m\e[38;5;4m000\e[0m\e[38;5;8m000\e[39m
+\e[0m\e[39m◆\e[0m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;5mzz\e[0m\e[38;5;8mzzzz\e[39m \e[38;5;2mroot()\e[39m \e[1m\e[38;5;4m000\e[0m\e[38;5;8m000\e[39m

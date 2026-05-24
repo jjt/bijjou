@@ -90,7 +90,7 @@ pub fn emit_line(
         }
         let kept_spaces = trailing_spaces.min(1);
         let prefix_end = trimmed_end + kept_spaces;
-        emit_dim_graph(&body[..prefix_end], out, false, false);
+        emit_dim_graph(&body[..prefix_end], out);
 
         let collapsed = trailing_spaces.saturating_sub(kept_spaces);
         let aligned_col = target_col + c.details_align_offset;
@@ -132,9 +132,8 @@ pub fn emit_line(
 
     match parsed {
         Some(p) => {
-            let (is_empty, is_divergent) = line_flags(body);
             let graph = &body[..p.graph_end];
-            emit_dim_graph(graph, out, is_empty, is_divergent);
+            emit_dim_graph(graph, out);
             if has_node_char(graph) {
                 let tail_is_node = graph_tail_is_node(graph);
                 write_gap(out, p, target_col, true, tail_is_node);
@@ -156,8 +155,7 @@ pub fn emit_line(
             }
         }
         None if has_graph_char(body) => {
-            let (is_empty, is_divergent) = line_flags(body);
-            emit_dim_graph(body, out, is_empty, is_divergent);
+            emit_dim_graph(body, out);
         }
         None => out.extend_from_slice(body),
     }
@@ -358,32 +356,40 @@ pub fn parse_content_columns(content: &[u8]) -> Option<ContentCols> {
 }
 
 fn is_graph_char(cp: u32) -> bool {
-    matches!(
-        cp,
-        0x2500..=0x257F   // box drawing block
-        | WC_CP
-        | ELISION_CP
-        | CONFLICT_CP
-        | MUTABLE_CP
-        | ALTERNATE_CP
-        | IMMUTABLE_CP
-    )
-}
-
-fn is_node_char(cp: u32) -> bool {
-    matches!(cp, WC_CP | MUTABLE_CP | ALTERNATE_CP | IMMUTABLE_CP | CONFLICT_CP)
-}
-
-fn map_node_char(cp: u32) -> Option<&'static str> {
-    let c = cfg();
-    match cp {
-        WC_CP => Some(c.wc_icon.as_str()),
-        MUTABLE_CP => Some(c.mutable_icon.as_str()),
-        IMMUTABLE_CP => Some(c.immutable_icon.as_str()),
-        CONFLICT_CP => Some(c.conflict_icon.as_str()),
-        ALTERNATE_CP => Some(c.alternate_icon.as_str()),
-        _ => None,
+    if matches!(cp, 0x2500..=0x257F | ELISION_CP) {
+        return true;
     }
+    is_node_char(cp)
+}
+
+// A "node" is any codepoint that a jj template might emit at the rightmost
+// graph column. Includes jj's built-in node chars (back-compat when no
+// template override is applied) plus every configured node icon — so bijjou
+// recognizes whatever the user's template emits as part of the graph
+// prefix, not as content.
+fn is_node_char(cp: u32) -> bool {
+    if matches!(
+        cp,
+        WC_CP | MUTABLE_CP | ALTERNATE_CP | IMMUTABLE_CP | CONFLICT_CP
+    ) {
+        return true;
+    }
+    let c = cfg();
+    let icons = [
+        &c.wc_icon,
+        &c.mutable_icon,
+        &c.immutable_icon,
+        &c.conflict_icon,
+        &c.empty_icon,
+        &c.wc_empty_icon,
+        &c.empty_immutable_icon,
+        &c.hidden_icon,
+        &c.fallback_icon,
+    ];
+    icons
+        .iter()
+        .filter_map(|s| s.chars().next())
+        .any(|ch| ch as u32 == cp)
 }
 
 fn map_graph_char(cp: u32) -> Option<&'static str> {
@@ -633,34 +639,6 @@ pub fn is_vertical_only_line(body: &[u8]) -> bool {
     had_vertical
 }
 
-pub fn line_flags(body: &[u8]) -> (bool, bool) {
-    let c = cfg();
-    let em = c.empty_marker.as_bytes();
-    let dm = c.divergent_marker.as_bytes();
-    let mut empty = false;
-    let mut divergent = false;
-    let mut i = 0;
-    while i < body.len() {
-        if let Some(after) = skip_csi(body, i) {
-            i = after;
-            continue;
-        }
-        if !em.is_empty() && body[i..].starts_with(em) {
-            empty = true;
-            i += em.len();
-            continue;
-        }
-        if !dm.is_empty() && body[i..].starts_with(dm) {
-            divergent = true;
-            i += dm.len();
-            continue;
-        }
-        let (_, len) = decode_utf8(body, i);
-        i += len;
-    }
-    (empty, divergent)
-}
-
 fn strip_markers() -> Vec<&'static [u8]> {
     let c = cfg();
     let mut v: Vec<&'static [u8]> = Vec::with_capacity(4);
@@ -732,47 +710,13 @@ pub fn write_stripping_marker_with(content: &[u8], extra: &[&[u8]], out: &mut Ve
     }
 }
 
-fn pick_node_icon(cp: u32, is_empty: bool, is_divergent: bool) -> Option<&'static str> {
-    let c = cfg();
-    if is_empty {
-        return Some(match cp {
-            WC_CP if is_divergent => c.empty_immutable_icon.as_str(),
-            WC_CP => c.wc_empty_icon.as_str(),
-            IMMUTABLE_CP => c.empty_immutable_icon.as_str(),
-            _ => c.empty_icon.as_str(),
-        });
-    }
-    if cp == WC_CP && is_divergent {
-        return Some(c.immutable_icon.as_str());
-    }
-    map_node_char(cp)
-}
-
-fn emit_node(
-    cp: u32,
-    raw: &[u8],
-    ansi: &[u8],
-    is_empty: bool,
-    is_divergent: bool,
-    out: &mut Vec<u8>,
-) {
-    let c = cfg();
-    // Mutable (○) and immutable (◆, or @ flagged as divergent) share the
-    // darker color override; other nodes preserve jj's original ANSI.
-    let darken = cp == MUTABLE_CP || cp == IMMUTABLE_CP || (cp == WC_CP && is_divergent);
-    if darken {
-        emit_filtered_ansi(ansi, out, is_fg_color_sgr);
-        out.extend_from_slice(&c.mutable_node_color);
-    } else {
-        out.extend_from_slice(ansi);
-    }
-    match pick_node_icon(cp, is_empty, is_divergent) {
-        Some(icon) => out.extend_from_slice(icon.as_bytes()),
-        None => out.extend_from_slice(raw),
-    }
-    if darken {
-        out.extend_from_slice(FG_RESET);
-    }
+// Node bytes pass through unchanged: jj's template (or upstream emitter) is
+// responsible for picking the right icon and label color. Bijjou forwards
+// the bytes plus their surrounding ANSI verbatim. See `bijjou jj-config`
+// for a template that wires bijjou's icon config into jj.
+fn emit_node(raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
+    out.extend_from_slice(ansi);
+    out.extend_from_slice(raw);
 }
 
 fn emit_edge(cp: u32, raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
@@ -794,7 +738,7 @@ fn emit_edge(cp: u32, raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
 // graph chars (node or edge) is filled with the dash glyph, one dash per
 // space. Runs before the first node, or trailing past the last graph char,
 // stay as plain spaces.
-pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_divergent: bool) {
+pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
     let markers = strip_markers();
     let c = cfg();
     let mut i = 0;
@@ -848,7 +792,7 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>, is_empty: bool, is_diverg
         let cp_is_graph = is_graph_char(cp);
         flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, cp_is_graph, c);
         if is_node_char(cp) {
-            emit_node(cp, raw, ansi, is_empty, is_divergent, out);
+            emit_node(raw, ansi, out);
             seen_node = true;
             prev_was_node = true;
         } else {
@@ -905,11 +849,7 @@ fn flush_internal_run(
 mod tests {
     use super::*;
     use crate::ansi::{CONFLICT_MARKER_BYTES, DIVERGENT_MARKER_BYTES, EMPTY_MARKER_BYTES};
-    use crate::config::{
-        DEFAULT_ALTERNATE_ICON, DEFAULT_CONFLICT_ICON, DEFAULT_EDGE_DIM_ON,
-        DEFAULT_EMPTY_IMMUTABLE_ICON, DEFAULT_GRAPH_VERTICAL, DEFAULT_IMMUTABLE_ICON,
-        DEFAULT_MUTABLE_ICON, DEFAULT_MUTABLE_NODE_COLOR, DEFAULT_WC_EMPTY_ICON, DEFAULT_WC_ICON,
-    };
+    use crate::config::{DEFAULT_EDGE_DIM_ON, DEFAULT_GRAPH_VERTICAL};
 
     #[test]
     fn is_node_char_recognizes_all_nodes() {
@@ -949,21 +889,6 @@ mod tests {
     }
 
     #[test]
-    fn map_node_char_covers_each_node() {
-        assert_eq!(map_node_char(WC_CP), Some(DEFAULT_WC_ICON));
-        assert_eq!(map_node_char(MUTABLE_CP), Some(DEFAULT_MUTABLE_ICON));
-        assert_eq!(map_node_char(IMMUTABLE_CP), Some(DEFAULT_IMMUTABLE_ICON));
-        assert_eq!(map_node_char(CONFLICT_CP), Some(DEFAULT_CONFLICT_ICON));
-        assert_eq!(map_node_char(ALTERNATE_CP), Some(DEFAULT_ALTERNATE_ICON));
-    }
-
-    #[test]
-    fn map_node_char_returns_none_for_other() {
-        assert_eq!(map_node_char(0x41), None);
-        assert_eq!(map_node_char(0x2502), None);
-    }
-
-    #[test]
     fn map_graph_char_box_drawings() {
         assert!(map_graph_char(0x2500).is_some());
         assert!(map_graph_char(0x2502).is_some());
@@ -977,49 +902,6 @@ mod tests {
     #[test]
     fn map_graph_char_unknown_returns_none() {
         assert!(map_graph_char(0x41).is_none());
-    }
-
-    #[test]
-    fn line_flags_plain_line() {
-        assert_eq!(line_flags(b"hello world"), (false, false));
-    }
-
-    #[test]
-    fn line_flags_detects_empty_marker() {
-        let mut buf = b"prefix ".to_vec();
-        buf.extend_from_slice(EMPTY_MARKER_BYTES);
-        buf.extend_from_slice(b" suffix");
-        assert_eq!(line_flags(&buf), (true, false));
-    }
-
-    #[test]
-    fn line_flags_detects_divergent_marker() {
-        let mut buf = b"x".to_vec();
-        buf.extend_from_slice(DIVERGENT_MARKER_BYTES);
-        assert_eq!(line_flags(&buf), (false, true));
-    }
-
-    #[test]
-    fn line_flags_detects_both() {
-        let mut buf = Vec::new();
-        buf.extend_from_slice(EMPTY_MARKER_BYTES);
-        buf.extend_from_slice(b" ");
-        buf.extend_from_slice(DIVERGENT_MARKER_BYTES);
-        assert_eq!(line_flags(&buf), (true, true));
-    }
-
-    #[test]
-    fn line_flags_skips_csi_sequences() {
-        let buf = b"\x1b[38;5;10m\x1b[39m";
-        assert_eq!(line_flags(buf), (false, false));
-    }
-
-    #[test]
-    fn line_flags_finds_marker_inside_colored_segment() {
-        let mut buf = b"\x1b[38;5;10m".to_vec();
-        buf.extend_from_slice(EMPTY_MARKER_BYTES);
-        buf.extend_from_slice(b"\x1b[39m");
-        assert_eq!(line_flags(&buf), (true, false));
     }
 
     #[test]
@@ -1151,78 +1033,37 @@ mod tests {
         assert!(find_boundary(b"   abc").is_none());
     }
 
-    fn run_emit(graph: &[u8], is_empty: bool, is_divergent: bool) -> Vec<u8> {
+    fn run_emit(graph: &[u8]) -> Vec<u8> {
         let mut out = Vec::new();
-        emit_dim_graph(graph, &mut out, is_empty, is_divergent);
+        emit_dim_graph(graph, &mut out);
         out
     }
 
-    fn darken(body: &[u8]) -> Vec<u8> {
-        let mut v = DEFAULT_MUTABLE_NODE_COLOR.to_vec();
-        v.extend_from_slice(body);
-        v.extend_from_slice(FG_RESET);
-        v
-    }
-
     #[test]
-    fn dim_mutable_circle_gets_darken_and_icon() {
-        let out = run_emit(b"\xe2\x97\x8b", false, false);
-        assert_eq!(out, darken(DEFAULT_MUTABLE_ICON.as_bytes()));
-    }
-
-    #[test]
-    fn dim_immutable_diamond_gets_darken_and_lock() {
-        let out = run_emit(b"\xe2\x97\x86", false, true);
-        assert_eq!(out, darken(DEFAULT_IMMUTABLE_ICON.as_bytes()));
-    }
-
-    #[test]
-    fn dim_immutable_diamond_darkens_even_without_flag() {
-        let out = run_emit(b"\xe2\x97\x86", false, false);
-        assert_eq!(out, darken(DEFAULT_IMMUTABLE_ICON.as_bytes()));
-    }
-
-    #[test]
-    fn dim_mutable_wc_preserves_jj_color() {
-        let input = b"\x1b[1m\x1b[38;5;2m@\x1b[0m";
-        let out = run_emit(input, false, false);
-        let mut expected = b"\x1b[1m\x1b[38;5;2m".to_vec();
-        expected.extend_from_slice(DEFAULT_WC_ICON.as_bytes());
-        expected.extend_from_slice(b"\x1b[0m");
-        assert_eq!(out, expected);
-    }
-
-    #[test]
-    fn dim_empty_wc_uses_empty_icon() {
-        let out = run_emit(b"@", true, false);
-        assert_eq!(out, DEFAULT_WC_EMPTY_ICON.as_bytes());
-    }
-
-    #[test]
-    fn dim_divergent_wc_darkens_and_uses_lock() {
-        let out = run_emit(b"@", false, true);
-        assert_eq!(out, darken(DEFAULT_IMMUTABLE_ICON.as_bytes()));
-    }
-
-    #[test]
-    fn dim_immutable_diamond_empty_uses_empty_immutable_icon() {
-        let out = run_emit(b"\xe2\x97\x86", true, true);
-        assert_eq!(out, darken(DEFAULT_EMPTY_IMMUTABLE_ICON.as_bytes()));
+    fn dim_node_chars_pass_through_verbatim() {
+        // Bijjou no longer replaces node glyphs; jj's template owns that.
+        // Each of these inputs should emerge unchanged, including the
+        // surrounding ANSI on the @ case.
+        assert_eq!(run_emit(b"\xe2\x97\x8b"), b"\xe2\x97\x8b"); // ○
+        assert_eq!(run_emit(b"\xe2\x97\x86"), b"\xe2\x97\x86"); // ◆
+        assert_eq!(run_emit(b"@"), b"@");
+        let with_ansi = b"\x1b[1m\x1b[38;5;2m@\x1b[0m";
+        assert_eq!(run_emit(with_ansi), with_ansi);
     }
 
     #[test]
     fn dim_strips_empty_marker() {
-        assert_eq!(run_emit(EMPTY_MARKER_BYTES, false, false), b"");
+        assert_eq!(run_emit(EMPTY_MARKER_BYTES), b"");
     }
 
     #[test]
     fn dim_strips_divergent_marker() {
-        assert_eq!(run_emit(DIVERGENT_MARKER_BYTES, false, false), b"");
+        assert_eq!(run_emit(DIVERGENT_MARKER_BYTES), b"");
     }
 
     #[test]
     fn dim_box_drawing_gets_edge_dim() {
-        let out = run_emit(b"\xe2\x94\x82", false, false);
+        let out = run_emit(b"\xe2\x94\x82");
         let mut expected = DEFAULT_EDGE_DIM_ON.to_vec();
         expected.extend_from_slice(DEFAULT_GRAPH_VERTICAL.as_bytes());
         expected.extend_from_slice(FG_RESET);
@@ -1231,7 +1072,7 @@ mod tests {
 
     #[test]
     fn dim_spaces_passthrough() {
-        assert_eq!(run_emit(b"   ", false, false), b"   ");
+        assert_eq!(run_emit(b"   "), b"   ");
     }
 
     #[test]
@@ -1270,12 +1111,6 @@ mod tests {
         let mut buf = "│".as_bytes().to_vec();
         buf.extend_from_slice(EMPTY_MARKER_BYTES);
         assert!(is_vertical_only_line(&buf));
-    }
-
-    #[test]
-    fn dim_strips_fg_color_around_mutable_node() {
-        let out = run_emit(b"\x1b[38;5;14m\xe2\x97\x8b\x1b[39m", false, false);
-        assert_eq!(out, darken(DEFAULT_MUTABLE_ICON.as_bytes()));
     }
 
     #[test]
