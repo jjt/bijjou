@@ -3,16 +3,16 @@ source: tests/golden.rs
 description: "Custom `<digits><letter><digits> <rest>` diff-stat detail rows under a commit. Letter column is aligned within each contiguous group; left digits are right-justified against the letter, right digits are left-justified, and the rest column is padded to the group's widest right side. Within each group, rows are reordered by status (A, D, M, R, C), stable within each status. Groups are isolated — the second commit's lone `2M1` row does not affect the first group's widths."
 expression: visualize(&output)
 ---
-■\e[38;5;240m╶╴\e[39mklzkot 9d49d0 ME 260524·2251 default@ ws2@ ws2: working copy
-\e[38;5;240m𜸩\e[39m     1·0\e[38;5;240m╶──╴\e[39mA NOTES.md
-\e[38;5;240m𜸩\e[39m     0·0\e[38;5;240m╶──╴\e[39mA R
-\e[38;5;240m𜸩\e[39m  1m94·0\e[38;5;240m╶──╴\e[39mA long
-\e[38;5;240m𜸩\e[39m     0·1\e[38;5;240m╶──╴\e[39mD o4.txt
-\e[38;5;240m𜸩\e[39m     1·34k5 M B
-\e[38;5;240m𜸩\e[39m     1·0\e[38;5;240m╶──╴\e[39mM o3-extra.txt
-\e[38;5;240m𜸩\e[39m     1·55\e[38;5;240m╶─╴\e[39mM o3.txt
-\e[38;5;240m𜸩\e[39m     0·0\e[38;5;240m╶──╴\e[39mR {A => renamed-A.txt}
-\e[38;5;240m𜸩\e[39m     1·0\e[38;5;240m╶──╴\e[39mC {B => B-copy}
-●\e[38;5;240m╶╴\e[39mknvmus 44d850 ME 260524·2246 octopus octopus: 4-way merge
-\e[38;5;240m𜸩\e[39m  2·1 M only-file.txt
-●\e[38;5;240m╶╴\e[39mabcdef 123456 ME 260524·2200 third commit
+■\e[38;5;8m╶╴\e[39mklzkot 9d49d0 ME 260524·2251 default@ ws2@ ws2: working copy
+\e[38;5;8m𜸩\e[39m     1·0\e[38;5;8m╶──╴\e[39mA NOTES.md
+\e[38;5;8m𜸩\e[39m     0·0\e[38;5;8m╶──╴\e[39mA R
+\e[38;5;8m𜸩\e[39m  1m94·0\e[38;5;8m╶──╴\e[39mA long
+\e[38;5;8m𜸩\e[39m     0·1\e[38;5;8m╶──╴\e[39mD o4.txt
+\e[38;5;8m𜸩\e[39m     1·34k5 M B
+\e[38;5;8m𜸩\e[39m     1·0\e[38;5;8m╶──╴\e[39mM o3-extra.txt
+\e[38;5;8m𜸩\e[39m     1·55\e[38;5;8m╶─╴\e[39mM o3.txt
+\e[38;5;8m𜸩\e[39m     0·0\e[38;5;8m╶──╴\e[39mR {A => renamed-A.txt}
+\e[38;5;8m𜸩\e[39m     1·0\e[38;5;8m╶──╴\e[39mC {B => B-copy}
+●\e[38;5;8m╶╴\e[39mknvmus 44d850 ME 260524·2246 octopus octopus: 4-way merge
+\e[38;5;8m𜸩\e[39m  2·1 M only-file.txt
+●\e[38;5;8m╶╴\e[39mabcdef 123456 ME 260524·2200 third commit

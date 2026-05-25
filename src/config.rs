@@ -7,9 +7,8 @@ pub const DEFAULT_DASH_ARROW: &str = "";
 pub const DEFAULT_DASH_MARGIN: usize = 0;
 pub const DEFAULT_DASH_START: &str = "╶";
 pub const DEFAULT_DASH_END: &str = "╴";
-pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;240m";
-pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;240m";
-pub const DEFAULT_GRAPH_NODE_COLOR: &str = "ansi-color-242";
+pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
+pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EMPTY_ICON: &str = "";
 pub const DEFAULT_WC_EMPTY_ICON: &str = "□";
 pub const DEFAULT_EMPTY_IMMUTABLE_ICON: &str = "";
@@ -147,7 +146,6 @@ pub struct Config {
     pub graph_elision: String,
     pub dim_on: Vec<u8>,
     pub edge_dim_on: Vec<u8>,
-    pub graph_node_color: String,
     pub activation_marker: String,
     pub empty_marker: String,
     pub divergent_marker: String,
@@ -197,7 +195,6 @@ impl Default for Config {
             graph_elision: DEFAULT_GRAPH_ELISION.to_string(),
             dim_on: DEFAULT_DIM_ON.to_vec(),
             edge_dim_on: DEFAULT_EDGE_DIM_ON.to_vec(),
-            graph_node_color: DEFAULT_GRAPH_NODE_COLOR.to_string(),
             activation_marker: DEFAULT_ACTIVATION_MARKER.to_string(),
             empty_marker: DEFAULT_EMPTY_MARKER.to_string(),
             divergent_marker: DEFAULT_DIVERGENT_MARKER.to_string(),
@@ -506,7 +503,6 @@ impl Config {
             }
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
-            "colors.graph-node" => self.graph_node_color = value.to_string(),
             "debug.force-screen-height" => {
                 let n: i64 = value
                     .parse()

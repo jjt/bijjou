@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: "Stray 0x80 continuation byte — UTF-8 decoder treats as 1-byte char, no crash."
 expression: visualize(&output)
 ---
-@\e[38;5;240m╶╴\e[39mabcde \x80 strange desc
+@\e[38;5;8m╶╴\e[39mabcde \x80 strange desc

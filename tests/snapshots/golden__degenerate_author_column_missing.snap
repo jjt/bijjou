@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: Realistic format minus the author cell — boundary detection still works.
 expression: visualize(&output)
 ---
-@\e[38;5;240m╶╴\e[39mabcde 12345 260509·0958 desc
+@\e[38;5;8m╶╴\e[39mabcde 12345 260509·0958 desc

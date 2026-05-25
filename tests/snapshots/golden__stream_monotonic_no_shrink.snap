@@ -3,7 +3,7 @@ source: tests/golden.rs
 description: "Two batches; second narrows. Running max sticks at 3, so both batches emit at col=5."
 expression: visualize(&output)
 ---
-\e[38;5;240m𜸩\e[39m ○\e[38;5;240m╶╴\e[39ma
-\e[38;5;240m𜸩\e[39m ○\e[38;5;240m╶╴\e[39mb
-○\e[38;5;240m╶──╴\e[39mc
-○\e[38;5;240m╶──╴\e[39md
+\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶╴\e[39ma
+\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶╴\e[39mb
+○\e[38;5;8m╶──╴\e[39mc
+○\e[38;5;8m╶──╴\e[39md

@@ -3,11 +3,11 @@ source: tests/golden.rs
 description: "jj diff --summary lines under a working-copy commit. Pencil icon should land in the same column as the change-id's first letter."
 expression: visualize(&output)
 ---
-@\e[38;5;240m╶╴\e[39mwqsumo bd67c1 ME 260518·1045 no description
-\e[38;5;240m𜸩\e[39m    M README.md
-\e[38;5;240m𜸩\e[39m    M config.default.toml
-\e[38;5;240m𜸩\e[39m    M src/config.rs
-\e[38;5;240m𜸩\e[39m    M src/main.rs
-\e[38;5;240m𜸩\e[39m    M src/render.rs
-\e[38;5;240m𜸩\e[39m    M tests/golden.rs
-\e[38;5;240m𜸩\e[39m    M tests/snapshots/golden__plain_text.snap
+@\e[38;5;8m╶╴\e[39mwqsumo bd67c1 ME 260518·1045 no description
+\e[38;5;8m𜸩\e[39m    M README.md
+\e[38;5;8m𜸩\e[39m    M config.default.toml
+\e[38;5;8m𜸩\e[39m    M src/config.rs
+\e[38;5;8m𜸩\e[39m    M src/main.rs
+\e[38;5;8m𜸩\e[39m    M src/render.rs
+\e[38;5;8m𜸩\e[39m    M tests/golden.rs
+\e[38;5;8m𜸩\e[39m    M tests/snapshots/golden__plain_text.snap

@@ -132,8 +132,6 @@ KEYS
 
   [colors]                                  int 0-255 | \"#rrggbb\"
     dash-filler  edge
-  colors.graph-node                         string (jj color spec, e.g. \"ansi-color-242\" or \"#5f5f5f\");
-                                            used in the `jj-config` / `jj-graph-node-config` output
 
 See config.default.toml for defaults and discussion.
 ";
@@ -259,8 +257,7 @@ fn render_log_node_template_inline(cfg: &Config) -> String {
 // Multi-line TOML snippet ready to drop into a jj config file.
 fn render_jj_config(cfg: &Config) -> String {
     format!(
-        "colors.graph_node = \"{}\"\ntemplates.log_node = '''\n{}\n'''\n",
-        cfg.graph_node_color,
+        "templates.log_node = '''\n{}\n'''\n",
         render_log_node_template_body(cfg),
     )
 }
@@ -291,15 +288,14 @@ fn toml_basic_string_space_safe(s: &str) -> String {
     out
 }
 
-// Single-line `--config KEY=VAL --config KEY=VAL` ready for direct shell
-// substitution: `jj log $(bijjou jj-graph-node-config) | bijjou`. Values
-// are TOML basic strings whose whitespace is `\u`-escaped so the line
-// word-splits into exactly four args regardless of icon contents.
+// Single-line `--config KEY=VAL` ready for direct shell substitution:
+// `jj log $(bijjou jj-graph-node-config) | bijjou`. The value is a TOML
+// basic string whose whitespace is `\u`-escaped so the line word-splits
+// into exactly two args regardless of icon contents.
 fn render_jj_graph_node_config(cfg: &Config) -> String {
     format!(
-        "--config templates.log_node={} --config colors.graph_node={}",
+        "--config templates.log_node={}",
         toml_basic_string_space_safe(&render_log_node_template_inline(cfg)),
-        toml_basic_string_space_safe(&cfg.graph_node_color),
     )
 }
 

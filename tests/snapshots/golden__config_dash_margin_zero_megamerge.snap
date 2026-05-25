@@ -3,13 +3,13 @@ source: tests/golden.rs
 description: megamerge with dash-margin = 0 — dash runs butt against the graph and content with ╶/╴ half-line caps.
 expression: visualize(&output)
 ---
-\e[1m\e[38;5;2m@\e[0m\e[38;5;240m╶────╴\e[39m\e[1m\e[38;5;13mmk\e[38;5;8mzlmp\e[39m \e[38;5;12m26\e[38;5;8m137d\e[39m \e[38;5;3mTU\e[39m \e[38;5;14m260509·1438\e[39m \e[38;5;10mdefault@\e[39m \e[38;5;10m\e[39mMEGAMERGE\e[0m
-\e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸠\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜸤\e[39m
-\e[38;5;240m𜸩\e[39m \e[38;5;240m𜸩\e[39m ○\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;5mo\e[0m\e[38;5;8mpnyrm\e[39m \e[1m\e[38;5;4mf\e[0m\e[38;5;8m0f735\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-c\e[39m stack-c commit
-\e[38;5;240m𜸩\e[39m ○\e[38;5;240m╶\e[39m\e[38;5;240m𜸩\e[39m\e[38;5;240m─╴\e[39m\e[1m\e[38;5;5mz\e[0m\e[38;5;8mwvrkr\e[39m \e[1m\e[38;5;4mc\e[0m\e[38;5;8m468a6\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-b\e[39m stack-b commit
-\e[38;5;240m𜸩\e[39m \e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-○\e[38;5;240m╶\e[39m\e[38;5;240m𜸩\e[39m\e[38;5;240m───╴\e[39m\e[1m\e[38;5;5mv\e[0m\e[38;5;8mrmrsw\e[39m \e[1m\e[38;5;4md\e[0m\e[38;5;8m88a94\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-a\e[39m stack-a commit
-\e[38;5;240m𜸨\e[39m\e[38;5;240m𜸟\e[39m\e[38;5;240m𜹃\e[39m
-○\e[38;5;240m╶────╴\e[39m\e[1m\e[38;5;5mw\e[0m\e[38;5;8mosytr\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m12122\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m \e[38;5;5mmain\e[39m main: edit shared
-\e[38;5;240m𜹀\e[39m\e[38;5;8m\e[39m
-\e[0m\e[39m◆\e[0m\e[38;5;240m╶────╴\e[39m\e[1m\e[38;5;5mzz\e[0m\e[38;5;8mzzzz\e[39m \e[38;5;2mroot()\e[39m \e[1m\e[38;5;4m00\e[0m\e[38;5;8m0000\e[39m
+\e[1m\e[38;5;2m@\e[0m\e[38;5;8m╶────╴\e[39m\e[1m\e[38;5;13mmk\e[38;5;8mzlmp\e[39m \e[38;5;12m26\e[38;5;8m137d\e[39m \e[38;5;3mTU\e[39m \e[38;5;14m260509·1438\e[39m \e[38;5;10mdefault@\e[39m \e[38;5;10m\e[39mMEGAMERGE\e[0m
+\e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜸠\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜸤\e[39m
+\e[38;5;8m𜸩\e[39m \e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶╴\e[39m\e[1m\e[38;5;5mo\e[0m\e[38;5;8mpnyrm\e[39m \e[1m\e[38;5;4mf\e[0m\e[38;5;8m0f735\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-c\e[39m stack-c commit
+\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m─╴\e[39m\e[1m\e[38;5;5mz\e[0m\e[38;5;8mwvrkr\e[39m \e[1m\e[38;5;4mc\e[0m\e[38;5;8m468a6\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-b\e[39m stack-b commit
+\e[38;5;8m𜸩\e[39m \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
+○\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m───╴\e[39m\e[1m\e[38;5;5mv\e[0m\e[38;5;8mrmrsw\e[39m \e[1m\e[38;5;4md\e[0m\e[38;5;8m88a94\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5mstack-a\e[39m stack-a commit
+\e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
+○\e[38;5;8m╶────╴\e[39m\e[1m\e[38;5;5mw\e[0m\e[38;5;8mosytr\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m12122\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m \e[38;5;5mmain\e[39m main: edit shared
+\e[38;5;8m𜹀\e[39m\e[38;5;8m\e[39m
+\e[0m\e[39m◆\e[0m\e[38;5;8m╶────╴\e[39m\e[1m\e[38;5;5mzz\e[0m\e[38;5;8mzzzz\e[39m \e[38;5;2mroot()\e[39m \e[1m\e[38;5;4m00\e[0m\e[38;5;8m0000\e[39m

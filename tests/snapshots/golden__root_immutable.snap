@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: Root() commit — exercises immutable ◆ glyph and lock icon.
 expression: visualize(&output)
 ---
-\e[0m\e[39m◆\e[0m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;5mzz\e[0m\e[38;5;8mzzzz\e[39m \e[38;5;2mroot()\e[39m \e[1m\e[38;5;4m000\e[0m\e[38;5;8m000\e[39m
+\e[0m\e[39m◆\e[0m\e[38;5;8m╶╴\e[39m\e[1m\e[38;5;5mzz\e[0m\e[38;5;8mzzzz\e[39m \e[38;5;2mroot()\e[39m \e[1m\e[38;5;4m000\e[0m\e[38;5;8m000\e[39m

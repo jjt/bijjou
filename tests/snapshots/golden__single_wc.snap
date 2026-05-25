@@ -3,6 +3,6 @@ source: tests/golden.rs
 description: One working-copy commit; minimal graph.
 expression: visualize(&output)
 ---
-\e[1m\e[38;5;2m@\e[0m\e[38;5;240m╶╴\e[39m\e[1m\e[38;5;13mzt\e[38;5;8mtznl\e[39m \e[38;5;12mc\e[38;5;8m732fb\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;14m260509·1007\e[39m add unit tests for byte-level rendering helpers\e[0m
-\e[38;5;240m𜸩\e[39m
-\e[38;5;240m𜹀\e[39m
+\e[1m\e[38;5;2m@\e[0m\e[38;5;8m╶╴\e[39m\e[1m\e[38;5;13mzt\e[38;5;8mtznl\e[39m \e[38;5;12mc\e[38;5;8m732fb\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;14m260509·1007\e[39m add unit tests for byte-level rendering helpers\e[0m
+\e[38;5;8m𜸩\e[39m
+\e[38;5;8m𜹀\e[39m

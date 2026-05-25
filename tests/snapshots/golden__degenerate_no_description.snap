@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: "Bare graph + change/commit IDs only, no description text."
 expression: visualize(&output)
 ---
-○\e[38;5;240m╶╴\e[39mabcde 12345
+○\e[38;5;8m╶╴\e[39mabcde 12345

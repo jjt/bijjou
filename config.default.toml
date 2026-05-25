@@ -170,18 +170,18 @@
 
 [colors]
 # `dash-filler` / `edge`: integer 0-255 (256-color palette) or "#rrggbb"
-#   hex string. Defaults: dash-filler = 240, edge = 240.
-# `graph-node`: jj color spec (e.g. "ansi-color-242" or "#5f5f5f"), emitted
-#   as `colors.graph_node` by `bijjou jj-config` so jj's `graph_node`
-#   label paints node glyphs in that color. Not used by bijjou itself.
+#   hex string. Defaults: dash-filler = 8 (bright black), edge = 8 (bright black).
 #
 # dash-filler — color of the dash filler between graph and content.
 # edge        — color of graph edges (lines, corners, tees, crosses).
-# graph-node  — value substituted into the generated jj config.
 #
-# dash-filler  = 240
-# edge         = "#5f5f5f"
-# graph-node   = "ansi-color-242"
+# Node glyph color is left alone — bijjou no longer emits any
+# `colors.graph_node` / `colors.node` override. jj's own color
+# resolution applies, so style node glyphs via the standard jj
+# `colors.*` config if you want to change them.
+#
+# dash-filler  = 8
+# edge         = 8
 
 [details]
 # Controls how bijjou renders detail rows that follow a commit.
