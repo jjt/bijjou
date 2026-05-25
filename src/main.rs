@@ -109,7 +109,6 @@ KEYS
     dash-margin                             int >= 0 (default 1)
 
   [details]
-    diffsummary-path-color                  int 0-255 | \"#rrggbb\" | \"original\" (default 15)
     align-offset                            int >= 0 (default 0)
 
   [stream]

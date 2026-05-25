@@ -90,55 +90,6 @@ pub fn emit_line(
         return true;
     }
 
-    if let Some(s) = parse_status_summary(body) {
-        let mut trimmed_end = s.graph_prefix_end;
-        let mut trailing_spaces = 0;
-        while trimmed_end > 0 && body[trimmed_end - 1] == b' ' {
-            trailing_spaces += 1;
-            trimmed_end -= 1;
-        }
-        let kept_spaces = trailing_spaces.min(1);
-        let prefix_end = trimmed_end + kept_spaces;
-        emit_dim_graph(&body[..prefix_end], out);
-
-        let collapsed = trailing_spaces.saturating_sub(kept_spaces);
-        let aligned_col = target_col + c.details_align_offset;
-
-        if s.had_vertical {
-            let pad = (aligned_col + collapsed).saturating_sub(s.graph_col);
-            for _ in 0..pad {
-                out.push(b' ');
-            }
-        }
-        out.extend_from_slice(&body[s.graph_prefix_end..s.status_byte_idx]);
-        let status_byte = body[s.status_byte_idx];
-        out.extend_from_slice(status_icon(status_byte).as_bytes());
-        let mut stripped = crate::ansi::strip_sgr(&body[s.status_section_end..]);
-        if matches!(status_byte, b'R' | b'C') {
-            stripped.retain(|b| *b != b'{' && *b != b'}');
-        }
-        match &c.details_diffsummary_path_color {
-            crate::config::PathColor::Original => {
-                out.push(b' ');
-                out.extend_from_slice(&stripped);
-                out.extend_from_slice(b"\x1b[0m");
-            }
-            crate::config::PathColor::Fixed(color) => {
-                out.extend_from_slice(&body[s.status_byte_idx + 1..s.status_section_end]);
-                if body[s.graph_prefix_end..s.status_section_end].contains(&0x1b) {
-                    out.extend_from_slice(b"\x1b[0m");
-                }
-                out.extend_from_slice(color);
-                out.extend_from_slice(&stripped);
-                out.extend_from_slice(FG_RESET);
-            }
-        }
-        if trailing_nl {
-            out.push(b'\n');
-        }
-        return true;
-    }
-
     match parsed {
         Some(p) => {
             let graph = &body[..p.graph_end];
@@ -551,29 +502,6 @@ fn graph_tail_is_node(body: &[u8]) -> bool {
     last_was_node
 }
 
-fn status_icon(b: u8) -> &'static str {
-    use crate::config::{
-        DEFAULT_STATUS_ADDED_ICON, DEFAULT_STATUS_COPIED_ICON, DEFAULT_STATUS_DELETED_ICON,
-        DEFAULT_STATUS_MODIFIED_ICON, DEFAULT_STATUS_RENAMED_ICON,
-    };
-    match b {
-        b'M' => DEFAULT_STATUS_MODIFIED_ICON,
-        b'A' => DEFAULT_STATUS_ADDED_ICON,
-        b'D' => DEFAULT_STATUS_DELETED_ICON,
-        b'R' => DEFAULT_STATUS_RENAMED_ICON,
-        b'C' => DEFAULT_STATUS_COPIED_ICON,
-        _ => "",
-    }
-}
-
-pub struct StatusSummary {
-    pub graph_prefix_end: usize,
-    pub status_byte_idx: usize,
-    pub status_section_end: usize,
-    pub graph_col: usize,
-    pub had_vertical: bool,
-}
-
 // A detail-row format `<digits><A|C|D|M|R><digits> <rest>`, after an optional
 // graph prefix of vertical edges and spaces. Used for `jj log` templates that
 // emit per-file diff stats: e.g. `│  1936515A0 path/to/file`.
@@ -722,9 +650,6 @@ pub fn parse_diff_stat(body: &[u8]) -> Option<DiffStatRow> {
         graph_prefix_end = csi_start;
         graph_col = csi_start_col;
         break;
-    }
-    if !had_vertical {
-        return None;
     }
     let left_start = i;
     let mut left_val: u64 = 0;
@@ -875,12 +800,14 @@ fn emit_diff_stat_line(
 
     let collapsed = trailing_spaces.saturating_sub(kept_spaces);
 
-    if row.had_vertical {
-        let pad = (target_col + max_left + collapsed)
-            .saturating_sub(row.graph_col + row.left_width);
-        for _ in 0..pad {
-            out.push(b' ');
-        }
+    let letter_target = if row.had_vertical {
+        target_col + max_left
+    } else {
+        max_left
+    };
+    let pad = (letter_target + collapsed).saturating_sub(row.graph_col + row.left_width);
+    for _ in 0..pad {
+        out.push(b' ');
     }
 
     out.extend_from_slice(&body[row.graph_prefix_end..row.left_start]);
@@ -896,52 +823,6 @@ fn emit_diff_stat_line(
     }
     out.push(b' ');
     out.extend_from_slice(&body[row.rest_start..]);
-}
-
-pub fn parse_status_summary(body: &[u8]) -> Option<StatusSummary> {
-    let mut i = 0;
-    let mut vis_col: usize = 0;
-    let mut had_vertical = false;
-    loop {
-        let csi_start = i;
-        let csi_start_col = vis_col;
-        while let Some(after) = skip_csi(body, i) {
-            i = after;
-        }
-        if i >= body.len() {
-            return None;
-        }
-        let b = body[i];
-        if b == b' ' {
-            i += 1;
-            vis_col += 1;
-            continue;
-        }
-        let (cp, len) = decode_utf8(body, i);
-        if cp == VERTICAL_CP {
-            had_vertical = true;
-            i += len;
-            vis_col += 1;
-            continue;
-        }
-        if !matches!(b, b'M' | b'A' | b'D' | b'R' | b'C') {
-            return None;
-        }
-        let mut j = i + 1;
-        while let Some(after) = skip_csi(body, j) {
-            j = after;
-        }
-        if j >= body.len() || body[j] != b' ' {
-            return None;
-        }
-        return Some(StatusSummary {
-            graph_prefix_end: csi_start,
-            status_byte_idx: i,
-            status_section_end: j + 1,
-            graph_col: csi_start_col,
-            had_vertical,
-        });
-    }
 }
 
 pub fn is_vertical_only_line(body: &[u8]) -> bool {
@@ -1479,68 +1360,6 @@ mod tests {
     }
 
     #[test]
-    fn status_summary_plain_leading_char() {
-        let s = parse_status_summary(b"M path/to/file").unwrap();
-        assert_eq!(s.graph_prefix_end, 0);
-        assert_eq!(s.status_section_end, 2);
-    }
-
-    #[test]
-    fn status_summary_all_chars() {
-        for c in [b'M', b'A', b'D', b'R', b'C'] {
-            let line = [c, b' ', b'x'];
-            assert!(parse_status_summary(&line).is_some(), "char {}", c as char);
-        }
-    }
-
-    #[test]
-    fn status_summary_rejects_lowercase() {
-        assert!(parse_status_summary(b"m path").is_none());
-    }
-
-    #[test]
-    fn status_summary_rejects_non_status_letter() {
-        assert!(parse_status_summary(b"X path").is_none());
-    }
-
-    #[test]
-    fn status_summary_requires_following_space() {
-        assert!(parse_status_summary(b"Modify").is_none());
-        assert!(parse_status_summary(b"M").is_none());
-    }
-
-    #[test]
-    fn status_summary_with_vertical_prefix() {
-        let s = parse_status_summary("│ M path".as_bytes()).unwrap();
-        assert_eq!(s.graph_prefix_end, 4);
-        assert_eq!(s.status_section_end, 6);
-    }
-
-    #[test]
-    fn status_summary_with_csi_wrapped_status() {
-        let line = b"\x1b[38;5;3mM\x1b[39m path";
-        let s = parse_status_summary(line).unwrap();
-        assert_eq!(s.graph_prefix_end, 0);
-        assert_eq!(s.status_section_end, line.len() - 4);
-    }
-
-    #[test]
-    fn status_summary_with_graph_and_color() {
-        let mut line = b"\x1b[38;5;240m".to_vec();
-        line.extend_from_slice("│".as_bytes());
-        line.extend_from_slice(b"\x1b[39m \x1b[38;5;3mM\x1b[39m path");
-        let s = parse_status_summary(&line).unwrap();
-        assert_eq!(s.graph_prefix_end, 11 + 3 + 5 + 1);
-    }
-
-    #[test]
-    fn status_summary_rejects_empty_or_blank() {
-        assert!(parse_status_summary(b"").is_none());
-        assert!(parse_status_summary(b"   ").is_none());
-        assert!(parse_status_summary("│ │ │".as_bytes()).is_none());
-    }
-
-    #[test]
     fn format_compact_user_examples() {
         assert_eq!(format_compact(123), "123");
         assert_eq!(format_compact(1234), "1234");
@@ -1620,8 +1439,10 @@ mod tests {
     }
 
     #[test]
-    fn diff_stat_requires_vertical_prefix() {
-        assert!(parse_diff_stat(b"1M2 path").is_none());
+    fn diff_stat_matches_without_graph_prefix() {
+        let row = parse_diff_stat(b"1M2 path").expect("expected match");
+        assert!(!row.had_vertical);
+        assert_eq!(row.graph_col, 0);
     }
 
     #[test]

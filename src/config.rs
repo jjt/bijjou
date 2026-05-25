@@ -19,13 +19,7 @@ pub const DEFAULT_IMMUTABLE_ICON: &str = "";
 pub const DEFAULT_CONFLICT_ICON: &str = "";
 pub const DEFAULT_HIDDEN_ICON: &str = "🮀";
 pub const DEFAULT_FALLBACK_ICON: &str = "●";
-pub const DEFAULT_DETAILS_DIFFSUMMARY_PATH_COLOR: &[u8] = b"\x1b[38;5;15m";
 pub const DEFAULT_DETAILS_ALIGN_OFFSET: usize = 2;
-pub const DEFAULT_STATUS_MODIFIED_ICON: &str = "";
-pub const DEFAULT_STATUS_ADDED_ICON: &str = "";
-pub const DEFAULT_STATUS_DELETED_ICON: &str = "";
-pub const DEFAULT_STATUS_RENAMED_ICON: &str = "";
-pub const DEFAULT_STATUS_COPIED_ICON: &str = "󰆏";
 pub const DEFAULT_GRAPH_HORIZONTAL: &str = "𜸟";
 pub const DEFAULT_GRAPH_VERTICAL: &str = "𜸩";
 pub const DEFAULT_GRAPH_TOP_LEFT: &str = "𜸚";
@@ -167,7 +161,6 @@ pub struct Config {
     pub align_gap: usize,
     pub monotonic_alignment: bool,
     pub debug_force_screen_height: Option<usize>,
-    pub details_diffsummary_path_color: PathColor,
     pub details_align_offset: usize,
 }
 
@@ -217,9 +210,6 @@ impl Default for Config {
             align_gap: DEFAULT_ALIGN_GAP,
             monotonic_alignment: DEFAULT_MONOTONIC_ALIGNMENT,
             debug_force_screen_height: None,
-            details_diffsummary_path_color: PathColor::Fixed(
-                DEFAULT_DETAILS_DIFFSUMMARY_PATH_COLOR.to_vec(),
-            ),
             details_align_offset: DEFAULT_DETAILS_ALIGN_OFFSET,
         }
     }
@@ -342,19 +332,6 @@ fn parse_batch_size(s: &str) -> Result<BatchSize, String> {
         return Err(format!("expected integer >= 1, got {}", n));
     }
     Ok(BatchSize::Fixed(n as usize))
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum PathColor {
-    Original,
-    Fixed(Vec<u8>),
-}
-
-fn parse_path_color(s: &str) -> Result<PathColor, String> {
-    if s == "original" {
-        return Ok(PathColor::Original);
-    }
-    parse_color_str(s).map(PathColor::Fixed)
 }
 
 fn parse_color_str(s: &str) -> Result<Vec<u8>, String> {
@@ -489,9 +466,6 @@ impl Config {
             "commits.markers.empty" => self.empty_marker = value.to_string(),
             "commits.markers.divergent" => self.divergent_marker = value.to_string(),
             "commits.markers.conflict" => self.conflict_marker = value.to_string(),
-            "details.diffsummary-path-color" => {
-                self.details_diffsummary_path_color = parse_path_color(value).map_err(mkerr)?;
-            }
             "details.align-offset" => {
                 let n: i64 = value
                     .parse()

@@ -184,31 +184,17 @@
 # graph-node   = "ansi-color-242"
 
 [details]
-# Controls how bijjou renders detail rows that follow a commit — currently
-# `jj diff --summary` style status lines: lines whose graph prefix (if any)
-# is just `│` and spaces, followed by an uppercase M/A/D/R/C, a space, and
-# a path. bijjou replaces the status letter with a Nerd Font icon and
-# strips SGR from the path bytes.
-#
-# `diffsummary-path-color` — color applied to the path after the status
-# icon. Accepts an integer 0-255 (256-color palette), a "#rrggbb" hex
-# string, or the literal "original" to inherit the input's status-letter
-# foreground color. Default 15 (terminal bright white).
-# For R/C lines, the surrounding `{` and `}` braces around the
-# `old => new` spec are stripped regardless of the color setting.
+# Controls how bijjou renders detail rows that follow a commit.
 #
 # `align-offset` — extra columns past the change-id column where the
-# detail icon should land, for lines whose graph prefix has any
-# vertical edges. With offset = 0 (default), the icon sits at the
+# detail content should land, for lines whose graph prefix has any
+# vertical edges. With offset = 0 (default), the content sits at the
 # change-id column; offset = 1 shifts it one column further right,
 # and so on. Lines with no graph prefix are not padded.
 #
-# Defaults: diffsummary-path-color = 15, align-offset = 0
+# Default: align-offset = 0
 #
-# diffsummary-path-color = 15
-# diffsummary-path-color = "#5f5f5f"
-# diffsummary-path-color = "original"
-# align-offset           = 0
+# align-offset = 0
 
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of

@@ -143,7 +143,7 @@ and explanatory comment. Quick reference:
 | `[ui]`                | `color` (auto\|always\|never)                                                                       |
 | `[layout]`            | `align`, `gap`, `dash`, `dash-arrow`, `dash-margin`                                                 |
 | `[filter]`            | `hide-vertical-only-lines`                                                                          |
-| `[details]`           | `diffsummary-path-color`, `align-offset`                                                            |
+| `[details]`           | `align-offset`                                                                                      |
 | `[stream]`            | `enabled`, `batch-size`                                                                             |
 | `[commits.markers]`   | `empty`, `divergent`                                                                                |
 | `[graph.nodes.chars]` | `working-copy`, `mutable`, `immutable`, `conflict`, `hidden`, `fallback`, `empty`, `working-copy-empty`, `empty-immutable` |
