@@ -218,8 +218,10 @@ fn diff_stat_grouped_align() {
          a commit. Letter column is aligned within each contiguous group; \
          left digits are right-justified against the letter, right digits \
          are left-justified, and the rest column is padded to the group's \
-         widest right side. Groups are isolated — the second commit's lone \
-         `2M1` row does not affect the first group's widths.",
+         widest right side. Within each group, rows are reordered by status \
+         (A, D, M, R, C), stable within each status. Groups are isolated — \
+         the second commit's lone `2M1` row does not affect the first \
+         group's widths.",
     );
 }
 

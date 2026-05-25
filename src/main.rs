@@ -37,8 +37,8 @@ use std::io::{self, Read, Write};
 use crate::config::{cfg, Activate, Config, Pager};
 use crate::output::write_output;
 use crate::render::{
-    compute_diff_stat_groups, contains_bytes, emit_line, find_boundary, parse_content_columns,
-    parse_diff_stat, strip_trailing_nl, DiffStatRow, Parsed,
+    compute_diff_stat_groups, contains_bytes, diff_stat_status_rank, emit_line, find_boundary,
+    parse_content_columns, parse_diff_stat, strip_trailing_nl, DiffStatRow, Parsed,
 };
 
 const HELP: &str = "\
@@ -110,6 +110,7 @@ KEYS
 
   [details]
     align-offset                            int >= 0 (default 0)
+    diffstat-separator                      string (default \"·\")
 
   [stream]
     enabled                                 bool (default true)
@@ -317,6 +318,47 @@ fn split_lines(input: &[u8]) -> Vec<&[u8]> {
     lines
 }
 
+// Within each contiguous run of diff-stat rows, reorder by status group
+// (A, D, M, R, C); stable within each status so file order from the input is
+// preserved. Reorders `lines`, `parsed`, and `diff_stat` together so all
+// three stay aligned.
+fn reorder_diff_stat_groups<'a>(
+    lines: &mut [&'a [u8]],
+    parsed: &mut [Option<Parsed>],
+    diff_stat: &mut [Option<DiffStatRow>],
+) {
+    let mut i = 0;
+    while i < diff_stat.len() {
+        if diff_stat[i].is_none() {
+            i += 1;
+            continue;
+        }
+        let start = i;
+        while i < diff_stat.len() && diff_stat[i].is_some() {
+            i += 1;
+        }
+        let end = i;
+        if end - start < 2 {
+            continue;
+        }
+        let mut order: Vec<usize> = (start..end).collect();
+        order.sort_by_key(|&j| {
+            diff_stat_status_rank(diff_stat[j].as_ref().unwrap().letter_byte)
+        });
+        let taken_lines: Vec<&[u8]> = (start..end).map(|j| lines[j]).collect();
+        let mut taken_parsed: Vec<Option<Parsed>> =
+            (start..end).map(|j| parsed[j].take()).collect();
+        let mut taken_diff: Vec<Option<DiffStatRow>> =
+            (start..end).map(|j| diff_stat[j].take()).collect();
+        for (offset, &orig_j) in order.iter().enumerate() {
+            let k = orig_j - start;
+            lines[start + offset] = taken_lines[k];
+            parsed[start + offset] = taken_parsed[k].take();
+            diff_stat[start + offset] = taken_diff[k].take();
+        }
+    }
+}
+
 fn run() -> io::Result<()> {
     let c = cfg();
     if c.activate == Activate::Never {
@@ -346,15 +388,16 @@ fn run() -> io::Result<()> {
     // every line. Early narrow rows get dash filler stretching to the widest
     // point of the log. Streaming mode (stream.rs) diverges intentionally:
     // it widens per-line and can't backfill once a row is emitted.
-    let lines = split_lines(&input);
-    let parsed: Vec<Option<Parsed>> = lines
+    let mut lines = split_lines(&input);
+    let mut parsed: Vec<Option<Parsed>> = lines
         .iter()
         .map(|line| find_boundary(strip_trailing_nl(line).0))
         .collect();
-    let diff_stat: Vec<Option<DiffStatRow>> = lines
+    let mut diff_stat: Vec<Option<DiffStatRow>> = lines
         .iter()
         .map(|line| parse_diff_stat(strip_trailing_nl(line).0))
         .collect();
+    reorder_diff_stat_groups(&mut lines, &mut parsed, &mut diff_stat);
     let group_widths = compute_diff_stat_groups(&diff_stat);
 
     let max_graph = parsed

@@ -192,9 +192,16 @@
 # change-id column; offset = 1 shifts it one column further right,
 # and so on. Lines with no graph prefix are not padded.
 #
-# Default: align-offset = 0
+# `diffstat-separator` — the literal character (or string) sitting
+# between the added/removed digit pairs in diff-stat detail rows of
+# the form `<digits><sep><digits> <A|C|D|M|R> <path>`. Must match
+# whatever the jj template emits between the two counts. Default is
+# the middle dot `·`; common alternatives are `|` or `│`.
 #
-# align-offset = 0
+# Defaults: align-offset = 0, diffstat-separator = "·"
+#
+# align-offset        = 0
+# diffstat-separator  = "·"
 
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of

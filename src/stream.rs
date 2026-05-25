@@ -3,8 +3,8 @@ use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 use crate::ansi::strip_sgr;
 use crate::config::{cfg, color_enabled, Activate, BatchSize, Pager};
 use crate::render::{
-    contains_bytes, emit_line, find_boundary, is_vertical_only_line, parse_content_columns,
-    parse_diff_stat, strip_trailing_nl,
+    contains_bytes, diff_stat_status_rank, emit_line, find_boundary, is_vertical_only_line,
+    parse_content_columns, parse_diff_stat, strip_trailing_nl,
 };
 
 pub fn run() -> io::Result<()> {
@@ -282,9 +282,16 @@ fn flush_pending_diff_stat(
 ) {
     let ml = state.pending_max_left;
     let mr = state.pending_max_right;
-    let lines = std::mem::take(&mut state.pending_diff_stat);
+    let mut lines = std::mem::take(&mut state.pending_diff_stat);
     state.pending_max_left = 0;
     state.pending_max_right = 0;
+    // Group by status (A, D, M, R, C); stable to keep file order within a status.
+    lines.sort_by_key(|line| {
+        let body = strip_trailing_nl(line).0;
+        parse_diff_stat(body)
+            .map(|r| diff_stat_status_rank(r.letter_byte))
+            .unwrap_or(u8::MAX)
+    });
     for line in lines {
         let body = strip_trailing_nl(&line).0;
         let row = match parse_diff_stat(body) {

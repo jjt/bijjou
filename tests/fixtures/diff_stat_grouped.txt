@@ -1,13 +1,13 @@
 ■  klzkot 9d49d0 ME 260524·2251 default@ ws2@ ws2: working copy
-│  1M34523 B
-│  1C0 {B => B-copy}
-│  1A0 NOTES.md
-│  0A0 R
-│  1936515A0 long
-│  1M0 o3-extra.txt
-│  1M55 o3.txt
-│  0D1 o4.txt
-│  0R0 {A => renamed-A.txt}
+│  1·34523 M B
+│  1·0 C {B => B-copy}
+│  1·0 A NOTES.md
+│  0·0 A R
+│  1936515·0 A long
+│  1·0 M o3-extra.txt
+│  1·55 M o3.txt
+│  0·1 D o4.txt
+│  0·0 R {A => renamed-A.txt}
 ●  knvmus 44d850 ME 260524·2246 octopus octopus: 4-way merge
-│  2M1 only-file.txt
+│  2·1 M only-file.txt
 ●  abcdef 123456 ME 260524·2200 third commit

@@ -502,19 +502,19 @@ fn graph_tail_is_node(body: &[u8]) -> bool {
     last_was_node
 }
 
-// A detail-row format `<digits><A|C|D|M|R><digits> <rest>`, after an optional
-// graph prefix of vertical edges and spaces. Used for `jj log` templates that
-// emit per-file diff stats: e.g. `│  1936515A0 path/to/file`.
+// A detail-row format `<digits><sep><digits> <A|C|D|M|R> <rest>`, after an
+// optional graph prefix of vertical edges and spaces. The inner separator
+// is either ASCII `|` or `│`. Used for `jj log` templates that emit per-file
+// diff stats: e.g. `│  19|3 M path/to/file`.
 pub struct DiffStatRow {
     pub graph_prefix_end: usize,
     pub graph_col: usize,
     pub had_vertical: bool,
     pub left_start: usize,
     pub left_digits_byte_end: usize,
-    pub letter_byte_idx: usize,
+    pub separator_byte_end: usize,
     pub right_digits_byte_start: usize,
     pub right_digits_byte_end: usize,
-    pub right_end: usize,
     pub rest_start: usize,
     pub letter_byte: u8,
     pub left_formatted: String,
@@ -616,7 +616,34 @@ fn skip_all_csi(body: &[u8], mut i: usize) -> usize {
     i
 }
 
+fn parse_digits(body: &[u8], mut i: usize) -> (u64, bool, usize, usize) {
+    let mut val: u64 = 0;
+    let mut overflow = false;
+    let mut n = 0usize;
+    let mut end = i;
+    loop {
+        let j = skip_all_csi(body, i);
+        if j < body.len() && body[j].is_ascii_digit() {
+            let d = (body[j] - b'0') as u64;
+            val = match val.checked_mul(10).and_then(|v| v.checked_add(d)) {
+                Some(v) => v,
+                None => {
+                    overflow = true;
+                    val
+                }
+            };
+            i = j + 1;
+            end = i;
+            n += 1;
+        } else {
+            break;
+        }
+    }
+    (val, overflow, n, end)
+}
+
 pub fn parse_diff_stat(body: &[u8]) -> Option<DiffStatRow> {
+    let sep_bytes = crate::config::cfg().details_diffstat_separator.as_bytes();
     let mut i = 0;
     let mut vis_col: usize = 0;
     let mut had_vertical = false;
@@ -652,70 +679,44 @@ pub fn parse_diff_stat(body: &[u8]) -> Option<DiffStatRow> {
         break;
     }
     let left_start = i;
-    let mut left_val: u64 = 0;
-    let mut left_overflow = false;
-    let mut left_n = 0usize;
-    let mut left_digits_byte_end = i;
-    loop {
-        let j = skip_all_csi(body, i);
-        if j < body.len() && body[j].is_ascii_digit() {
-            let d = (body[j] - b'0') as u64;
-            left_val = match left_val.checked_mul(10).and_then(|v| v.checked_add(d)) {
-                Some(v) => v,
-                None => {
-                    left_overflow = true;
-                    left_val
-                }
-            };
-            i = j + 1;
-            left_digits_byte_end = i;
-            left_n += 1;
-        } else {
-            break;
-        }
-    }
+    let (left_val, left_overflow, left_n, end) = parse_digits(body, i);
     if left_n == 0 {
         return None;
     }
+    let left_digits_byte_end = end;
+    i = end;
+    let j = skip_all_csi(body, i);
+    if j >= body.len() {
+        return None;
+    }
+    if j + sep_bytes.len() > body.len() || &body[j..j + sep_bytes.len()] != sep_bytes {
+        return None;
+    }
+    let separator_byte_end = j + sep_bytes.len();
+    i = separator_byte_end;
+    let right_digits_byte_start = skip_all_csi(body, i);
+    i = right_digits_byte_start;
+    let (right_val, right_overflow, right_n, end) = parse_digits(body, i);
+    if right_n == 0 {
+        return None;
+    }
+    let right_digits_byte_end = end;
+    i = end;
+    let j = skip_all_csi(body, i);
+    if j >= body.len() || body[j] != b' ' {
+        return None;
+    }
+    i = j + 1;
     let j = skip_all_csi(body, i);
     if j >= body.len() || !matches!(body[j], b'M' | b'A' | b'D' | b'R' | b'C') {
         return None;
     }
     let letter_byte = body[j];
-    let letter_byte_idx = j;
     i = j + 1;
-    let right_digits_byte_start = skip_all_csi(body, i);
-    i = right_digits_byte_start;
-    let mut right_val: u64 = 0;
-    let mut right_overflow = false;
-    let mut right_n = 0usize;
-    let mut right_digits_byte_end = i;
-    loop {
-        let j = skip_all_csi(body, i);
-        if j < body.len() && body[j].is_ascii_digit() {
-            let d = (body[j] - b'0') as u64;
-            right_val = match right_val.checked_mul(10).and_then(|v| v.checked_add(d)) {
-                Some(v) => v,
-                None => {
-                    right_overflow = true;
-                    right_val
-                }
-            };
-            i = j + 1;
-            right_digits_byte_end = i;
-            right_n += 1;
-        } else {
-            break;
-        }
-    }
-    if right_n == 0 {
-        return None;
-    }
     let j = skip_all_csi(body, i);
     if j >= body.len() || body[j] != b' ' {
         return None;
     }
-    let right_end = j;
     let rest_start = j + 1;
     let left_formatted = if left_overflow {
         "9999".to_string()
@@ -735,10 +736,9 @@ pub fn parse_diff_stat(body: &[u8]) -> Option<DiffStatRow> {
         had_vertical,
         left_start,
         left_digits_byte_end,
-        letter_byte_idx,
+        separator_byte_end,
         right_digits_byte_start,
         right_digits_byte_end,
-        right_end,
         rest_start,
         letter_byte,
         left_formatted,
@@ -746,6 +746,20 @@ pub fn parse_diff_stat(body: &[u8]) -> Option<DiffStatRow> {
         left_width,
         right_width,
     })
+}
+
+// Rank for grouping diff-stat rows within a commit: A, D, M, R, C.
+// Anything else sorts after the known statuses (parse_diff_stat already
+// rejects non-status letters, so the fallback is defensive).
+pub fn diff_stat_status_rank(letter: u8) -> u8 {
+    match letter {
+        b'A' => 0,
+        b'D' => 1,
+        b'M' => 2,
+        b'R' => 3,
+        b'C' => 4,
+        _ => 5,
+    }
 }
 
 // For each contiguous run of `Some(DiffStatRow)` entries, return the group's
@@ -812,16 +826,14 @@ fn emit_diff_stat_line(
 
     out.extend_from_slice(&body[row.graph_prefix_end..row.left_start]);
     out.extend_from_slice(row.left_formatted.as_bytes());
-    out.extend_from_slice(&body[row.left_digits_byte_end..row.letter_byte_idx]);
-    out.push(row.letter_byte);
-    out.extend_from_slice(&body[row.letter_byte_idx + 1..row.right_digits_byte_start]);
+    out.extend_from_slice(&body[row.left_digits_byte_end..row.separator_byte_end]);
+    out.extend_from_slice(&body[row.separator_byte_end..row.right_digits_byte_start]);
     out.extend_from_slice(row.right_formatted.as_bytes());
-    out.extend_from_slice(&body[row.right_digits_byte_end..row.right_end]);
     let right_pad = max_right.saturating_sub(row.right_width);
     for _ in 0..right_pad {
         out.push(b' ');
     }
-    out.push(b' ');
+    out.extend_from_slice(&body[row.right_digits_byte_end..row.rest_start]);
     out.extend_from_slice(&body[row.rest_start..]);
 }
 
@@ -1389,7 +1401,7 @@ mod tests {
 
     #[test]
     fn diff_stat_formats_large_numbers() {
-        let row = parse_diff_stat("│  12345M123456 path".as_bytes()).expect("expected match");
+        let row = parse_diff_stat("│  12345·123456 M path".as_bytes()).expect("expected match");
         assert_eq!(row.left_formatted, "12k3");
         assert_eq!(row.right_formatted, "123k");
         assert_eq!(row.left_width, 4);
@@ -1398,7 +1410,7 @@ mod tests {
 
     #[test]
     fn diff_stat_basic_match() {
-        let row = parse_diff_stat("│  1M24523 B".as_bytes()).expect("expected match");
+        let row = parse_diff_stat("│  1·24523 M B".as_bytes()).expect("expected match");
         assert!(row.had_vertical);
         assert_eq!(row.left_formatted, "1");
         assert_eq!(row.right_formatted, "24k5");
@@ -1406,12 +1418,11 @@ mod tests {
         assert_eq!(row.right_width, 4);
         assert_eq!(row.graph_col, 3);
         assert_eq!(row.letter_byte, b'M');
-        assert_eq!(row.rest_start, row.right_end + 1);
     }
 
     #[test]
     fn diff_stat_long_left_digits() {
-        let row = parse_diff_stat("│  1936515A0 long".as_bytes()).expect("expected match");
+        let row = parse_diff_stat("│  1936515·0 A long".as_bytes()).expect("expected match");
         assert_eq!(row.left_formatted, "1m94");
         assert_eq!(row.left_width, 4);
         assert_eq!(row.right_formatted, "0");
@@ -1420,47 +1431,47 @@ mod tests {
 
     #[test]
     fn diff_stat_rejects_no_left_digits() {
-        assert!(parse_diff_stat("│  M path".as_bytes()).is_none());
+        assert!(parse_diff_stat("│  ·1 M path".as_bytes()).is_none());
     }
 
     #[test]
     fn diff_stat_rejects_no_right_digits() {
-        assert!(parse_diff_stat("│  1M path".as_bytes()).is_none());
+        assert!(parse_diff_stat("│  1· M path".as_bytes()).is_none());
     }
 
     #[test]
     fn diff_stat_rejects_no_trailing_space() {
-        assert!(parse_diff_stat("│  1M2".as_bytes()).is_none());
+        assert!(parse_diff_stat("│  1·2 M".as_bytes()).is_none());
     }
 
     #[test]
     fn diff_stat_rejects_non_status_letter() {
-        assert!(parse_diff_stat("│  1X2 path".as_bytes()).is_none());
+        assert!(parse_diff_stat("│  1·2 X path".as_bytes()).is_none());
     }
 
     #[test]
     fn diff_stat_matches_without_graph_prefix() {
-        let row = parse_diff_stat(b"1M2 path").expect("expected match");
+        let row = parse_diff_stat("1·2 M path".as_bytes()).expect("expected match");
         assert!(!row.had_vertical);
         assert_eq!(row.graph_col, 0);
     }
 
     #[test]
     fn diff_stat_rejects_node_prefix() {
-        assert!(parse_diff_stat("○  1M2 path".as_bytes()).is_none());
+        assert!(parse_diff_stat("○  1·2 M path".as_bytes()).is_none());
     }
 
     #[test]
     fn diff_stat_multi_vertical_prefix() {
-        let row = parse_diff_stat("│ │  1M2 path".as_bytes()).expect("expected match");
+        let row = parse_diff_stat("│ │  1·2 M path".as_bytes()).expect("expected match");
         assert!(row.had_vertical);
         assert_eq!(row.graph_col, 5);
     }
 
     #[test]
     fn diff_stat_csi_before_digits() {
-        let row =
-            parse_diff_stat(b"\xe2\x94\x82  \x1b[1m1M2 path").expect("expected match");
+        let row = parse_diff_stat("│  \u{1b}[1m1·2 M path".as_bytes())
+            .expect("expected match");
         assert!(row.had_vertical);
         assert_eq!(row.left_width, 1);
         assert_eq!(row.right_width, 1);
@@ -1471,10 +1482,10 @@ mod tests {
         let mk = |body: &str| parse_diff_stat(body.as_bytes());
         let rows = vec![
             None,
-            mk("│  1M3 a"),
-            mk("│  1234A1 b"),
+            mk("│  1·3 M a"),
+            mk("│  1234·1 A b"),
             None,
-            mk("│  1D9 c"),
+            mk("│  1·9 D c"),
             None,
         ];
         let widths = compute_diff_stat_groups(&rows);

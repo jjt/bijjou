@@ -20,6 +20,7 @@ pub const DEFAULT_CONFLICT_ICON: &str = "";
 pub const DEFAULT_HIDDEN_ICON: &str = "🮀";
 pub const DEFAULT_FALLBACK_ICON: &str = "●";
 pub const DEFAULT_DETAILS_ALIGN_OFFSET: usize = 2;
+pub const DEFAULT_DETAILS_DIFFSTAT_SEPARATOR: &str = "·";
 pub const DEFAULT_GRAPH_HORIZONTAL: &str = "𜸟";
 pub const DEFAULT_GRAPH_VERTICAL: &str = "𜸩";
 pub const DEFAULT_GRAPH_TOP_LEFT: &str = "𜸚";
@@ -162,6 +163,7 @@ pub struct Config {
     pub monotonic_alignment: bool,
     pub debug_force_screen_height: Option<usize>,
     pub details_align_offset: usize,
+    pub details_diffstat_separator: String,
 }
 
 impl Default for Config {
@@ -211,6 +213,7 @@ impl Default for Config {
             monotonic_alignment: DEFAULT_MONOTONIC_ALIGNMENT,
             debug_force_screen_height: None,
             details_align_offset: DEFAULT_DETAILS_ALIGN_OFFSET,
+            details_diffstat_separator: DEFAULT_DETAILS_DIFFSTAT_SEPARATOR.to_string(),
         }
     }
 }
@@ -474,6 +477,12 @@ impl Config {
                     return Err(mkerr(format!("expected integer >= 0, got {}", n)));
                 }
                 self.details_align_offset = n as usize;
+            }
+            "details.diffstat-separator" => {
+                if value.is_empty() {
+                    return Err(mkerr("must not be empty".into()));
+                }
+                self.details_diffstat_separator = value.to_string();
             }
             "filter.hide-vertical-only-lines" => {
                 self.hide_vertical_only_lines = parse_bool_str(value).map_err(mkerr)?;
