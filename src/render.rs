@@ -515,6 +515,9 @@ pub struct DiffStatRow {
     pub separator_byte_end: usize,
     pub right_digits_byte_start: usize,
     pub right_digits_byte_end: usize,
+    pub space_before_letter_idx: usize,
+    pub letter_byte_idx: usize,
+    pub space_before_rest_idx: usize,
     pub rest_start: usize,
     pub letter_byte: u8,
     pub left_formatted: String,
@@ -706,17 +709,20 @@ pub fn parse_diff_stat(body: &[u8]) -> Option<DiffStatRow> {
     if j >= body.len() || body[j] != b' ' {
         return None;
     }
+    let space_before_letter_idx = j;
     i = j + 1;
     let j = skip_all_csi(body, i);
     if j >= body.len() || !matches!(body[j], b'M' | b'A' | b'D' | b'R' | b'C') {
         return None;
     }
     let letter_byte = body[j];
+    let letter_byte_idx = j;
     i = j + 1;
     let j = skip_all_csi(body, i);
     if j >= body.len() || body[j] != b' ' {
         return None;
     }
+    let space_before_rest_idx = j;
     let rest_start = j + 1;
     let left_formatted = if left_overflow {
         "9999".to_string()
@@ -739,6 +745,9 @@ pub fn parse_diff_stat(body: &[u8]) -> Option<DiffStatRow> {
         separator_byte_end,
         right_digits_byte_start,
         right_digits_byte_end,
+        space_before_letter_idx,
+        letter_byte_idx,
+        space_before_rest_idx,
         rest_start,
         letter_byte,
         left_formatted,
@@ -829,12 +838,54 @@ fn emit_diff_stat_line(
     out.extend_from_slice(&body[row.left_digits_byte_end..row.separator_byte_end]);
     out.extend_from_slice(&body[row.separator_byte_end..row.right_digits_byte_start]);
     out.extend_from_slice(row.right_formatted.as_bytes());
-    let right_pad = max_right.saturating_sub(row.right_width);
-    for _ in 0..right_pad {
+    out.extend_from_slice(&body[row.right_digits_byte_end..row.space_before_letter_idx]);
+    let gap_cells = 1 + max_right.saturating_sub(row.right_width);
+    if gap_cells == 1 {
         out.push(b' ');
+    } else {
+        emit_dash_gap(out, gap_cells);
     }
-    out.extend_from_slice(&body[row.right_digits_byte_end..row.rest_start]);
+    out.extend_from_slice(&body[row.space_before_letter_idx + 1..row.letter_byte_idx]);
+    out.push(row.letter_byte);
+    out.extend_from_slice(&body[row.letter_byte_idx + 1..row.space_before_rest_idx]);
+    out.push(b' ');
     out.extend_from_slice(&body[row.rest_start..]);
+}
+
+// Dashed run of `count` cells using the configured dash glyphs, with
+// `dash_start` (╶) as the first cell and `dash_end` (╴) as the last. Mirrors
+// the dash filler emitted in `write_gap` between graph nodes and content,
+// but is sized locally to the gap between the right digit run and the
+// status letter on a diff-stat row.
+fn emit_dash_gap(out: &mut Vec<u8>, count: usize) {
+    if count == 0 {
+        return;
+    }
+    let c = cfg();
+    let head = if c.dash_start.is_empty() {
+        c.dash.as_str()
+    } else {
+        c.dash_start.as_str()
+    };
+    let tail = if c.dash_end.is_empty() {
+        c.dash.as_str()
+    } else {
+        c.dash_end.as_str()
+    };
+    out.extend_from_slice(&c.dim_on);
+    for idx in 0..count {
+        let glyph = if count == 1 {
+            head
+        } else if idx == 0 {
+            head
+        } else if idx == count - 1 {
+            tail
+        } else {
+            c.dash.as_str()
+        };
+        out.extend_from_slice(glyph.as_bytes());
+    }
+    out.extend_from_slice(FG_RESET);
 }
 
 pub fn is_vertical_only_line(body: &[u8]) -> bool {

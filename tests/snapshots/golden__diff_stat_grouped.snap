@@ -4,15 +4,15 @@ description: "Custom `<digits><letter><digits> <rest>` diff-stat detail rows und
 expression: visualize(&output)
 ---
 ■\e[38;5;240m╶╴\e[39mklzkot 9d49d0 ME 260524·2251 default@ ws2@ ws2: working copy
-\e[38;5;240m𜸩\e[39m     1·0    A NOTES.md
-\e[38;5;240m𜸩\e[39m     0·0    A R
-\e[38;5;240m𜸩\e[39m  1m94·0    A long
-\e[38;5;240m𜸩\e[39m     0·1    D o4.txt
+\e[38;5;240m𜸩\e[39m     1·0\e[38;5;240m╶──╴\e[39mA NOTES.md
+\e[38;5;240m𜸩\e[39m     0·0\e[38;5;240m╶──╴\e[39mA R
+\e[38;5;240m𜸩\e[39m  1m94·0\e[38;5;240m╶──╴\e[39mA long
+\e[38;5;240m𜸩\e[39m     0·1\e[38;5;240m╶──╴\e[39mD o4.txt
 \e[38;5;240m𜸩\e[39m     1·34k5 M B
-\e[38;5;240m𜸩\e[39m     1·0    M o3-extra.txt
-\e[38;5;240m𜸩\e[39m     1·55   M o3.txt
-\e[38;5;240m𜸩\e[39m     0·0    R {A => renamed-A.txt}
-\e[38;5;240m𜸩\e[39m     1·0    C {B => B-copy}
+\e[38;5;240m𜸩\e[39m     1·0\e[38;5;240m╶──╴\e[39mM o3-extra.txt
+\e[38;5;240m𜸩\e[39m     1·55\e[38;5;240m╶─╴\e[39mM o3.txt
+\e[38;5;240m𜸩\e[39m     0·0\e[38;5;240m╶──╴\e[39mR {A => renamed-A.txt}
+\e[38;5;240m𜸩\e[39m     1·0\e[38;5;240m╶──╴\e[39mC {B => B-copy}
 ●\e[38;5;240m╶╴\e[39mknvmus 44d850 ME 260524·2246 octopus octopus: 4-way merge
 \e[38;5;240m𜸩\e[39m  2·1 M only-file.txt
 ●\e[38;5;240m╶╴\e[39mabcdef 123456 ME 260524·2200 third commit
