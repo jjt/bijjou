@@ -211,6 +211,19 @@ fn diff_summary_branched_align() {
 }
 
 #[test]
+fn diff_stat_grouped_align() {
+    snapshot(
+        "diff_stat_grouped",
+        "Custom `<digits><letter><digits> <rest>` diff-stat detail rows under \
+         a commit. Letter column is aligned within each contiguous group; \
+         left digits are right-justified against the letter, right digits \
+         are left-justified, and the rest column is padded to the group's \
+         widest right side. Groups are isolated — the second commit's lone \
+         `2M1` row does not affect the first group's widths.",
+    );
+}
+
+#[test]
 fn diff_summary_complex_align() {
     snapshot(
         "diff_summary_complex",

@@ -37,7 +37,8 @@ use std::io::{self, Read, Write};
 use crate::config::{cfg, Activate, Config, Pager};
 use crate::output::write_output;
 use crate::render::{
-    contains_bytes, emit_line, find_boundary, parse_content_columns, strip_trailing_nl, Parsed,
+    compute_diff_stat_groups, contains_bytes, emit_line, find_boundary, parse_content_columns,
+    parse_diff_stat, strip_trailing_nl, DiffStatRow, Parsed,
 };
 
 const HELP: &str = "\
@@ -351,6 +352,11 @@ fn run() -> io::Result<()> {
         .iter()
         .map(|line| find_boundary(strip_trailing_nl(line).0))
         .collect();
+    let diff_stat: Vec<Option<DiffStatRow>> = lines
+        .iter()
+        .map(|line| parse_diff_stat(strip_trailing_nl(line).0))
+        .collect();
+    let group_widths = compute_diff_stat_groups(&diff_stat);
 
     let max_graph = parsed
         .iter()
@@ -373,15 +379,20 @@ fn run() -> io::Result<()> {
     let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 8);
     let mut emitted_lines = 0usize;
 
-    for (line, p) in lines.iter().zip(parsed.iter()) {
+    for (idx, (line, p)) in lines.iter().zip(parsed.iter()).enumerate() {
         let target_col = if c.align_enabled {
             max_graph + c.align_gap
         } else {
             p.as_ref().map(|p| p.graph_col).unwrap_or(0) + c.align_gap
         };
+        let ds_arg = match (diff_stat[idx].as_ref(), group_widths[idx]) {
+            (Some(row), Some((ml, mr))) => Some((row, ml, mr)),
+            _ => None,
+        };
         if emit_line(
             line,
             p.as_ref(),
+            ds_arg,
             target_col,
             max_cid_w,
             max_auth_w,

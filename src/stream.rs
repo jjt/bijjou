@@ -4,7 +4,7 @@ use crate::ansi::strip_sgr;
 use crate::config::{cfg, color_enabled, Activate, BatchSize, Pager};
 use crate::render::{
     contains_bytes, emit_line, find_boundary, is_vertical_only_line, parse_content_columns,
-    strip_trailing_nl,
+    parse_diff_stat, strip_trailing_nl,
 };
 
 pub fn run() -> io::Result<()> {
@@ -59,6 +59,7 @@ pub fn run() -> io::Result<()> {
         process_batch(&batch, &mut state, &mut sink)?;
     }
 
+    flush_trailing_diff_stat(&mut state, &mut sink)?;
     sink.close()
 }
 
@@ -191,6 +192,9 @@ struct StreamState {
     graph_max: usize,
     changeid_max: usize,
     author_max: usize,
+    pending_diff_stat: Vec<Vec<u8>>,
+    pending_max_left: usize,
+    pending_max_right: usize,
 }
 
 fn read_batch<R: BufRead>(reader: &mut R, batch_size: usize) -> io::Result<Vec<Vec<u8>>> {
@@ -220,6 +224,17 @@ fn process_batch(
     let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 8).sum());
     for line in batch.iter() {
         let body = strip_trailing_nl(line).0;
+        if let Some(row) = parse_diff_stat(body) {
+            state.pending_max_left = state.pending_max_left.max(row.left_width);
+            state.pending_max_right = state.pending_max_right.max(row.right_width);
+            state.pending_diff_stat.push(line.clone());
+            continue;
+        }
+
+        if !state.pending_diff_stat.is_empty() {
+            flush_pending_diff_stat(state, &mut out, c);
+        }
+
         let parsed = find_boundary(body);
         if let Some(p) = &parsed {
             if p.graph_col > state.graph_max {
@@ -242,12 +257,70 @@ fn process_batch(
         emit_line(
             line,
             parsed.as_ref(),
+            None,
             target_col,
             state.changeid_max,
             state.author_max,
             &mut out,
         );
     }
+    if color_enabled() {
+        sink_write(sink, &out)
+    } else {
+        sink_write(sink, &strip_sgr(&out))
+    }
+}
+
+// Diff-stat lines stay buffered until the group closes (next non-diff-stat
+// line, or end of stream) so per-commit alignment doesn't fracture at batch
+// boundaries. Called when a non-diff-stat line arrives mid-stream, and again
+// from `flush_trailing_diff_stat` at EOF.
+fn flush_pending_diff_stat(
+    state: &mut StreamState,
+    out: &mut Vec<u8>,
+    c: &crate::config::Config,
+) {
+    let ml = state.pending_max_left;
+    let mr = state.pending_max_right;
+    let lines = std::mem::take(&mut state.pending_diff_stat);
+    state.pending_max_left = 0;
+    state.pending_max_right = 0;
+    for line in lines {
+        let body = strip_trailing_nl(&line).0;
+        let row = match parse_diff_stat(body) {
+            Some(r) => r,
+            None => continue,
+        };
+        let parsed = find_boundary(body);
+        if let Some(p) = &parsed {
+            if p.graph_col > state.graph_max {
+                state.graph_max = p.graph_col;
+            }
+        }
+        let target_col = if c.align_enabled {
+            state.graph_max + c.align_gap
+        } else {
+            parsed.as_ref().map(|p| p.graph_col).unwrap_or(0) + c.align_gap
+        };
+        emit_line(
+            &line,
+            parsed.as_ref(),
+            Some((&row, ml, mr)),
+            target_col,
+            state.changeid_max,
+            state.author_max,
+            out,
+        );
+    }
+}
+
+fn flush_trailing_diff_stat(state: &mut StreamState, sink: &mut OutputSink) -> io::Result<()> {
+    if state.pending_diff_stat.is_empty() {
+        return Ok(());
+    }
+    let c = cfg();
+    let mut out: Vec<u8> = Vec::new();
+    flush_pending_diff_stat(state, &mut out, c);
     if color_enabled() {
         sink_write(sink, &out)
     } else {

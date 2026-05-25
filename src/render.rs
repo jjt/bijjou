@@ -69,6 +69,7 @@ fn write_gap(
 pub fn emit_line(
     line: &[u8],
     parsed: Option<&Parsed>,
+    diff_stat: Option<(&DiffStatRow, usize, usize)>,
     target_col: usize,
     max_changeid_w: usize,
     max_author_w: usize,
@@ -79,6 +80,14 @@ pub fn emit_line(
 
     if c.hide_vertical_only_lines && parsed.is_none() && is_vertical_only_line(body) {
         return false;
+    }
+
+    if let Some((row, max_left, max_right)) = diff_stat {
+        emit_diff_stat_line(body, row, target_col, max_left, max_right, out);
+        if trailing_nl {
+            out.push(b'\n');
+        }
+        return true;
     }
 
     if let Some(s) = parse_status_summary(body) {
@@ -563,6 +572,330 @@ pub struct StatusSummary {
     pub status_section_end: usize,
     pub graph_col: usize,
     pub had_vertical: bool,
+}
+
+// A detail-row format `<digits><A|C|D|M|R><digits> <rest>`, after an optional
+// graph prefix of vertical edges and spaces. Used for `jj log` templates that
+// emit per-file diff stats: e.g. `│  1936515A0 path/to/file`.
+pub struct DiffStatRow {
+    pub graph_prefix_end: usize,
+    pub graph_col: usize,
+    pub had_vertical: bool,
+    pub left_start: usize,
+    pub left_digits_byte_end: usize,
+    pub letter_byte_idx: usize,
+    pub right_digits_byte_start: usize,
+    pub right_digits_byte_end: usize,
+    pub right_end: usize,
+    pub rest_start: usize,
+    pub letter_byte: u8,
+    pub left_formatted: String,
+    pub right_formatted: String,
+    pub left_width: usize,
+    pub right_width: usize,
+}
+
+// Compact-format a decimal number so it occupies at most 4 visible chars,
+// using `k`/`m`/`b`/`t` for thousands/millions/billions/trillions in place of
+// the decimal point. Examples: 12345 -> "12k3", 123456 -> "123k", 1234567 ->
+// "1m23". Numbers < 10_000 are emitted verbatim. Fractional rounding is
+// half-up; if the rounded result overflows the integer-digit budget we
+// escalate to the next unit (e.g. 999500 -> "1m00").
+pub fn format_compact(n: u64) -> String {
+    if n < 10_000 {
+        return n.to_string();
+    }
+    let candidates: [(u64, char); 4] = [
+        (1_000, 'k'),
+        (1_000_000, 'm'),
+        (1_000_000_000, 'b'),
+        (1_000_000_000_000, 't'),
+    ];
+    let (mut divisor, mut letter) = candidates[0];
+    for &(d, l) in &candidates {
+        divisor = d;
+        letter = l;
+        if n / d < 1000 {
+            break;
+        }
+    }
+    format_compact_with_unit(n, divisor, letter)
+}
+
+fn format_compact_with_unit(n: u64, divisor: u64, letter: char) -> String {
+    let int_part = n / divisor;
+    let int_digits = if int_part < 10 {
+        1
+    } else if int_part < 100 {
+        2
+    } else {
+        3
+    };
+    let frac_digits = 3 - int_digits;
+    let scale = 10u64.pow(frac_digits as u32);
+    let rem = n - int_part * divisor;
+    let frac = (rem * scale + divisor / 2) / divisor;
+
+    if frac == scale {
+        let new_int = int_part + 1;
+        if new_int >= 1000 {
+            let (next_d, next_l) = match letter {
+                'k' => (1_000_000u64, 'm'),
+                'm' => (1_000_000_000u64, 'b'),
+                'b' => (1_000_000_000_000u64, 't'),
+                _ => return format!("{}{}", new_int, letter),
+            };
+            return format_compact_with_unit(n, next_d, next_l);
+        }
+        let new_int_digits = if new_int < 10 {
+            1
+        } else if new_int < 100 {
+            2
+        } else {
+            3
+        };
+        let new_frac_digits = 3 - new_int_digits;
+        return if new_frac_digits == 0 {
+            format!("{}{}", new_int, letter)
+        } else {
+            format!(
+                "{}{}{:0width$}",
+                new_int,
+                letter,
+                0,
+                width = new_frac_digits
+            )
+        };
+    }
+
+    if frac_digits == 0 {
+        format!("{}{}", int_part, letter)
+    } else {
+        format!(
+            "{}{}{:0width$}",
+            int_part,
+            letter,
+            frac,
+            width = frac_digits
+        )
+    }
+}
+
+fn skip_all_csi(body: &[u8], mut i: usize) -> usize {
+    while let Some(after) = skip_csi(body, i) {
+        i = after;
+    }
+    i
+}
+
+pub fn parse_diff_stat(body: &[u8]) -> Option<DiffStatRow> {
+    let mut i = 0;
+    let mut vis_col: usize = 0;
+    let mut had_vertical = false;
+    let graph_prefix_end;
+    let graph_col;
+    loop {
+        let csi_start = i;
+        let csi_start_col = vis_col;
+        while let Some(after) = skip_csi(body, i) {
+            i = after;
+        }
+        if i >= body.len() {
+            return None;
+        }
+        let b = body[i];
+        if b == b' ' {
+            i += 1;
+            vis_col += 1;
+            continue;
+        }
+        let (cp, len) = decode_utf8(body, i);
+        if cp == VERTICAL_CP {
+            had_vertical = true;
+            i += len;
+            vis_col += 1;
+            continue;
+        }
+        if !b.is_ascii_digit() {
+            return None;
+        }
+        graph_prefix_end = csi_start;
+        graph_col = csi_start_col;
+        break;
+    }
+    if !had_vertical {
+        return None;
+    }
+    let left_start = i;
+    let mut left_val: u64 = 0;
+    let mut left_overflow = false;
+    let mut left_n = 0usize;
+    let mut left_digits_byte_end = i;
+    loop {
+        let j = skip_all_csi(body, i);
+        if j < body.len() && body[j].is_ascii_digit() {
+            let d = (body[j] - b'0') as u64;
+            left_val = match left_val.checked_mul(10).and_then(|v| v.checked_add(d)) {
+                Some(v) => v,
+                None => {
+                    left_overflow = true;
+                    left_val
+                }
+            };
+            i = j + 1;
+            left_digits_byte_end = i;
+            left_n += 1;
+        } else {
+            break;
+        }
+    }
+    if left_n == 0 {
+        return None;
+    }
+    let j = skip_all_csi(body, i);
+    if j >= body.len() || !matches!(body[j], b'M' | b'A' | b'D' | b'R' | b'C') {
+        return None;
+    }
+    let letter_byte = body[j];
+    let letter_byte_idx = j;
+    i = j + 1;
+    let right_digits_byte_start = skip_all_csi(body, i);
+    i = right_digits_byte_start;
+    let mut right_val: u64 = 0;
+    let mut right_overflow = false;
+    let mut right_n = 0usize;
+    let mut right_digits_byte_end = i;
+    loop {
+        let j = skip_all_csi(body, i);
+        if j < body.len() && body[j].is_ascii_digit() {
+            let d = (body[j] - b'0') as u64;
+            right_val = match right_val.checked_mul(10).and_then(|v| v.checked_add(d)) {
+                Some(v) => v,
+                None => {
+                    right_overflow = true;
+                    right_val
+                }
+            };
+            i = j + 1;
+            right_digits_byte_end = i;
+            right_n += 1;
+        } else {
+            break;
+        }
+    }
+    if right_n == 0 {
+        return None;
+    }
+    let j = skip_all_csi(body, i);
+    if j >= body.len() || body[j] != b' ' {
+        return None;
+    }
+    let right_end = j;
+    let rest_start = j + 1;
+    let left_formatted = if left_overflow {
+        "9999".to_string()
+    } else {
+        format_compact(left_val)
+    };
+    let right_formatted = if right_overflow {
+        "9999".to_string()
+    } else {
+        format_compact(right_val)
+    };
+    let left_width = left_formatted.chars().count();
+    let right_width = right_formatted.chars().count();
+    Some(DiffStatRow {
+        graph_prefix_end,
+        graph_col,
+        had_vertical,
+        left_start,
+        left_digits_byte_end,
+        letter_byte_idx,
+        right_digits_byte_start,
+        right_digits_byte_end,
+        right_end,
+        rest_start,
+        letter_byte,
+        left_formatted,
+        right_formatted,
+        left_width,
+        right_width,
+    })
+}
+
+// For each contiguous run of `Some(DiffStatRow)` entries, return the group's
+// (max left_width, max right_width). Non-diff-stat lines get None. Used to
+// align the letter column and the path column within each group independently,
+// so one commit's stats don't shift another's.
+pub fn compute_diff_stat_groups(
+    rows: &[Option<DiffStatRow>],
+) -> Vec<Option<(usize, usize)>> {
+    let mut widths: Vec<Option<(usize, usize)>> = vec![None; rows.len()];
+    let mut i = 0;
+    while i < rows.len() {
+        if rows[i].is_none() {
+            i += 1;
+            continue;
+        }
+        let start = i;
+        let mut max_left = 0usize;
+        let mut max_right = 0usize;
+        while i < rows.len() {
+            let Some(r) = rows[i].as_ref() else {
+                break;
+            };
+            max_left = max_left.max(r.left_width);
+            max_right = max_right.max(r.right_width);
+            i += 1;
+        }
+        for j in start..i {
+            widths[j] = Some((max_left, max_right));
+        }
+    }
+    widths
+}
+
+fn emit_diff_stat_line(
+    body: &[u8],
+    row: &DiffStatRow,
+    target_col: usize,
+    max_left: usize,
+    max_right: usize,
+    out: &mut Vec<u8>,
+) {
+    let mut trimmed_end = row.graph_prefix_end;
+    let mut trailing_spaces = 0;
+    while trimmed_end > 0 && body[trimmed_end - 1] == b' ' {
+        trailing_spaces += 1;
+        trimmed_end -= 1;
+    }
+    let kept_spaces = trailing_spaces.min(1);
+    let prefix_end = trimmed_end + kept_spaces;
+    emit_dim_graph(&body[..prefix_end], out);
+
+    let collapsed = trailing_spaces.saturating_sub(kept_spaces);
+
+    if row.had_vertical {
+        let pad = (target_col + max_left + collapsed)
+            .saturating_sub(row.graph_col + row.left_width);
+        for _ in 0..pad {
+            out.push(b' ');
+        }
+    }
+
+    out.extend_from_slice(&body[row.graph_prefix_end..row.left_start]);
+    out.extend_from_slice(row.left_formatted.as_bytes());
+    out.extend_from_slice(&body[row.left_digits_byte_end..row.letter_byte_idx]);
+    out.push(row.letter_byte);
+    out.extend_from_slice(&body[row.letter_byte_idx + 1..row.right_digits_byte_start]);
+    out.extend_from_slice(row.right_formatted.as_bytes());
+    out.extend_from_slice(&body[row.right_digits_byte_end..row.right_end]);
+    let right_pad = max_right.saturating_sub(row.right_width);
+    for _ in 0..right_pad {
+        out.push(b' ');
+    }
+    out.push(b' ');
+    out.extend_from_slice(&body[row.rest_start..]);
 }
 
 pub fn parse_status_summary(body: &[u8]) -> Option<StatusSummary> {
@@ -1205,6 +1538,131 @@ mod tests {
         assert!(parse_status_summary(b"").is_none());
         assert!(parse_status_summary(b"   ").is_none());
         assert!(parse_status_summary("│ │ │".as_bytes()).is_none());
+    }
+
+    #[test]
+    fn format_compact_user_examples() {
+        assert_eq!(format_compact(123), "123");
+        assert_eq!(format_compact(1234), "1234");
+        assert_eq!(format_compact(9999), "9999");
+        assert_eq!(format_compact(12345), "12k3");
+        assert_eq!(format_compact(12367), "12k4");
+        assert_eq!(format_compact(123456), "123k");
+        assert_eq!(format_compact(1234567), "1m23");
+        assert_eq!(format_compact(12345678), "12m3");
+        assert_eq!(format_compact(12388888), "12m4");
+        assert_eq!(format_compact(123456789), "123m");
+        assert_eq!(format_compact(1234567890), "1b23");
+        assert_eq!(format_compact(12345678901), "12b3");
+    }
+
+    #[test]
+    fn format_compact_overflow_escalates_unit() {
+        assert_eq!(format_compact(999_500), "1m00");
+        assert_eq!(format_compact(999_999_999), "1b00");
+    }
+
+    #[test]
+    fn format_compact_zero_padding() {
+        assert_eq!(format_compact(10_000), "10k0");
+        assert_eq!(format_compact(1_020_000), "1m02");
+    }
+
+    #[test]
+    fn diff_stat_formats_large_numbers() {
+        let row = parse_diff_stat("│  12345M123456 path".as_bytes()).expect("expected match");
+        assert_eq!(row.left_formatted, "12k3");
+        assert_eq!(row.right_formatted, "123k");
+        assert_eq!(row.left_width, 4);
+        assert_eq!(row.right_width, 4);
+    }
+
+    #[test]
+    fn diff_stat_basic_match() {
+        let row = parse_diff_stat("│  1M24523 B".as_bytes()).expect("expected match");
+        assert!(row.had_vertical);
+        assert_eq!(row.left_formatted, "1");
+        assert_eq!(row.right_formatted, "24k5");
+        assert_eq!(row.left_width, 1);
+        assert_eq!(row.right_width, 4);
+        assert_eq!(row.graph_col, 3);
+        assert_eq!(row.letter_byte, b'M');
+        assert_eq!(row.rest_start, row.right_end + 1);
+    }
+
+    #[test]
+    fn diff_stat_long_left_digits() {
+        let row = parse_diff_stat("│  1936515A0 long".as_bytes()).expect("expected match");
+        assert_eq!(row.left_formatted, "1m94");
+        assert_eq!(row.left_width, 4);
+        assert_eq!(row.right_formatted, "0");
+        assert_eq!(row.right_width, 1);
+    }
+
+    #[test]
+    fn diff_stat_rejects_no_left_digits() {
+        assert!(parse_diff_stat("│  M path".as_bytes()).is_none());
+    }
+
+    #[test]
+    fn diff_stat_rejects_no_right_digits() {
+        assert!(parse_diff_stat("│  1M path".as_bytes()).is_none());
+    }
+
+    #[test]
+    fn diff_stat_rejects_no_trailing_space() {
+        assert!(parse_diff_stat("│  1M2".as_bytes()).is_none());
+    }
+
+    #[test]
+    fn diff_stat_rejects_non_status_letter() {
+        assert!(parse_diff_stat("│  1X2 path".as_bytes()).is_none());
+    }
+
+    #[test]
+    fn diff_stat_requires_vertical_prefix() {
+        assert!(parse_diff_stat(b"1M2 path").is_none());
+    }
+
+    #[test]
+    fn diff_stat_rejects_node_prefix() {
+        assert!(parse_diff_stat("○  1M2 path".as_bytes()).is_none());
+    }
+
+    #[test]
+    fn diff_stat_multi_vertical_prefix() {
+        let row = parse_diff_stat("│ │  1M2 path".as_bytes()).expect("expected match");
+        assert!(row.had_vertical);
+        assert_eq!(row.graph_col, 5);
+    }
+
+    #[test]
+    fn diff_stat_csi_before_digits() {
+        let row =
+            parse_diff_stat(b"\xe2\x94\x82  \x1b[1m1M2 path").expect("expected match");
+        assert!(row.had_vertical);
+        assert_eq!(row.left_width, 1);
+        assert_eq!(row.right_width, 1);
+    }
+
+    #[test]
+    fn compute_diff_stat_groups_splits_on_gap() {
+        let mk = |body: &str| parse_diff_stat(body.as_bytes());
+        let rows = vec![
+            None,
+            mk("│  1M3 a"),
+            mk("│  1234A1 b"),
+            None,
+            mk("│  1D9 c"),
+            None,
+        ];
+        let widths = compute_diff_stat_groups(&rows);
+        assert_eq!(widths[0], None);
+        assert_eq!(widths[1], Some((4, 1)));
+        assert_eq!(widths[2], Some((4, 1)));
+        assert_eq!(widths[3], None);
+        assert_eq!(widths[4], Some((1, 1)));
+        assert_eq!(widths[5], None);
     }
 
     #[test]
