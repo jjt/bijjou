@@ -1,0 +1,8 @@
+@  {"change_id":"abcdef/1","commit_id":"7c0177","author":"TU","timestamp":"260509·1438","labels":"","working_copies":"default@","bookmarks":"","tags":"","description":"version B"}
+│ ○  {"change_id":"qzwtry","commit_id":"e62c4e","author":"TU","timestamp":"260509·1438","labels":"","working_copies":"ws2@","bookmarks":"","tags":"","description":"no description"}
+├─╯
+│ ○  {"change_id":"abcdef/0","commit_id":"2ae826","author":"TU","timestamp":"260509·1438","labels":"","working_copies":"","bookmarks":"","tags":"","description":"version C"}
+├─╯
+○  {"change_id":"wosytr","commit_id":"912122","author":"TU","timestamp":"260509·1436","labels":"","working_copies":"","bookmarks":"main","tags":"","description":"main: edit shared"}
+○  {"change_id":"xsnkqp","commit_id":"48a20a","author":"TU","timestamp":"260509·1436","labels":"","working_copies":"","bookmarks":"","tags":"","description":"base: shared file"}
+◆  {"root":"zzzzzz root() 000000"}

@@ -933,6 +933,30 @@ fn cli_color_never_strips_colors() {
 }
 
 #[test]
+fn dsl_oneline_streaming_monotonic() {
+    // Same fixture but through the streaming path with a small batch size.
+    // The first batch (2 rows) sets baseline widths; later batches widen
+    // the columns monotonically. Already-emitted rows can't backfill, so
+    // their alignment uses the widths known at flush time.
+    let input = read_fixture("dsl_oneline");
+    let output = run_bijjou_with_config(&input, "stream-batch-2-always");
+    insta::with_settings!({description => "DSL oneline rendered through the streaming path with batch-size=2; column widths grow monotonically per batch."}, {
+        insta::assert_snapshot!("dsl_oneline_stream", visualize(&output));
+    });
+}
+
+#[test]
+fn dsl_oneline_aligns_columns() {
+    snapshot(
+        "dsl_oneline",
+        "JSON commit rows piped through the elastic_tab DSL. Mixed graph widths \
+         and field widths exercise the right-pad-with-dashes alignment; a root \
+         commit (single `root` key) bypasses the template; an `├─╯` graph-only \
+         row passes through verbatim.",
+    );
+}
+
+#[test]
 fn config_alt_nodes_kitchen_sink() {
     snapshot_with_config(
         "combo_kitchen_sink",

@@ -1,10 +1,11 @@
 # Architecture
 
 `bijjou` = stdin/stdout filter. Post-process `jj log` output: rewrite edge
-glyphs and dim edges. Everything past the graph prefix passes through
-byte-for-byte. Non-graph lines pass through byte-for-byte. Node glyphs
-themselves are owned by jj's template (see `bijjou jj-config`) — bijjou
-recognizes them but never rewrites them.
+glyphs, dim edges, and re-render per-commit content from a JSON payload
+(emitted by `bijjou log-oneline-json`) through a small templating DSL.
+Lines that aren't JSON commit rows pass through byte-for-byte. Node
+glyphs themselves are owned by jj's template (see `bijjou jj-config`) —
+bijjou recognizes them but never rewrites them.
 
 ## Pipeline
 
@@ -26,8 +27,9 @@ stdin → activation check → (stream | buffered) → render → output sink �
 | `main.rs`    | Arg parse, config load chain, dispatch buffered path                                      |
 | `config.rs`  | Config struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
 | `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
-| `render.rs`  | Core. Parse line → `Parsed{graph_col, graph_end, content_start}`, recognize edges (box-drawing) and nodes (jj defaults + configured icons), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job via the `graph_node` label set by the template. Bytes past the graph prefix are copied verbatim. |
-| `stream.rs`  | Batched reader, per-line emit, `OutputSink` (stdout or piped pager)                     |
+| `render.rs`  | Parse line → `Parsed{graph_col, graph_end, content_start}`, recognize edges (box-drawing) and nodes (jj defaults + configured icons), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job via the `graph_node` label set by the template. |
+| `dsl.rs`     | Templating DSL + flat JSON parser. `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render: collect max visible widths, then emit each row with right-padded elastic-tab fields. |
+| `stream.rs`  | Batched reader, two-pass per batch with monotonic widening (column targets never shrink as new batches arrive), `OutputSink` (stdout or piped pager). |
 | `output.rs`  | Buffered path's terminal write / pager spawn                                              |
 
 ## Render flow per line
@@ -36,13 +38,24 @@ stdin → activation check → (stream | buffered) → render → output sink �
    if its codepoint is in the box-drawing range, is the elision char, is
    one of jj's default node chars (`@ ○ ◆ × ●`), or matches the first
    codepoint of any configured `[graph.nodes.chars]` icon.
-2. `emit_dim_graph` → rewrite edges via `map_graph_char`, paint them with
-   `colors.edge`, and strip jj's edge fg color. Space runs between graph
-   chars (once a node has appeared on the line) are filled with the
-   configured `layout.dash`, with `layout.dash-start` capping the run
-   when it abuts a node. Node bytes (and their surrounding ANSI) are
-   forwarded unchanged.
-3. Bytes from `graph_end` to end of line are copied byte-for-byte.
+2. `classify_row` → after the graph prefix, look for a `{...}` JSON
+   payload (jj's `log-oneline-json` template output). Lines that parse
+   become `RowKind::Commit{graph_col, fields}`; the special `{"root":...}`
+   shape becomes `RowKind::Root`; anything else stays `RowKind::Passthrough`.
+3. Pass 1 over the buffer (or batch): collect per-field max visible
+   widths (`collect_widths`) and the overall max `graph_col` across
+   commit rows.
+4. Pass 2 — `emit_classified`:
+   - Commit: `emit_dim_graph` for the graph prefix, right-pad to the
+     max graph column, then `render_row` walks the template: literal
+     text and `%{field}` lookups emit verbatim; `%{elastic_tab(field)}`
+     emits the field value followed by `max_width - this_width` fill
+     cells (one space if the gap is one cell; otherwise dashes with
+     `layout.dash-start` caps).
+   - Root: emit the graph prefix then the `root` value verbatim (no
+     template) so root commits don't perturb column widths.
+   - Passthrough: `emit_line` from `render.rs` handles the graph-only
+     and non-JSON cases (just the edge-dim rewrite + verbatim tail).
 
 ## Subcommands
 
@@ -77,7 +90,7 @@ Single global `OnceLock<Config>` via `cfg()`. Three merge layers:
 3. `apply_cli` → `--key__sub=val`.
 
 Keys: top-level (`activate`, `pager`, `activation-marker`),
-`[ui]`, `[layout]`, `[stream]`,
+`[ui]`, `[layout]`, `[template]`, `[stream]`,
 `[graph.nodes.chars]`, `[graph.edges.chars]`,
 `[colors]`. Full ref: `config.default.toml`.
 

@@ -28,15 +28,113 @@
 
 mod ansi;
 mod config;
+mod dsl;
 mod output;
 mod render;
 mod stream;
 
+use std::collections::HashMap;
 use std::io::{self, Read, Write};
 
+use crate::ansi::skip_csi;
 use crate::config::{cfg, Activate, Config, Pager};
+use crate::dsl::{collect_widths, parse_json_oneline, render_row, Template};
 use crate::output::write_output;
-use crate::render::{contains_bytes, emit_line, find_boundary, strip_trailing_nl};
+use crate::render::{contains_bytes, emit_dim_graph, emit_line, find_boundary, strip_trailing_nl};
+
+pub enum RowKind {
+    Commit {
+        graph_end: usize,
+        graph_col: usize,
+        fields: HashMap<String, Vec<u8>>,
+    },
+    Root {
+        graph_end: usize,
+        value: Vec<u8>,
+    },
+    Passthrough,
+}
+
+pub fn classify_row(body: &[u8]) -> RowKind {
+    let Some(p) = find_boundary(body) else {
+        return RowKind::Passthrough;
+    };
+    let payload = &body[p.content_start..];
+    let mut i = 0;
+    while i < payload.len() {
+        if let Some(after) = skip_csi(payload, i) {
+            i = after;
+            continue;
+        }
+        if matches!(payload[i], b' ' | b'\t') {
+            i += 1;
+            continue;
+        }
+        break;
+    }
+    if i >= payload.len() || payload[i] != b'{' {
+        return RowKind::Passthrough;
+    }
+    let Some(fields) = parse_json_oneline(&payload[i..]) else {
+        return RowKind::Passthrough;
+    };
+    if fields.len() == 1 && fields.contains_key("root") {
+        let value = fields.get("root").cloned().unwrap_or_default();
+        return RowKind::Root {
+            graph_end: p.graph_end,
+            value,
+        };
+    }
+    RowKind::Commit {
+        graph_end: p.graph_end,
+        graph_col: p.graph_col,
+        fields,
+    }
+}
+
+pub fn emit_classified(
+    line: &[u8],
+    row: &RowKind,
+    template: &Template,
+    widths: &HashMap<String, usize>,
+    max_graph_col: usize,
+    out: &mut Vec<u8>,
+) {
+    let (body, trailing_nl) = strip_trailing_nl(line);
+    match row {
+        RowKind::Commit {
+            graph_end,
+            graph_col,
+            fields,
+        } => {
+            emit_dim_graph(&body[..*graph_end], out);
+            // Right-pad graph to the widest column across commit rows so
+            // every row's template content starts at the same offset.
+            // Pad < 2 cells stays as plain spaces; >= 2 emits a dashed
+            // run with cap glyphs (matches elastic_tab fill style).
+            crate::dsl::emit_pad_public(
+                max_graph_col.saturating_sub(*graph_col),
+                out,
+            );
+            render_row(template, fields, max_graph_col, widths, out);
+        }
+        RowKind::Root { graph_end, value } => {
+            emit_dim_graph(&body[..*graph_end], out);
+            out.extend_from_slice(b"  ");
+            out.extend_from_slice(value);
+        }
+        RowKind::Passthrough => {
+            let parsed = find_boundary(body);
+            // emit_line owns trailing newline handling for the passthrough
+            // branch, so return early without our own \n append.
+            emit_line(line, parsed.as_ref(), out);
+            return;
+        }
+    }
+    if trailing_nl {
+        out.push(b'\n');
+    }
+}
 
 const HELP: &str = "\
 bijjou - jj log post-processor
@@ -107,6 +205,9 @@ KEYS
   [layout]
     dash                                    string
     dash-start                              string
+
+  [template]
+    oneline                                 DSL string (see config.default.toml)
 
   [stream]
     enabled                                 bool (default true)
@@ -397,12 +498,32 @@ fn run() -> io::Result<()> {
         }
     }
 
+    let template = Template::parse(&c.template_oneline).map_err(|e| {
+        io::Error::new(io::ErrorKind::InvalidData, format!("template.oneline: {}", e))
+    })?;
     let lines = split_lines(&input);
-    let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 8);
-    for line in &lines {
-        let body = strip_trailing_nl(line).0;
-        let parsed = find_boundary(body);
-        emit_line(line, parsed.as_ref(), &mut out);
+    let rows: Vec<RowKind> = lines
+        .iter()
+        .map(|l| classify_row(strip_trailing_nl(l).0))
+        .collect();
+
+    let mut widths: HashMap<String, usize> = HashMap::new();
+    let mut max_graph_col = 0usize;
+    for row in &rows {
+        if let RowKind::Commit {
+            graph_col, fields, ..
+        } = row
+        {
+            collect_widths(&template, fields, *graph_col, &mut widths);
+            if *graph_col > max_graph_col {
+                max_graph_col = *graph_col;
+            }
+        }
+    }
+
+    let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 16);
+    for (line, row) in lines.iter().zip(rows.iter()) {
+        emit_classified(line, row, &template, &widths, max_graph_col, &mut out);
     }
     write_output(&out, lines.len())
 }

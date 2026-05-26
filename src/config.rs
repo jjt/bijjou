@@ -29,6 +29,7 @@ pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
 pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
+pub const DEFAULT_TEMPLATE_ONELINE: &str = " %{elastic_tab(change_id)}\n%{elastic_tab(commit_id)}\n%{elastic_tab(author)}\n%{elastic_tab(timestamp)}\n%{working_copies}\n%{bookmarks}\n%{tags}\n%{description}";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BatchSize {
@@ -139,6 +140,7 @@ pub struct Config {
     pub stream_enabled: bool,
     pub stream_batch_size: BatchSize,
     pub debug_force_screen_height: Option<usize>,
+    pub template_oneline: String,
 }
 
 impl Default for Config {
@@ -176,6 +178,7 @@ impl Default for Config {
             stream_enabled: true,
             stream_batch_size: BatchSize::default(),
             debug_force_screen_height: None,
+            template_oneline: DEFAULT_TEMPLATE_ONELINE.to_string(),
         }
     }
 }
@@ -421,6 +424,7 @@ impl Config {
             "stream.batch-size" => {
                 self.stream_batch_size = parse_batch_size(value).map_err(mkerr)?;
             }
+            "template.oneline" => self.template_oneline = value.to_string(),
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
             "debug.force-screen-height" => {

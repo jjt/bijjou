@@ -104,18 +104,43 @@
 
 [layout]
 # `dash` — glyph repeated to fill internal space runs between graph
-# chars on a row once that row's node has appeared. Spaces to the left
-# of the node, or before any graph char on edge-only rows, are left
-# alone.
+# chars on a row once that row's node has appeared, and to fill
+# elastic_tab pads of two or more cells in the content template.
 #
-# `dash-start` — terminal glyph that replaces the first dash of an
-# internal run when it sits immediately to the right of a node char,
-# producing a half-line cap. Set to "" to disable.
+# `dash-start` — terminal cap glyph that replaces the first and last
+# cell of a multi-cell dash run, producing half-line caps (e.g. `╶─╴`).
+# Set to "" to disable.
 #
 # Defaults: dash = "─", dash-start = "╶"
 #
 # dash       = "─"
 # dash-start = "╶"
+
+[template]
+# DSL string controlling per-commit content rendering. `%{name}` looks
+# up a JSON field from the jj template output; `%{func(arg)}` is a
+# function call. The only function currently supported is
+# `elastic_tab(field)`, which renders the field value followed by
+# enough fill cells to reach the column-wide max for that field across
+# rows (so the next column's left edge aligns).
+#
+# Real newlines inside this string collapse to single spaces. To embed
+# a literal newline in the output, write `\n` (the two-char escape).
+#
+# Default: the template below — a leading space, then change_id,
+# commit_id, author, timestamp (each elastic), then working_copies,
+# bookmarks, tags, description (each verbatim), separated by spaces.
+#
+# oneline = """
+# %{elastic_tab(change_id)}
+# %{elastic_tab(commit_id)}
+# %{elastic_tab(author)}
+# %{elastic_tab(timestamp)}
+# %{working_copies}
+# %{bookmarks}
+# %{tags}
+# %{description}
+# """
 
 [colors]
 # `dash-filler` / `edge`: integer 0-255 (256-color palette) or "#rrggbb"

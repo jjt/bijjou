@@ -1,14 +1,22 @@
+use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 
 use crate::ansi::strip_sgr;
 use crate::config::{cfg, color_enabled, Activate, BatchSize, Pager};
-use crate::render::{contains_bytes, emit_line, find_boundary, strip_trailing_nl};
+use crate::dsl::{collect_widths, Template};
+use crate::{classify_row, emit_classified, RowKind};
+use crate::render::{contains_bytes, strip_trailing_nl};
 
 pub fn run() -> io::Result<()> {
     let c = cfg();
     let (first_size, rest_size) = resolve_batch_sizes(&c.stream_batch_size);
     let mut sink = OutputSink::open();
     let mut reader = BufReader::new(io::stdin().lock());
+    let template = Template::parse(&c.template_oneline).map_err(|e| {
+        io::Error::new(io::ErrorKind::InvalidData, format!("template.oneline: {}", e))
+    })?;
+    let mut widths: HashMap<String, usize> = HashMap::new();
+    let mut max_graph_col: usize = 0;
 
     let first = read_batch(&mut reader, first_size)?;
     if first.is_empty() {
@@ -32,13 +40,13 @@ pub fn run() -> io::Result<()> {
         }
     }
 
-    process_batch(&first, &mut sink)?;
+    process_batch(&first, &template, &mut widths, &mut max_graph_col, &mut sink)?;
     loop {
         let batch = read_batch(&mut reader, rest_size)?;
         if batch.is_empty() {
             break;
         }
-        process_batch(&batch, &mut sink)?;
+        process_batch(&batch, &template, &mut widths, &mut max_graph_col, &mut sink)?;
     }
     sink.close()
 }
@@ -124,12 +132,35 @@ fn read_batch<R: BufRead>(reader: &mut R, batch_size: usize) -> io::Result<Vec<V
     Ok(out)
 }
 
-fn process_batch(batch: &[Vec<u8>], sink: &mut OutputSink) -> io::Result<()> {
-    let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 8).sum());
-    for line in batch.iter() {
-        let body = strip_trailing_nl(line).0;
-        let parsed = find_boundary(body);
-        emit_line(line, parsed.as_ref(), &mut out);
+fn process_batch(
+    batch: &[Vec<u8>],
+    template: &Template,
+    widths: &mut HashMap<String, usize>,
+    max_graph_col: &mut usize,
+    sink: &mut OutputSink,
+) -> io::Result<()> {
+    let rows: Vec<RowKind> = batch
+        .iter()
+        .map(|l| classify_row(strip_trailing_nl(l).0))
+        .collect();
+
+    // Monotonic widen: widths only grow across batches so already-emitted
+    // rows above remain valid (column targets never shrink).
+    for row in &rows {
+        if let RowKind::Commit {
+            graph_col, fields, ..
+        } = row
+        {
+            collect_widths(template, fields, *graph_col, widths);
+            if *graph_col > *max_graph_col {
+                *max_graph_col = *graph_col;
+            }
+        }
+    }
+
+    let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 16).sum());
+    for (line, row) in batch.iter().zip(rows.iter()) {
+        emit_classified(line, row, template, widths, *max_graph_col, &mut out);
     }
     if color_enabled() {
         sink_write(sink, &out)

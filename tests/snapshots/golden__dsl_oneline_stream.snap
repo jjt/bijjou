@@ -1,0 +1,13 @@
+---
+source: tests/golden.rs
+description: DSL oneline rendered through the streaming path with batch-size=2; column widths grow monotonically per batch.
+expression: visualize(&output)
+---
+@\e[38;5;8m╶╴\e[39m abcdef/1 7c0177 TU 260509·1438 default@   version B
+\e[38;5;8m𜸩\e[39m ○ qzwtry\e[38;5;8m╶╴\e[39m e62c4e TU 260509·1438 ws2@   no description
+\e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
+\e[38;5;8m𜸩\e[39m ○ abcdef/0 2ae826 TU 260509·1438    version C
+\e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
+○\e[38;5;8m╶╴\e[39m wosytr\e[38;5;8m╶╴\e[39m 912122 TU 260509·1436  main  main: edit shared
+○\e[38;5;8m╶╴\e[39m xsnkqp\e[38;5;8m╶╴\e[39m 48a20a TU 260509·1436    base: shared file
+◆  zzzzzz root() 000000
