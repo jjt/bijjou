@@ -127,11 +127,11 @@
 # Real newlines inside this string collapse to single spaces. To embed
 # a literal newline in the output, write `\n` (the two-char escape).
 #
-# Default: the template below — a leading space, then change_id,
-# commit_id, author, timestamp (each elastic), then working_copies,
-# bookmarks, tags, description (each verbatim), separated by spaces.
+# Default: change_id, commit_id, author, timestamp (each elastic),
+# then working_copies, bookmarks, tags, description (each verbatim),
+# separated by spaces.
 #
-# oneline = """
+# oneline = '''
 # %{elastic_tab(change_id)}
 # %{elastic_tab(commit_id)}
 # %{elastic_tab(author)}
@@ -140,7 +140,7 @@
 # %{bookmarks}
 # %{tags}
 # %{description}
-# """
+# '''
 
 [colors]
 # `dash-filler` / `edge`: integer 0-255 (256-color palette) or "#rrggbb"

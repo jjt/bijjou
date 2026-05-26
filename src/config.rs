@@ -29,7 +29,7 @@ pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
 pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
-pub const DEFAULT_TEMPLATE_ONELINE: &str = " %{elastic_tab(change_id)}\n%{elastic_tab(commit_id)}\n%{elastic_tab(author)}\n%{elastic_tab(timestamp)}\n%{working_copies}\n%{bookmarks}\n%{tags}\n%{description}";
+pub const DEFAULT_TEMPLATE_ONELINE: &str = "%{elastic_tab(change_id)}\n%{elastic_tab(commit_id)}\n%{elastic_tab(author)}\n%{elastic_tab(timestamp)}\n%{working_copies}\n%{bookmarks}\n%{tags}\n%{description}";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BatchSize {
