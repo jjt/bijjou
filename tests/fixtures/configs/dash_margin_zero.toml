@@ -1,7 +1,0 @@
-activate = "always"
-
-[layout]
-dash-margin = 0
-
-[stream]
-enabled = false

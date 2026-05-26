@@ -1,10 +1,10 @@
 # Architecture
 
 `bijjou` = stdin/stdout filter. Post-process `jj log` output: rewrite edge
-glyphs, dim edges, align content column, optional dash filler. Non-graph
-lines pass through byte-for-byte. Node glyphs themselves are owned by jj's
-template (see `bijjou jj-config`) — bijjou recognizes them but never
-rewrites them.
+glyphs and dim edges. Everything past the graph prefix passes through
+byte-for-byte. Non-graph lines pass through byte-for-byte. Node glyphs
+themselves are owned by jj's template (see `bijjou jj-config`) — bijjou
+recognizes them but never rewrites them.
 
 ## Pipeline
 
@@ -15,11 +15,9 @@ stdin → activation check → (stream | buffered) → render → output sink �
 - **Activate gate** (`Activate::Never|Auto|Always`): `Never` = raw copy.
   `Auto` = look for `activation-marker` in input, else passthrough.
 - **Stream vs buffered**: `[stream].enabled` switches paths.
-  - Stream (`stream.rs`): read in batches, widen graph width monotonically
-    per line, flush as input arrives. Cannot backfill.
-  - Buffered (`main.rs::run`): slurp stdin, compute global max graph col +
-    max changeid/author width, emit one pass. Aligns every line to widest
-    column at cost of EOF wait.
+  - Stream (`stream.rs`): read in batches, emit per line, flush as input
+    arrives.
+  - Buffered (`main.rs::run`): slurp stdin, emit one pass.
 
 ## Modules
 
@@ -28,8 +26,8 @@ stdin → activation check → (stream | buffered) → render → output sink �
 | `main.rs`    | Arg parse, config load chain, dispatch buffered path                                      |
 | `config.rs`  | Config struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
 | `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
-| `render.rs`  | Core. Parse line → `Parsed{graph_col, content_start}`, recognize edges (box-drawing) and nodes (jj defaults + configured icons), emit dimmed edges + dash filler + status icons; nodes pass through verbatim |
-| `stream.rs`  | Batched reader, per-line widen, `OutputSink` (stdout or piped pager)                     |
+| `render.rs`  | Core. Parse line → `Parsed{graph_col, graph_end, content_start}`, recognize edges (box-drawing) and nodes (jj defaults + configured icons), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job via the `graph_node` label set by the template. Bytes past the graph prefix are copied verbatim. |
+| `stream.rs`  | Batched reader, per-line emit, `OutputSink` (stdout or piped pager)                     |
 | `output.rs`  | Buffered path's terminal write / pager spawn                                              |
 
 ## Render flow per line
@@ -38,16 +36,13 @@ stdin → activation check → (stream | buffered) → render → output sink �
    if its codepoint is in the box-drawing range, is the elision char, is
    one of jj's default node chars (`@ ○ ◆ × ●`), or matches the first
    codepoint of any configured `[graph.nodes.chars]` icon.
-2. `parse_content_columns` → extract changeid + author widths for padding.
-3. `emit_dim_graph` → rewrite edges via `map_graph_char`, paint them with
-   `colors.edge`, and strip jj's edge fg color. Strips `(empty)` /
-   `(divergent)` / `(conflict)` markers in passing. Node bytes (and their
-   surrounding ANSI) are forwarded unchanged — node coloring is jj's job
-   via the `graph_node` label set by the template.
-4. `write_gap` → pad spaces (+ optional dash run, optional arrow) up to
-   `max_graph + layout.gap`.
-5. `write_padded_content` → align changeid/author columns. Status-summary
-   lines get Nerd Font M/A/D/R/C icons + optional path color.
+2. `emit_dim_graph` → rewrite edges via `map_graph_char`, paint them with
+   `colors.edge`, and strip jj's edge fg color. Space runs between graph
+   chars (once a node has appeared on the line) are filled with the
+   configured `layout.dash`, with `layout.dash-start` capping the run
+   when it abuts a node. Node bytes (and their surrounding ANSI) are
+   forwarded unchanged.
+3. Bytes from `graph_end` to end of line are copied byte-for-byte.
 
 ## Subcommands
 
@@ -64,6 +59,9 @@ stdin → activation check → (stream | buffered) → render → output sink �
     `jj log $(bijjou jj-graph-node-config) | bijjou`
   No shell quoting, no `eval` — this avoids the failure mode where
   shell quotes embedded in command output reach jj literally.
+- `bijjou log-oneline-json` — emit a jj log template expression that
+  produces one JSON object per commit. Intended for use with the
+  forthcoming content-DSL renderer.
 
 `[graph.nodes.chars].fallback` is a config-only key: not emitted by the
 default template, but recognized as a node icon in input so a custom
@@ -79,8 +77,8 @@ Single global `OnceLock<Config>` via `cfg()`. Three merge layers:
 3. `apply_cli` → `--key__sub=val`.
 
 Keys: top-level (`activate`, `pager`, `activation-marker`),
-`[ui]`, `[layout]`, `[filter]`, `[details]`, `[stream]`,
-`[commits.markers]`, `[graph.nodes.chars]`, `[graph.edges.chars]`,
+`[ui]`, `[layout]`, `[stream]`,
+`[graph.nodes.chars]`, `[graph.edges.chars]`,
 `[colors]`. Full ref: `config.default.toml`.
 
 ## Output

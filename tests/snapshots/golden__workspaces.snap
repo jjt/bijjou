@@ -3,13 +3,13 @@ source: tests/golden.rs
 description: "Multi-workspace log: multiple @ markers across workspaces."
 expression: visualize(&output)
 ---
-\e[1m\e[38;5;2m@\e[0m\e[38;5;8m╶──╴\e[39m\e[1m\e[38;5;13mm\e[38;5;8mpzqvy\e[38;5;13m/1\e[39m \e[38;5;12m7\e[38;5;8mc0177\e[39m \e[38;5;3mTU\e[39m \e[38;5;14m260509·1438\e[39m \e[38;5;13m𝘿\e[39m \e[38;5;10mdefault@\e[39m version B\e[0m
-\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶╴\e[39m\e[1m\e[38;5;5mq\e[0m\e[38;5;8mzwtry\e[39m\e[38;5;8m╶─╴\e[39m\e[1m\e[38;5;4me\e[0m\e[38;5;8m62c4e\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;2mws2@\e[39m \e[38;5;2m\e[3m\e[38;5;8mno description\e[23m\e[39m
+\e[1m\e[38;5;2m@\e[0m  \e[1m\e[38;5;13mm\e[38;5;8mpzqvy\e[38;5;13m/1\e[39m \e[38;5;12m7\e[38;5;8mc0177\e[39m \e[38;5;3mTU\e[39m \e[38;5;14m260509·1438\e[39m \e[38;5;13m𝘿\e[39m \e[38;5;10mdefault@\e[39m version B\e[0m
+\e[38;5;8m𜸩\e[39m ○  \e[1m\e[38;5;5mq\e[0m\e[38;5;8mzwtry\e[39m \e[1m\e[38;5;4me\e[0m\e[38;5;8m62c4e\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;2mws2@\e[39m \e[38;5;2m(empty)\e[3m\e[38;5;8mno description\e[23m\e[39m
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
-\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶╴\e[39m\e[1m\e[38;5;5mm\e[0m\e[38;5;8mpzqvy\e[1m\e[38;5;5m/0\e[0m \e[1m\e[38;5;4m2\e[0m\e[38;5;8mae826\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5m𝘿\e[39m version C
+\e[38;5;8m𜸩\e[39m ○  \e[1m\e[38;5;5mm\e[0m\e[38;5;8mpzqvy\e[1m\e[38;5;5m/0\e[0m \e[1m\e[38;5;4m2\e[0m\e[38;5;8mae826\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1438\e[39m \e[38;5;5m𝘿\e[39m version C
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
-\e[38;5;8m𜸩\e[39m \e[1m\e[38;5;1m×\e[0m\e[38;5;8m╶╴\e[39m\e[1m\e[38;5;5mxsp\e[0m\e[38;5;8mpxl\e[39m\e[38;5;8m╶─╴\e[39m\e[1m\e[38;5;4ma\e[0m\e[38;5;8m22667\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m \e[38;5;5mside\e[39m side conflict edit
+\e[38;5;8m𜸩\e[39m \e[1m\e[38;5;1m×\e[0m  \e[1m\e[38;5;5mxsp\e[0m\e[38;5;8mpxl\e[39m \e[1m\e[38;5;4ma\e[0m\e[38;5;8m22667\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m \e[38;5;5mside\e[39m side conflict edit
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
-○\e[38;5;8m╶──╴\e[39m\e[1m\e[38;5;5mw\e[0m\e[38;5;8mosytr\e[39m\e[38;5;8m╶─╴\e[39m\e[1m\e[38;5;4m9\e[0m\e[38;5;8m12122\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m \e[38;5;5mmain\e[39m main: edit shared
-○\e[38;5;8m╶──╴\e[39m\e[1m\e[38;5;5mxsn\e[0m\e[38;5;8mkqp\e[39m\e[38;5;8m╶─╴\e[39m\e[1m\e[38;5;4m4\e[0m\e[38;5;8m8a20a\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m base: shared file
-\e[0m\e[39m◆\e[0m\e[38;5;8m╶──╴\e[39m\e[1m\e[38;5;5mz\e[0m\e[38;5;8mzzzzz\e[39m\e[38;5;8m╶─╴\e[39m\e[38;5;2mroot()\e[39m \e[1m\e[38;5;4m0\e[0m\e[38;5;8m00000\e[39m
+○  \e[1m\e[38;5;5mw\e[0m\e[38;5;8mosytr\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m12122\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m \e[38;5;5mmain\e[39m main: edit shared
+○  \e[1m\e[38;5;5mxsn\e[0m\e[38;5;8mkqp\e[39m \e[1m\e[38;5;4m4\e[0m\e[38;5;8m8a20a\e[39m \e[38;5;3mTU\e[39m \e[38;5;6m260509·1436\e[39m base: shared file
+\e[0m\e[39m◆\e[0m  \e[1m\e[38;5;5mz\e[0m\e[38;5;8mzzzzz\e[39m \e[38;5;2mroot()\e[39m \e[1m\e[38;5;4m0\e[0m\e[38;5;8m00000\e[39m

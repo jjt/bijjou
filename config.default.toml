@@ -29,11 +29,11 @@
 # activate = "always"
 
 # Opt-in marker. In `auto` mode, bijjou processes input only if this byte
-# sequence appears at least once anywhere in stdin. All occurrences are
-# stripped from output. When absent (and mode is auto), stdin is passed
-# through byte-for-byte. Must be a non-empty string of printable characters;
-# empty or control-char markers are a configuration error. To always process
-# regardless of input, set `activate = "always"` instead.
+# sequence appears at least once anywhere in stdin. When absent (and mode
+# is auto), stdin is passed through byte-for-byte. Must be a non-empty
+# string of printable characters; empty or control-char markers are a
+# configuration error. To always process regardless of input, set
+# `activate = "always"` instead.
 #
 # Default: "BIJJOU_ACTIVATE"
 # Pair with a jj template that emits the marker — see
@@ -62,17 +62,6 @@
 #
 # color = "auto"
 
-[commits.markers]
-# Sentinel strings bijjou looks for to detect commit state. The defaults
-# match jj's native log annotations — no jj template config required.
-# Both are stripped from output. Set either to "" to disable detection of
-# that state.
-#
-# Defaults: empty = "(empty)", divergent = "(divergent)"
-#
-# empty     = "(empty)"
-# divergent = "(divergent)"
-
 [graph.nodes.chars]
 # Icons substituted into the jj template emitted by
 # `bijjou jj-config` / `bijjou jj-graph-node-config`. Bijjou itself no
@@ -88,13 +77,13 @@
 #
 # working-copy       = "■"
 # mutable            = "●"
-# immutable          = ""
-# conflict           = ""
+# immutable          = ""
+# conflict           = ""
 # hidden             = "🮀"
 # fallback           = "●"
-# empty              = ""
+# empty              = ""
 # working-copy-empty = "□"
-# empty-immutable    = ""
+# empty-immutable    = ""
 
 [graph.edges.chars]
 # Single-cell replacements for jj's box-drawing graph chars. Defaults are
@@ -113,66 +102,26 @@
 # cross        = "𜸺"
 # elision      = "𜹀"
 
-[filter]
-# Drop lines whose visible content is nothing but vertical graph edges (│) —
-# the filler rows jj prints between commit nodes. Spaces, CSI escapes, and
-# bijjou's own markers are ignored when judging "vertical-only".
-#
-# Default: false
-#
-# hide-vertical-only-lines = true
-
 [layout]
-# Controls horizontal layout between the graph column and commit content.
+# `dash` — glyph repeated to fill internal space runs between graph
+# chars on a row once that row's node has appeared. Spaces to the left
+# of the node, or before any graph char on edge-only rows, are left
+# alone.
 #
-# `align` — when true (default), every line's content column is shifted to
-# the right of the widest graph column seen in the input, so all change ids
-# line up vertically. Narrow rows get dash filler to bridge the gap. When
-# false, each line uses only its own graph width plus `gap`, so content
-# starts immediately after its local graph column with no filler.
+# `dash-start` — terminal glyph that replaces the first dash of an
+# internal run when it sits immediately to the right of a node char,
+# producing a half-line cap. Set to "" to disable.
 #
-# `gap` — number of spaces between the rightmost graph column and the start
-# of commit content. 0 lets content touch the graph node.
+# Defaults: dash = "─", dash-start = "╶"
 #
-# `dash` — glyph repeated to fill the gap between the graph and commit
-# content, and to fill every internal space run between graph chars on a
-# row once that row's node has appeared. Spaces to the left of the node,
-# or before any graph char on edge-only rows, are left alone.
-#
-# `dash-arrow` — if non-empty, replaces the rightmost dash in the
-# trailing run with this glyph to point at the content; leave empty for
-# a plain dash run.
-#
-# `dash-margin` — number of plain spaces kept between the trailing dash
-# run and the adjacent graph char or commit content. A trailing gap is
-# dash-filled only when it is at least `2 * dash-margin + 1` cells wide.
-# Internal runs between graph chars always fill one dash per space and
-# ignore this margin.
-#
-# `dash-start` / `dash-end` — terminal glyphs that replace the first and
-# last dash of a run when `dash-margin = 0`, so the fill butts up against
-# the graph node and commit info with a half-line cap. `dash-start`
-# applies when the run sits immediately to the right of a node char;
-# `dash-end` applies to the last dash before the commit content. Set
-# either to an empty string to disable that cap. `dash-arrow` takes
-# precedence over `dash-end`.
-#
-# Defaults: align = true, gap = 2, dash = "─", dash-arrow = "" (no arrow),
-# dash-margin = 0, dash-start = "╶", dash-end = "╴"
-#
-# align       = true
-# gap         = 2
-# dash        = "─"
-# dash-arrow  = "▶"
-# dash-margin = 0
-# dash-start  = "╶"
-# dash-end    = "╴"
+# dash       = "─"
+# dash-start = "╶"
 
 [colors]
 # `dash-filler` / `edge`: integer 0-255 (256-color palette) or "#rrggbb"
 #   hex string. Defaults: dash-filler = 8 (bright black), edge = 8 (bright black).
 #
-# dash-filler — color of the dash filler between graph and content.
+# dash-filler — color of the internal dash filler between graph chars.
 # edge        — color of graph edges (lines, corners, tees, crosses).
 #
 # Node glyph color is left alone — bijjou no longer emits any
@@ -183,47 +132,16 @@
 # dash-filler  = 8
 # edge         = 8
 
-[details]
-# Controls how bijjou renders detail rows that follow a commit.
-#
-# `align-offset` — extra columns past the change-id column where the
-# detail content should land, for lines whose graph prefix has any
-# vertical edges. With offset = 0 (default), the content sits at the
-# change-id column; offset = 1 shifts it one column further right,
-# and so on. Lines with no graph prefix are not padded.
-#
-# `diffstat-separator` — the literal character (or string) sitting
-# between the added/removed digit pairs in diff-stat detail rows of
-# the form `<digits><sep><digits> <A|C|D|M|R> <path>`. Must match
-# whatever the jj template emits between the two counts. Default is
-# the middle dot `·`; common alternatives are `|` or `│`.
-#
-# Defaults: align-offset = 0, diffstat-separator = "·"
-#
-# align-offset        = 0
-# diffstat-separator  = "·"
-
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of
-# `batch-size` lines. The graph-column width is tracked across the whole
-# stream and grows monotonically the moment a wider graph column appears
-# (not at the batch boundary), so column alignment never shifts backwards.
-# `batch-size` controls flush cadence: smaller batches give lower latency to
-# first paint, larger batches reduce syscalls. When stdout is a terminal and
-# $PAGER is set, batches are flushed into the pager (the pager must tolerate
-# partial input — modern `less` does).
+# `batch-size` lines. `batch-size` controls flush cadence: smaller batches
+# give lower latency to first paint, larger batches reduce syscalls. When
+# stdout is a terminal and $PAGER is set, batches are flushed into the
+# pager (the pager must tolerate partial input — modern `less` does).
 #
-# Note: streaming and non-streaming intentionally differ here. Non-streaming
-# has the whole input up front and aligns every line to the global max
-# graph_col, so early narrow rows get dash filler that extends to the widest
-# point of the log. Streaming pre-scans the first batch so every line in it
-# shares the batch-wide max; subsequent batches widen monotonically per-line
-# as wider rows arrive (and never shrink). Same input → different output
-# between the two modes for any log that fans out after the first batch.
-#
-# When `activate = "auto"` and streaming is on, the activation-marker scan is
-# limited to the first batch. If the marker isn't there, the rest of stdin is
-# passed through byte-for-byte without further processing. Set
+# When `activate = "auto"` and streaming is on, the activation-marker scan
+# is limited to the first batch. If the marker isn't there, the rest of
+# stdin is passed through byte-for-byte without further processing. Set
 # `activate = "always"` to skip the scan entirely.
 #
 # `batch-size` accepts a positive integer or the string "half-pager", which

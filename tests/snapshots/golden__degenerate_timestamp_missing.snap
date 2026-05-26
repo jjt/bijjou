@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: Header row without timestamp — no panic.
 expression: visualize(&output)
 ---
-@\e[38;5;8m╶╴\e[39mabcde 12345 ME desc-without-timestamp
+@  abcde 12345 ME desc-without-timestamp

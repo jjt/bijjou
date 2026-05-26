@@ -1,15 +1,5 @@
 pub const FG_RESET: &[u8] = b"\x1b[39m";
 
-// Default sentinel-marker byte sequences. Production code reads markers from
-// the live Config (see config::cfg().empty_marker / divergent_marker), so
-// these constants exist only to keep test fixtures legible.
-#[cfg(test)]
-pub const EMPTY_MARKER_BYTES: &[u8] = b"(empty)";
-#[cfg(test)]
-pub const DIVERGENT_MARKER_BYTES: &[u8] = b"(divergent)";
-#[cfg(test)]
-pub const CONFLICT_MARKER_BYTES: &[u8] = b"(conflict)";
-
 pub fn skip_csi(bytes: &[u8], i: usize) -> Option<usize> {
     if i + 1 >= bytes.len() || bytes[i] != 0x1b || bytes[i + 1] != b'[' {
         return None;

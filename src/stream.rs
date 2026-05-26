@@ -2,19 +2,15 @@ use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 
 use crate::ansi::strip_sgr;
 use crate::config::{cfg, color_enabled, Activate, BatchSize, Pager};
-use crate::render::{
-    contains_bytes, diff_stat_status_rank, emit_line, find_boundary, is_vertical_only_line,
-    parse_content_columns, parse_diff_stat, strip_trailing_nl,
-};
+use crate::render::{contains_bytes, emit_line, find_boundary, strip_trailing_nl};
 
 pub fn run() -> io::Result<()> {
     let c = cfg();
     let (first_size, rest_size) = resolve_batch_sizes(&c.stream_batch_size);
-    let count_visible = matches!(c.stream_batch_size, BatchSize::HalfPager);
     let mut sink = OutputSink::open();
     let mut reader = BufReader::new(io::stdin().lock());
 
-    let first = read_batch_with_mode(&mut reader, first_size, count_visible)?;
+    let first = read_batch(&mut reader, first_size)?;
     if first.is_empty() {
         return sink.close();
     }
@@ -36,80 +32,15 @@ pub fn run() -> io::Result<()> {
         }
     }
 
-    let mut state = StreamState::default();
-    let per_page = matches!(c.stream_batch_size, BatchSize::HalfPager);
-
-    // Pre-scan the first batch so its target_col is set from the whole batch's
-    // widest graph_col rather than growing per-line. Subsequent batches keep
-    // bumping monotonically per-line — only the first batch is uniform.
-    scan_widths(&first, &mut state);
-    process_batch(&first, &mut state, &mut sink)?;
-
+    process_batch(&first, &mut sink)?;
     loop {
-        let batch = read_batch_with_mode(&mut reader, rest_size, count_visible)?;
+        let batch = read_batch(&mut reader, rest_size)?;
         if batch.is_empty() {
             break;
         }
-        if per_page {
-            if !c.monotonic_alignment {
-                state = StreamState::default();
-            }
-            scan_widths(&batch, &mut state);
-        }
-        process_batch(&batch, &mut state, &mut sink)?;
+        process_batch(&batch, &mut sink)?;
     }
-
-    flush_trailing_diff_stat(&mut state, &mut sink)?;
     sink.close()
-}
-
-fn read_batch_with_mode<R: BufRead>(
-    reader: &mut R,
-    target_visible: usize,
-    count_visible: bool,
-) -> io::Result<Vec<Vec<u8>>> {
-    if !count_visible {
-        return read_batch(reader, target_visible);
-    }
-    let c = cfg();
-    let mut out = Vec::with_capacity(target_visible);
-    let mut visible = 0usize;
-    while visible < target_visible {
-        let mut buf = Vec::new();
-        let n = reader.read_until(b'\n', &mut buf)?;
-        if n == 0 {
-            break;
-        }
-        let body = strip_trailing_nl(&buf).0;
-        let parsed = find_boundary(body);
-        let filtered = c.hide_vertical_only_lines
-            && parsed.is_none()
-            && is_vertical_only_line(body);
-        if !filtered {
-            visible += 1;
-        }
-        out.push(buf);
-    }
-    Ok(out)
-}
-
-fn scan_widths(batch: &[Vec<u8>], state: &mut StreamState) {
-    for line in batch {
-        let body = strip_trailing_nl(line).0;
-        if let Some(p) = find_boundary(body) {
-            if p.graph_col > state.graph_max {
-                state.graph_max = p.graph_col;
-            }
-            if let Some(cols) = parse_content_columns(&body[p.content_start..]) {
-                if cols.changeid_width > state.changeid_max {
-                    state.changeid_max = cols.changeid_width;
-                }
-                if cols.author_width > state.author_max {
-                    state.author_max = cols.author_width;
-                }
-            }
-        }
-    }
 }
 
 fn resolve_batch_sizes(bs: &BatchSize) -> (usize, usize) {
@@ -119,10 +50,6 @@ fn resolve_batch_sizes(bs: &BatchSize) -> (usize, usize) {
             (n, n)
         }
         BatchSize::HalfPager => {
-            // Fallback to a small page when terminal_height can't be detected
-            // (no TTY available). DEFAULT_STREAM_BATCH_SIZE (128) is too big
-            // here — half-pager only makes sense at screen-scale, and a huge
-            // first batch flattens column alignment across the whole log.
             let h = cfg()
                 .debug_force_screen_height
                 .or_else(terminal_height)
@@ -154,9 +81,6 @@ fn terminal_height() -> Option<usize> {
     const TIOCGWINSZ: u64 = 0x5413;
 
     extern "C" {
-        // ioctl is variadic on macOS/Linux; declaring a fixed third arg
-        // uses the wrong ABI on ARM64 (the pointer lands in the wrong slot
-        // and ws_row stays 0). Keep it variadic to match libc.
         fn ioctl(fd: i32, req: u64, ...) -> i32;
     }
 
@@ -187,16 +111,6 @@ fn terminal_height() -> Option<usize> {
     std::env::var("LINES").ok().and_then(|s| s.parse().ok())
 }
 
-#[derive(Default)]
-struct StreamState {
-    graph_max: usize,
-    changeid_max: usize,
-    author_max: usize,
-    pending_diff_stat: Vec<Vec<u8>>,
-    pending_max_left: usize,
-    pending_max_right: usize,
-}
-
 fn read_batch<R: BufRead>(reader: &mut R, batch_size: usize) -> io::Result<Vec<Vec<u8>>> {
     let mut out = Vec::with_capacity(batch_size);
     for _ in 0..batch_size {
@@ -210,124 +124,13 @@ fn read_batch<R: BufRead>(reader: &mut R, batch_size: usize) -> io::Result<Vec<V
     Ok(out)
 }
 
-// Per-line monotonic widening: graph_max, changeid_max, and author_max all
-// bump the moment a wider value is seen and the new target widths take
-// effect on that same line. Batching is purely flush-cadence — `batch_size`
-// does not affect column alignment. This intentionally diverges from
-// main.rs's batch path, which applies one global max to every line.
-fn process_batch(
-    batch: &[Vec<u8>],
-    state: &mut StreamState,
-    sink: &mut OutputSink,
-) -> io::Result<()> {
-    let c = cfg();
+fn process_batch(batch: &[Vec<u8>], sink: &mut OutputSink) -> io::Result<()> {
     let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 8).sum());
     for line in batch.iter() {
         let body = strip_trailing_nl(line).0;
-        if let Some(row) = parse_diff_stat(body) {
-            state.pending_max_left = state.pending_max_left.max(row.left_width);
-            state.pending_max_right = state.pending_max_right.max(row.right_width);
-            state.pending_diff_stat.push(line.clone());
-            continue;
-        }
-
-        if !state.pending_diff_stat.is_empty() {
-            flush_pending_diff_stat(state, &mut out, c);
-        }
-
         let parsed = find_boundary(body);
-        if let Some(p) = &parsed {
-            if p.graph_col > state.graph_max {
-                state.graph_max = p.graph_col;
-            }
-            if let Some(cols) = parse_content_columns(&body[p.content_start..]) {
-                if cols.changeid_width > state.changeid_max {
-                    state.changeid_max = cols.changeid_width;
-                }
-                if cols.author_width > state.author_max {
-                    state.author_max = cols.author_width;
-                }
-            }
-        }
-        let target_col = if c.align_enabled {
-            state.graph_max + c.align_gap
-        } else {
-            parsed.as_ref().map(|p| p.graph_col).unwrap_or(0) + c.align_gap
-        };
-        emit_line(
-            line,
-            parsed.as_ref(),
-            None,
-            target_col,
-            state.changeid_max,
-            state.author_max,
-            &mut out,
-        );
+        emit_line(line, parsed.as_ref(), &mut out);
     }
-    if color_enabled() {
-        sink_write(sink, &out)
-    } else {
-        sink_write(sink, &strip_sgr(&out))
-    }
-}
-
-// Diff-stat lines stay buffered until the group closes (next non-diff-stat
-// line, or end of stream) so per-commit alignment doesn't fracture at batch
-// boundaries. Called when a non-diff-stat line arrives mid-stream, and again
-// from `flush_trailing_diff_stat` at EOF.
-fn flush_pending_diff_stat(
-    state: &mut StreamState,
-    out: &mut Vec<u8>,
-    c: &crate::config::Config,
-) {
-    let ml = state.pending_max_left;
-    let mr = state.pending_max_right;
-    let mut lines = std::mem::take(&mut state.pending_diff_stat);
-    state.pending_max_left = 0;
-    state.pending_max_right = 0;
-    // Group by status (A, D, M, R, C); stable to keep file order within a status.
-    lines.sort_by_key(|line| {
-        let body = strip_trailing_nl(line).0;
-        parse_diff_stat(body)
-            .map(|r| diff_stat_status_rank(r.letter_byte))
-            .unwrap_or(u8::MAX)
-    });
-    for line in lines {
-        let body = strip_trailing_nl(&line).0;
-        let row = match parse_diff_stat(body) {
-            Some(r) => r,
-            None => continue,
-        };
-        let parsed = find_boundary(body);
-        if let Some(p) = &parsed {
-            if p.graph_col > state.graph_max {
-                state.graph_max = p.graph_col;
-            }
-        }
-        let target_col = if c.align_enabled {
-            state.graph_max + c.align_gap
-        } else {
-            parsed.as_ref().map(|p| p.graph_col).unwrap_or(0) + c.align_gap
-        };
-        emit_line(
-            &line,
-            parsed.as_ref(),
-            Some((&row, ml, mr)),
-            target_col,
-            state.changeid_max,
-            state.author_max,
-            out,
-        );
-    }
-}
-
-fn flush_trailing_diff_stat(state: &mut StreamState, sink: &mut OutputSink) -> io::Result<()> {
-    if state.pending_diff_stat.is_empty() {
-        return Ok(());
-    }
-    let c = cfg();
-    let mut out: Vec<u8> = Vec::new();
-    flush_pending_diff_stat(state, &mut out, c);
     if color_enabled() {
         sink_write(sink, &out)
     } else {

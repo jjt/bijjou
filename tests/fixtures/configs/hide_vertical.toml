@@ -1,7 +1,0 @@
-activate = "always"
-
-[filter]
-hide-vertical-only-lines = true
-
-[stream]
-enabled = false

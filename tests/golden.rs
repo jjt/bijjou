@@ -650,7 +650,7 @@ fn degenerate_marker_after_graph_only() {
 // --- Activation gate ----------------------------------------------------
 // Default config gates processing on presence of the activation marker
 // (the ASCII sentinel `BIJJOU_ACTIVATE`). Absent → byte-identical passthrough.
-// Present → process and strip every occurrence of the marker.
+// Present → process (edge rewriting kicks in).
 
 const ACTIVATION_MARKER: &[u8] = b"BIJJOU_ACTIVATE";
 
@@ -666,8 +666,8 @@ fn gate_passthrough_when_marker_absent() {
 
 #[test]
 fn gate_processes_when_marker_present() {
-    // Marker on a graph line triggers processing; the graph line gets rewritten.
-    let mut input = "\u{25CB}  abcde 12345 ".as_bytes().to_vec();
+    // Marker on a graph line triggers processing; the edge glyph gets rewritten.
+    let mut input = "\u{2502} \u{25CB}  abcde 12345 ".as_bytes().to_vec();
     input.extend_from_slice(ACTIVATION_MARKER);
     input.extend_from_slice(b"description\n");
     let output = run_bijjou_with_auto_gate(&input);
@@ -702,20 +702,6 @@ fn gate_passes_through_non_graph_lines_even_when_marker_present() {
     );
 }
 
-#[test]
-fn gate_strips_inline_marker_in_content() {
-    // Marker embedded inside a description should be stripped.
-    let mut input = "\u{25CB}  abcde 12345 desc ".as_bytes().to_vec();
-    input.extend_from_slice(ACTIVATION_MARKER);
-    input.extend_from_slice(b" suffix\n");
-    let output = run_bijjou_with_auto_gate(&input);
-    assert!(
-        !output
-            .windows(ACTIVATION_MARKER.len())
-            .any(|w| w == ACTIVATION_MARKER),
-        "inline activation marker must be stripped"
-    );
-}
 
 // --- Custom-config fixtures --------------------------------------------
 // Each pipes a stock input through bijjou with a non-default config from
@@ -772,35 +758,6 @@ fn config_dash_only_workspaces() {
     );
 }
 
-#[test]
-fn config_dash_margin_zero_megamerge() {
-    snapshot_with_config(
-        "megamerge",
-        "dash_margin_zero",
-        "config_dash_margin_zero_megamerge",
-        "megamerge with dash-margin = 0 — dash runs butt against the graph and content with ╶/╴ half-line caps.",
-    );
-}
-
-#[test]
-fn config_hide_vertical_only_single_wc() {
-    snapshot_with_config(
-        "single_wc",
-        "hide_vertical",
-        "config_hide_vertical_only_single_wc",
-        "single_wc with hide_vertical.toml — the lone `│` filler line above the elision marker must be dropped.",
-    );
-}
-
-#[test]
-fn config_hide_vertical_only_megamerge_conflict() {
-    snapshot_with_config(
-        "combo_megamerge_conflict",
-        "hide_vertical",
-        "config_hide_vertical_only_megamerge_conflict",
-        "combo_megamerge_conflict with hide_vertical.toml — vertical-only filler row between nodes is dropped; rows with corners/tees stay.",
-    );
-}
 
 // --- Streaming mode -----------------------------------------------------
 // Streaming flushes output in batches. The first batch is pre-scanned so
@@ -860,18 +817,14 @@ fn stream_monotonic_no_shrink() {
 fn stream_auto_marker_in_first_batch_activates() {
     // Marker is on line 2, within the first batch (size 2). Auto must activate
     // and process the input — graph chars get rewritten.
-    let mut input = b"\xe2\x97\x8b  a\n".to_vec();
-    input.extend_from_slice(b"\xe2\x97\x8b  b ");
+    let mut input = b"\xe2\x94\x82 \xe2\x97\x8b  a\n".to_vec();
+    input.extend_from_slice(b"\xe2\x94\x82 \xe2\x97\x8b  b ");
     input.extend_from_slice(ACTIVATION_MARKER);
-    input.extend_from_slice(b"\n\xe2\x97\x8b  c\n\xe2\x97\x8b  d\n");
+    input.extend_from_slice(b"\n\xe2\x94\x82 \xe2\x97\x8b  c\n\xe2\x94\x82 \xe2\x97\x8b  d\n");
     let output = run_bijjou_with_config(&input, "stream-batch-2-auto");
     assert_ne!(
         output, input,
         "marker in first batch must activate streaming auto mode"
-    );
-    assert!(
-        !output.windows(ACTIVATION_MARKER.len()).any(|w| w == ACTIVATION_MARKER),
-        "marker must be stripped from output once activated"
     );
 }
 

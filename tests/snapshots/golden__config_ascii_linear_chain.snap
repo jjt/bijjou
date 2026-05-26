@@ -3,8 +3,8 @@ source: tests/golden.rs
 description: Linear chain rendered with ascii.toml — verifies icon and dash overrides on a simple shape.
 expression: visualize(&output)
 ---
-\e[1m\e[38;5;2m@\e[0m\e[38;5;244m╶╴\e[39m\e[1m\e[38;5;13mzt\e[38;5;8mtznl\e[39m \e[38;5;12m1\e[38;5;8m4be49\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;14m260509·1007\e[39m add unit tests for byte-level rendering helpers\e[0m
-○\e[38;5;244m╶╴\e[39m\e[1m\e[38;5;5mwn\e[0m\e[38;5;8mlmpu\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m6b17d\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260509·0958\e[39m color immutable nodes the same gray as mutable
-○\e[38;5;244m╶╴\e[39m\e[1m\e[38;5;5mpq\e[0m\e[38;5;8mvzwp\e[39m \e[1m\e[38;5;4ma9\e[0m\e[38;5;8mefd3\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260509·0947\e[39m handle immutable revs
-○\e[38;5;244m╶╴\e[39m\e[1m\e[38;5;5mq\e[0m\e[38;5;8mwvtur\e[39m \e[1m\e[38;5;4m0f\e[0m\e[38;5;8m3a01\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260508·1630\e[39m add notes on combo of rev states, use lock icon
-○\e[38;5;244m╶╴\e[39m\e[1m\e[38;5;5mzo\e[0m\e[38;5;8mkmtu\e[39m \e[1m\e[38;5;4mff\e[0m\e[38;5;8m8630\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260508·1547\e[39m \e[38;5;2m\e[39mempty on purpose
+\e[1m\e[38;5;2m@\e[0m  \e[1m\e[38;5;13mzt\e[38;5;8mtznl\e[39m \e[38;5;12m1\e[38;5;8m4be49\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;14m260509·1007\e[39m add unit tests for byte-level rendering helpers\e[0m
+○  \e[1m\e[38;5;5mwn\e[0m\e[38;5;8mlmpu\e[39m \e[1m\e[38;5;4m9\e[0m\e[38;5;8m6b17d\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260509·0958\e[39m color immutable nodes the same gray as mutable
+○  \e[1m\e[38;5;5mpq\e[0m\e[38;5;8mvzwp\e[39m \e[1m\e[38;5;4ma9\e[0m\e[38;5;8mefd3\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260509·0947\e[39m handle immutable revs
+○  \e[1m\e[38;5;5mq\e[0m\e[38;5;8mwvtur\e[39m \e[1m\e[38;5;4m0f\e[0m\e[38;5;8m3a01\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260508·1630\e[39m add notes on combo of rev states, use lock icon
+○  \e[1m\e[38;5;5mzo\e[0m\e[38;5;8mkmtu\e[39m \e[1m\e[38;5;4mff\e[0m\e[38;5;8m8630\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260508·1547\e[39m \e[38;5;2m(empty)\e[39mempty on purpose

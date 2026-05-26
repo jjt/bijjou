@@ -3,10 +3,7 @@ use std::path::PathBuf;
 use std::sync::OnceLock;
 
 pub const DEFAULT_DASH: &str = "─";
-pub const DEFAULT_DASH_ARROW: &str = "";
-pub const DEFAULT_DASH_MARGIN: usize = 0;
 pub const DEFAULT_DASH_START: &str = "╶";
-pub const DEFAULT_DASH_END: &str = "╴";
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EMPTY_ICON: &str = "";
@@ -18,8 +15,6 @@ pub const DEFAULT_IMMUTABLE_ICON: &str = "";
 pub const DEFAULT_CONFLICT_ICON: &str = "";
 pub const DEFAULT_HIDDEN_ICON: &str = "🮀";
 pub const DEFAULT_FALLBACK_ICON: &str = "●";
-pub const DEFAULT_DETAILS_ALIGN_OFFSET: usize = 2;
-pub const DEFAULT_DETAILS_DIFFSTAT_SEPARATOR: &str = "·";
 pub const DEFAULT_GRAPH_HORIZONTAL: &str = "𜸟";
 pub const DEFAULT_GRAPH_VERTICAL: &str = "𜸩";
 pub const DEFAULT_GRAPH_TOP_LEFT: &str = "𜸚";
@@ -33,9 +28,6 @@ pub const DEFAULT_GRAPH_TEE_UP: &str = "𜹀";
 pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
-pub const DEFAULT_EMPTY_MARKER: &str = "(empty)";
-pub const DEFAULT_DIVERGENT_MARKER: &str = "(divergent)";
-pub const DEFAULT_CONFLICT_MARKER: &str = "(conflict)";
 pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -49,9 +41,6 @@ impl Default for BatchSize {
         BatchSize::Fixed(DEFAULT_STREAM_BATCH_SIZE)
     }
 }
-pub const DEFAULT_ALIGN_ENABLED: bool = true;
-pub const DEFAULT_ALIGN_GAP: usize = 2;
-pub const DEFAULT_MONOTONIC_ALIGNMENT: bool = true;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum Activate {
@@ -128,10 +117,7 @@ pub struct Config {
     pub wc_empty_icon: String,
     pub empty_immutable_icon: String,
     pub dash: String,
-    pub dash_arrow: String,
-    pub dash_margin: usize,
     pub dash_start: String,
-    pub dash_end: String,
     pub graph_horizontal: String,
     pub graph_vertical: String,
     pub graph_top_left: String,
@@ -147,21 +133,12 @@ pub struct Config {
     pub dim_on: Vec<u8>,
     pub edge_dim_on: Vec<u8>,
     pub activation_marker: String,
-    pub empty_marker: String,
-    pub divergent_marker: String,
-    pub conflict_marker: String,
     pub activate: Activate,
     pub pager: Pager,
     pub color: Color,
-    pub hide_vertical_only_lines: bool,
     pub stream_enabled: bool,
     pub stream_batch_size: BatchSize,
-    pub align_enabled: bool,
-    pub align_gap: usize,
-    pub monotonic_alignment: bool,
     pub debug_force_screen_height: Option<usize>,
-    pub details_align_offset: usize,
-    pub details_diffstat_separator: String,
 }
 
 impl Default for Config {
@@ -177,10 +154,7 @@ impl Default for Config {
             wc_empty_icon: DEFAULT_WC_EMPTY_ICON.to_string(),
             empty_immutable_icon: DEFAULT_EMPTY_IMMUTABLE_ICON.to_string(),
             dash: DEFAULT_DASH.to_string(),
-            dash_arrow: DEFAULT_DASH_ARROW.to_string(),
-            dash_margin: DEFAULT_DASH_MARGIN,
             dash_start: DEFAULT_DASH_START.to_string(),
-            dash_end: DEFAULT_DASH_END.to_string(),
             graph_horizontal: DEFAULT_GRAPH_HORIZONTAL.to_string(),
             graph_vertical: DEFAULT_GRAPH_VERTICAL.to_string(),
             graph_top_left: DEFAULT_GRAPH_TOP_LEFT.to_string(),
@@ -196,21 +170,12 @@ impl Default for Config {
             dim_on: DEFAULT_DIM_ON.to_vec(),
             edge_dim_on: DEFAULT_EDGE_DIM_ON.to_vec(),
             activation_marker: DEFAULT_ACTIVATION_MARKER.to_string(),
-            empty_marker: DEFAULT_EMPTY_MARKER.to_string(),
-            divergent_marker: DEFAULT_DIVERGENT_MARKER.to_string(),
-            conflict_marker: DEFAULT_CONFLICT_MARKER.to_string(),
             activate: Activate::default(),
             pager: Pager::default(),
             color: Color::default(),
-            hide_vertical_only_lines: false,
             stream_enabled: true,
             stream_batch_size: BatchSize::default(),
-            align_enabled: DEFAULT_ALIGN_ENABLED,
-            align_gap: DEFAULT_ALIGN_GAP,
-            monotonic_alignment: DEFAULT_MONOTONIC_ALIGNMENT,
             debug_force_screen_height: None,
-            details_align_offset: DEFAULT_DETAILS_ALIGN_OFFSET,
-            details_diffstat_separator: DEFAULT_DETAILS_DIFFSTAT_SEPARATOR.to_string(),
         }
     }
 }
@@ -451,55 +416,10 @@ impl Config {
             "graph.edges.chars.cross" => self.graph_cross = value.to_string(),
             "graph.edges.chars.elision" => self.graph_elision = value.to_string(),
             "layout.dash" => self.dash = value.to_string(),
-            "layout.dash-arrow" => self.dash_arrow = value.to_string(),
             "layout.dash-start" => self.dash_start = value.to_string(),
-            "layout.dash-end" => self.dash_end = value.to_string(),
-            "layout.dash-margin" => {
-                let n: i64 = value
-                    .parse()
-                    .map_err(|_| mkerr(format!("expected integer >= 0, got {:?}", value)))?;
-                if n < 0 {
-                    return Err(mkerr(format!("expected integer >= 0, got {}", n)));
-                }
-                self.dash_margin = n as usize;
-            }
-            "commits.markers.empty" => self.empty_marker = value.to_string(),
-            "commits.markers.divergent" => self.divergent_marker = value.to_string(),
-            "commits.markers.conflict" => self.conflict_marker = value.to_string(),
-            "details.align-offset" => {
-                let n: i64 = value
-                    .parse()
-                    .map_err(|_| mkerr(format!("expected integer >= 0, got {:?}", value)))?;
-                if n < 0 {
-                    return Err(mkerr(format!("expected integer >= 0, got {}", n)));
-                }
-                self.details_align_offset = n as usize;
-            }
-            "details.diffstat-separator" => {
-                if value.is_empty() {
-                    return Err(mkerr("must not be empty".into()));
-                }
-                self.details_diffstat_separator = value.to_string();
-            }
-            "filter.hide-vertical-only-lines" => {
-                self.hide_vertical_only_lines = parse_bool_str(value).map_err(mkerr)?;
-            }
             "stream.enabled" => self.stream_enabled = parse_bool_str(value).map_err(mkerr)?,
             "stream.batch-size" => {
                 self.stream_batch_size = parse_batch_size(value).map_err(mkerr)?;
-            }
-            "layout.align" => self.align_enabled = parse_bool_str(value).map_err(mkerr)?,
-            "layout.monotonic-alignment" => {
-                self.monotonic_alignment = parse_bool_str(value).map_err(mkerr)?;
-            }
-            "layout.gap" => {
-                let n: i64 = value
-                    .parse()
-                    .map_err(|_| mkerr(format!("expected integer >= 0, got {:?}", value)))?;
-                if n < 0 {
-                    return Err(mkerr(format!("expected integer >= 0, got {}", n)));
-                }
-                self.align_gap = n as usize;
             }
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
@@ -683,29 +603,6 @@ edge = 200
     }
 
     #[test]
-    fn toml_commits_markers_override() {
-        let s = "[commits.markers]\nempty = \"E\"\ndivergent = \"D\"\n";
-        let cfg = Config::from_toml(s).unwrap();
-        assert_eq!(cfg.empty_marker, "E");
-        assert_eq!(cfg.divergent_marker, "D");
-    }
-
-    #[test]
-    fn toml_commits_markers_empty_disables() {
-        let s = "[commits.markers]\nempty = \"\"\ndivergent = \"\"\n";
-        let cfg = Config::from_toml(s).unwrap();
-        assert_eq!(cfg.empty_marker, "");
-        assert_eq!(cfg.divergent_marker, "");
-    }
-
-    #[test]
-    fn toml_default_commits_markers_match_legacy() {
-        let cfg = Config::from_toml("").unwrap();
-        assert_eq!(cfg.empty_marker, DEFAULT_EMPTY_MARKER);
-        assert_eq!(cfg.divergent_marker, DEFAULT_DIVERGENT_MARKER);
-    }
-
-    #[test]
     fn toml_activate_default_is_always() {
         let cfg = Config::from_toml("").unwrap();
         assert_eq!(cfg.activate, Activate::Always);
@@ -862,14 +759,6 @@ edge = 200
     }
 
     #[test]
-    fn cli_bool_filter() {
-        let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--filter__hide-vertical-only-lines=true"]))
-            .unwrap();
-        assert!(cfg.hide_vertical_only_lines);
-    }
-
-    #[test]
     fn cli_unknown_key_errors() {
         let mut cfg = Config::default();
         assert!(cfg.apply_cli(args(&["--bogus=x"])).is_err());
@@ -919,8 +808,8 @@ edge = 200
     #[test]
     fn env_key_single_underscore_becomes_hyphen() {
         assert_eq!(
-            env_key_to_config_key("LAYOUT__DASH_MARGIN"),
-            "layout.dash-margin"
+            env_key_to_config_key("LAYOUT__DASH_START"),
+            "layout.dash-start"
         );
     }
 
@@ -1020,119 +909,24 @@ edge = 200
     }
 
     #[test]
-    fn layout_defaults() {
+    fn layout_dash_defaults() {
         let cfg = Config::from_toml("").unwrap();
-        assert!(cfg.align_enabled);
-        assert_eq!(cfg.align_gap, DEFAULT_ALIGN_GAP);
-    }
-
-    #[test]
-    fn layout_toml_section() {
-        let s = "[layout]\nalign = false\ngap = 4\ndash = \".\"\n";
-        let cfg = Config::from_toml(s).unwrap();
-        assert!(!cfg.align_enabled);
-        assert_eq!(cfg.align_gap, 4);
-        assert_eq!(cfg.dash, ".");
-    }
-
-    #[test]
-    fn layout_toml_gap_zero_ok() {
-        let s = "[layout]\ngap = 0\n";
-        let cfg = Config::from_toml(s).unwrap();
-        assert_eq!(cfg.align_gap, 0);
-    }
-
-    #[test]
-    fn layout_toml_gap_negative_errors() {
-        let s = "[layout]\ngap = -1\n";
-        assert!(Config::from_toml(s).is_err());
-    }
-
-    #[test]
-    fn cli_layout_align_false() {
-        let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--layout__align=false"])).unwrap();
-        assert!(!cfg.align_enabled);
-    }
-
-    #[test]
-    fn cli_layout_gap() {
-        let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--layout__gap=5"])).unwrap();
-        assert_eq!(cfg.align_gap, 5);
-    }
-
-    #[test]
-    fn cli_layout_gap_zero_ok() {
-        let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--layout__gap=0"])).unwrap();
-        assert_eq!(cfg.align_gap, 0);
-    }
-
-    #[test]
-    fn cli_layout_gap_negative_errors() {
-        let mut cfg = Config::default();
-        assert!(cfg.apply_cli(args(&["--layout__gap=-1"])).is_err());
-    }
-
-    #[test]
-    fn cli_layout_dash_arrow() {
-        let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--layout__dash-arrow=>"])).unwrap();
-        assert_eq!(cfg.dash_arrow, ">");
-    }
-
-    #[test]
-    fn layout_dash_margin_default() {
-        let cfg = Config::from_toml("").unwrap();
-        assert_eq!(cfg.dash_margin, DEFAULT_DASH_MARGIN);
         assert_eq!(cfg.dash, DEFAULT_DASH);
-        assert_eq!(DEFAULT_DASH, "─");
-    }
-
-    #[test]
-    fn layout_dash_margin_toml() {
-        let s = "[layout]\ndash-margin = 0\n";
-        let cfg = Config::from_toml(s).unwrap();
-        assert_eq!(cfg.dash_margin, 0);
-    }
-
-    #[test]
-    fn layout_dash_margin_negative_errors() {
-        let s = "[layout]\ndash-margin = -1\n";
-        assert!(Config::from_toml(s).is_err());
-    }
-
-    #[test]
-    fn cli_layout_dash_margin() {
-        let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--layout__dash-margin=3"])).unwrap();
-        assert_eq!(cfg.dash_margin, 3);
-    }
-
-    #[test]
-    fn layout_dash_start_end_defaults() {
-        let cfg = Config::from_toml("").unwrap();
         assert_eq!(cfg.dash_start, DEFAULT_DASH_START);
-        assert_eq!(cfg.dash_end, DEFAULT_DASH_END);
-        assert_eq!(DEFAULT_DASH_START, "╶");
-        assert_eq!(DEFAULT_DASH_END, "╴");
     }
 
     #[test]
-    fn layout_dash_start_end_toml_override() {
-        let s = "[layout]\ndash-start = \"<\"\ndash-end = \">\"\n";
+    fn layout_toml_dash_override() {
+        let s = "[layout]\ndash = \".\"\ndash-start = \"<\"\n";
         let cfg = Config::from_toml(s).unwrap();
+        assert_eq!(cfg.dash, ".");
         assert_eq!(cfg.dash_start, "<");
-        assert_eq!(cfg.dash_end, ">");
     }
 
     #[test]
-    fn cli_layout_dash_start_end() {
+    fn cli_layout_dash_start() {
         let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--layout__dash-start=<", "--layout__dash-end=>"]))
-            .unwrap();
+        cfg.apply_cli(args(&["--layout__dash-start=<"])).unwrap();
         assert_eq!(cfg.dash_start, "<");
-        assert_eq!(cfg.dash_end, ">");
     }
 }

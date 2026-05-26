@@ -3,9 +3,9 @@ source: tests/golden.rs
 description: "diff --summary on a branched graph: the path on the status row must align with the change-id column of the commit rows above."
 expression: visualize(&output)
 ---
-○\e[38;5;8m╶────╴\e[39mosnnxn 42ebe6 ME 260518·1110 testo
+○      osnnxn 42ebe6 ME 260518·1110 (empty) testo
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜸠\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜸤\e[39m
-\e[38;5;8m𜸩\e[39m \e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶╴\e[39mpkmklp 02efec ME 260518·1110 testo
-\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m─╴\e[39mrwxork dc84b2 ME 260518·1110 testo
-@\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m─\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m─╴\e[39myumzkk 1224ef ME 260518·1109 aorsetn
-\e[38;5;8m𜸩\e[39m \e[38;5;8m𜸩\e[39m \e[38;5;8m𜸩\e[39m    A testo
+\e[38;5;8m𜸩\e[39m \e[38;5;8m𜸩\e[39m ○  pkmklp 02efec ME 260518·1110 (empty) testo
+\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m  rwxork dc84b2 ME 260518·1110 (empty) testo
+@\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m─\e[39m\e[38;5;8m𜸩\e[39m  yumzkk 1224ef ME 260518·1109 aorsetn
+\e[38;5;8m𜸩\e[39m \e[38;5;8m𜸩\e[39m \e[38;5;8m𜸩\e[39m  A testo

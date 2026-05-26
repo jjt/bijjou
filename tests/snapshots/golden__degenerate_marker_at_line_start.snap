@@ -3,4 +3,4 @@ source: tests/golden.rs
 description: Empty marker before the @ glyph — must strip cleanly.
 expression: visualize(&output)
 ---
-@  \e[38;5;8ma\e[39m\e[38;5;8mb\e[39m\e[38;5;8mc\e[39m\e[38;5;8md\e[39m\e[38;5;8me\e[39m \e[38;5;8md\e[39m\e[38;5;8me\e[39m\e[38;5;8ms\e[39m\e[38;5;8mc\e[39m
+\e[38;5;8m(\e[39m\e[38;5;8me\e[39m\e[38;5;8mm\e[39m\e[38;5;8mp\e[39m\e[38;5;8mt\e[39m\e[38;5;8my\e[39m\e[38;5;8m)\e[39m@  \e[38;5;8ma\e[39m\e[38;5;8mb\e[39m\e[38;5;8mc\e[39m\e[38;5;8md\e[39m\e[38;5;8me\e[39m \e[38;5;8md\e[39m\e[38;5;8me\e[39m\e[38;5;8ms\e[39m\e[38;5;8mc\e[39m

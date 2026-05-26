@@ -3,6 +3,6 @@ source: tests/golden.rs
 description: Mid-graph blank line — must not crash or merge into next row.
 expression: visualize(&output)
 ---
-○\e[38;5;8m╶╴\e[39mabcde 12345
+○  abcde 12345
 
-○\e[38;5;8m╶╴\e[39mfghij 67890
+○  fghij 67890
