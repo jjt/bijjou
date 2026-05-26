@@ -60,6 +60,15 @@ SUBCOMMANDS
                             argument boundaries only. Pipe through bijjou
                             (or use --no-pager) — jj's builtin pager
                             escapes PUA codepoints as `<U+XXXX>` text.
+  log-oneline-json          print a jj log template expression that emits
+                            one JSON object per commit, with ANSI color
+                            sequences preserved inside the string values.
+                            Ready for direct `$(...)` expansion:
+                              jj log -T $(bijjou log-oneline-json)
+                            All whitespace outside string literals is
+                            stripped; intra-string spaces are encoded as
+                            jj's `\\x20` byte escape so bash word-splits
+                            the output into a single argument.
 
 OPTIONS
   -h, --help                show this help and exit
@@ -166,6 +175,10 @@ fn main() {
             }
             "jj-graph-node-config" => {
                 println!("{}", render_jj_graph_node_config(&cfg_obj));
+                return;
+            }
+            "log-oneline-json" => {
+                println!("{}", render_log_oneline_json_inline());
                 return;
             }
             other => {
@@ -297,6 +310,68 @@ fn render_jj_graph_node_config(cfg: &Config) -> String {
         "--config templates.log_node={}",
         toml_basic_string_space_safe(&render_log_node_template_inline(cfg)),
     )
+}
+
+// One-line jj template that emits a JSON object per commit. Root commit
+// emits `{"root":"..."}`; every other commit emits one field per item
+// from the original `separate(...)` block in `log_oneline_json.toml`.
+//
+// ANSI escape sequences from `format_short_*` helpers are preserved
+// verbatim inside the JSON string values (raw ESC bytes, not ``
+// escapes), so a terminal that consumes the output gets colored
+// rendering. A `replace(...)` call wraps each value, encoding `"`, `\`,
+// and `\n` (raw newline) as JSON escape sequences — other bytes,
+// including ESC, pass through unchanged.
+//
+// Output has no whitespace outside string literals so it survives
+// unquoted `$(...)` substitution. The one literal space in the source
+// — inside `"no description"` — is encoded as jj's `\x20` byte escape.
+fn render_log_oneline_json_inline() -> String {
+    let jc = |value: &str| -> String {
+        let mut s = String::with_capacity(value.len() + 96);
+        s.push_str(r#"'"'++replace(regex:"[\"\\\\\\n]","#);
+        s.push_str(value);
+        s.push_str(r#",|m|if(m.get(0)=="\"","\\\"",if(m.get(0)=="\\","\\\\","\\n")))++'"'"#);
+        s
+    };
+    let fields: &[(&str, &str)] = &[
+        (r#"'"change_id":'"#, "format_short_change_id_with_change_offset(self)"),
+        (r#"'"commit_id":'"#, "format_short_commit_id(self.commit_id())"),
+        (r#"'"author":'"#, "format_short_signature_oneline(self.author())"),
+        (r#"'"timestamp":'"#, r#"commit_timestamp(self).format("%y%m%d·%H%M")"#),
+        (r#"'"labels":'"#, "format_commit_labels(self)"),
+        (r#"'"working_copies":'"#, "self.working_copies()"),
+        (r#"'"bookmarks":'"#, "self.bookmarks()"),
+        (r#"'"tags":'"#, "self.tags()"),
+    ];
+    let mut out = String::new();
+    out.push_str("if(self.root(),");
+    out.push_str(r#"'{"root":'++"#);
+    out.push_str(&jc("format_root_commit(self)"));
+    out.push_str(r#"++'}'++"\n",'{'++separate(',',"#);
+    let mut first = true;
+    for (key, val) in fields {
+        if !first {
+            out.push(',');
+        }
+        first = false;
+        out.push_str(key);
+        out.push_str("++");
+        out.push_str(&jc(val));
+    }
+    out.push(',');
+    out.push_str(r#"if(config("ui.show-cryptographic-signatures").as_boolean(),'"signature":'++"#);
+    out.push_str(&jc("format_short_cryptographic_signature(self.signature())"));
+    out.push_str("),");
+    out.push_str(r#"if(self.empty(),'"empty":'++"#);
+    out.push_str(&jc("empty_commit_marker"));
+    out.push_str("),");
+    out.push_str(r#"'"description":'++if(self.description(),"#);
+    out.push_str(&jc("self.description().first_line()"));
+    out.push(',');
+    out.push_str(&jc("label(\"no_desc\",\"no\\x20description\")"));
+    out.push_str(r#"))++'}'++"\n")"#);
+    out
 }
 
 fn split_lines(input: &[u8]) -> Vec<&[u8]> {
