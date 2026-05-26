@@ -1,0 +1,44 @@
+we're going to refactor out any output transformation that deals with anything except the graph edges - do that first
+
+then to display the information about the commit we'll use a jj log template that outputs the information about the commit in json and use that to echo the information about each commit
+
+we'll use a templating system with some defined "functions"
+
+newlines in this string will be spaces, and a character literal of `\n` will denote a new line - so the template a few lines below would be a single line of output
+
+anything in %{} is a "function" call in our DSL, see functions below
+
+'''
+%{elastic_tab(change_id(len=6))}
+%{elastic_tab(commit_id(len=6))}
+%{elastic_tab(author_initials(mine="ME"))}
+%{elastic_tab(timestamp("YYMMDD·HHMM"))}
+%{working_copies()}
+%{bookmarks()}
+%{tags()}
+%{description_title()}
+'''
+
+elastic_tab(...) aligns the left side of its context as per current columnar alignment behaviour for eg. the change id. Any space greater than 1 will use the current behaviour of dashes including the dash start and end chars
+
+commit_id(len=8) shows the first len chars of the commit id in bright black, with the commit_id_shortest prefix in blue
+
+change_id(len=8, show_divergence=true) shows the first len characters of the change_idd with the change_id_shortest in magenta. It also shows divergence. If change_offset is non-zero then it should add `/<change_offset>` after the change id. This can cause the overall output to be longer than len.
+
+author_initials(mine="") outputs the first and last letters of the author. If `mine` is a string and mine = true in the input, then instead of echoing the author initials, echo the passed in value of `mine`.
+
+timestamp(format) takes a standard date format to render the timestamp
+
+working_copies() shows all of the working copies for this revision in green
+
+bookmarks() the same for bookmarks, and tags() for tags, both in magenta
+
+description_title() displays the first line of the description
+
+the returned output will have some graph nodes and/or edges, then some whitespace before the JSON payload
+
+given this JSON:
+■  {"commit_id_short":"7b610d4217e4","commit_id_shortest":{"prefix":"7","rest":""},"change_id_short":"vsvmrxwyxqnq","change_id_shortest":{"prefix":"vs","rest":""},"description":"move to json template\n","author":{"name":"Jason Trill","timestamp":"2026-05-25T22:30:30-07:00"},"mine":true,"current_working_copy":true,"working_copies":[],"bookmarks":[],"local_bookmarks":[],"remote_bookmarks":[],"tags":[],"local_tags":[],"remote_tags":[],"divergent":false,"hidden":false,"change_offset":0,"immutable":false,"conflict":false,"empty":false,"root":false,"diff":{"files":[{"path":"json_template.tpl","display_diff_path":"json_template.tpl","status":"added","status_char":"A","source":{"path":"json_template.tpl","file_type":"","executable":false,"conflict":false,"conflict_side_count":1},"target":{"path":"json_template.tpl","file_type":"file","executable":false,"conflict":false,"conflict_side_count":1}},{"path":"template-log-notes","display_diff_path":"template-log-notes","status":"added","status_char":"A","source":{"path":"template-log-notes","file_type":"","executable":false,"conflict":false,"conflict_side_count":1},"target":{"path":"template-log-notes","file_type":"file","executable":false,"conflict":false,"conflict_side_count":1}}]},"conflicted_files":[]}
+
+it should look like this
+mvsvmrx 7b610d ME 260525·2330 move to json template
