@@ -48,6 +48,7 @@ pub struct Parsed {
     pub graph_end: usize,
     pub content_start: usize,
     pub graph_col: usize,
+    pub last_is_edge: bool,
 }
 
 fn is_graph_char(cp: u32) -> bool {
@@ -110,6 +111,7 @@ pub fn find_boundary(line: &[u8]) -> Option<Parsed> {
     let mut i = 0;
     let mut vis_col: usize = 0;
     let mut had_graph = false;
+    let mut last_is_edge = false;
 
     while i < line.len() {
         if let Some(after) = skip_csi(line, i) {
@@ -150,12 +152,14 @@ pub fn find_boundary(line: &[u8]) -> Option<Parsed> {
                     graph_end: sep_start_byte,
                     content_start: last_space_end,
                     graph_col: sep_start_col,
+                    last_is_edge,
                 });
             }
         } else {
             let (cp, len) = decode_utf8(line, i);
             if is_graph_char(cp) {
                 had_graph = true;
+                last_is_edge = !is_node_char(cp);
                 i += len;
                 vis_col += 1;
             } else {
@@ -226,13 +230,13 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
         let ansi = &bytes[ansi_start..i];
 
         if i >= bytes.len() {
-            flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, c);
+            flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, false, c);
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
             break;
         }
 
         if bytes[i] == b'\n' {
-            flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, c);
+            flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, false, c);
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
             out.push(b'\n');
             seen_node = false;
@@ -255,8 +259,9 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
         let (cp, len) = decode_utf8(bytes, i);
         let raw = &bytes[i..i + len];
         let cp_is_graph = is_graph_char(cp);
-        flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, cp_is_graph, c);
-        if is_node_char(cp) {
+        let cp_is_node = is_node_char(cp);
+        flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, cp_is_graph, cp_is_node, c);
+        if cp_is_node {
             emit_node(raw, ansi, out);
             seen_node = true;
             prev_was_node = true;
@@ -267,12 +272,15 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
         i += len;
     }
 
-    flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, c);
+    flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, false, c);
 }
 
 // Replace a pending internal space run with dashes when the line has already
 // seen its node and the run is followed by another graph char. The first dash
-// is swapped for `dash_start` when it abuts the node.
+// is swapped for `dash_start` only when the run abuts a node on the left AND
+// another node on the right — edges never get cap glyphs facing them, since
+// `╶`/`╴` are meant to attach a dash run to a node or content boundary, not
+// to a graph edge that already terminates in a glyph of its own.
 fn flush_internal_run(
     out: &mut Vec<u8>,
     run_start: &mut Option<usize>,
@@ -280,6 +288,7 @@ fn flush_internal_run(
     seen_node: bool,
     left_was_node: bool,
     right_is_graph: bool,
+    right_is_node: bool,
     c: &crate::config::Config,
 ) {
     let Some(start) = run_start.take() else {
@@ -292,7 +301,7 @@ fn flush_internal_run(
     let original: Vec<u8> = out[start..].to_vec();
     out.truncate(start);
     out.extend_from_slice(&c.dim_on);
-    let head_cap = left_was_node && !c.dash_start.is_empty();
+    let head_cap = left_was_node && right_is_node && !c.dash_start.is_empty();
     for idx in 0..count {
         if head_cap && idx == 0 {
             out.extend_from_slice(c.dash_start.as_bytes());

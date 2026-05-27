@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
@@ -29,7 +28,7 @@ pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
 pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
-pub const DEFAULT_TEMPLATE_ONELINE: &str = "%{elastic_tab(change_id)}\n%{elastic_tab(commit_id)}\n%{elastic_tab(author)}\n%{elastic_tab(timestamp)}\n%{working_copies}\n%{bookmarks}\n%{tags}\n%{description}";
+pub const DEFAULT_TEMPLATE_ONELINE: &str = " %{elastic_tab(change_id)} %{elastic_tab(commit_id)} %{elastic_tab(author)} %{elastic_tab(timestamp)} %{working_copies} %{bookmarks} %{tags} %{description}";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BatchSize {
@@ -183,95 +182,28 @@ impl Default for Config {
     }
 }
 
-#[derive(Debug)]
-enum TomlValue {
-    String(String),
-    Int(i64),
-    Bool(bool),
-}
-
-type TomlSections = HashMap<String, HashMap<String, TomlValue>>;
-
-fn parse_toml(s: &str) -> Result<TomlSections, String> {
-    let mut sections: TomlSections = HashMap::new();
-    let mut current = String::new();
-
-    for (idx, raw) in s.lines().enumerate() {
-        let line = raw.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        if let Some(rest) = line.strip_prefix('[') {
-            let inner = rest
-                .strip_suffix(']')
-                .ok_or_else(|| format!("line {}: unclosed section header", idx + 1))?;
-            current = inner.trim().to_string();
-            sections.entry(current.clone()).or_default();
-            continue;
-        }
-        let eq = line
-            .find('=')
-            .ok_or_else(|| format!("line {}: missing '='", idx + 1))?;
-        let key = line[..eq].trim().to_string();
-        let val_str = line[eq + 1..].trim();
-        let val = parse_toml_value(val_str).map_err(|e| format!("line {}: {}", idx + 1, e))?;
-        sections
-            .entry(current.clone())
-            .or_default()
-            .insert(key, val);
-    }
-    Ok(sections)
-}
-
-fn parse_toml_value(s: &str) -> Result<TomlValue, String> {
-    if let Some(rest) = s.strip_prefix('"') {
-        let inner = rest
-            .strip_suffix('"')
-            .ok_or_else(|| format!("unterminated string: {:?}", s))?;
-        return Ok(TomlValue::String(unescape(inner)?));
-    }
-    if s == "true" {
-        return Ok(TomlValue::Bool(true));
-    }
-    if s == "false" {
-        return Ok(TomlValue::Bool(false));
-    }
-    if let Ok(n) = s.parse::<i64>() {
-        return Ok(TomlValue::Int(n));
-    }
-    Err(format!(
-        "expected quoted string, bool, or integer, got {:?}",
-        s
-    ))
-}
-
-fn unescape(s: &str) -> Result<String, String> {
-    let mut out = String::with_capacity(s.len());
-    let mut chars = s.chars();
-    while let Some(c) = chars.next() {
-        if c != '\\' {
-            out.push(c);
-            continue;
-        }
-        match chars.next() {
-            Some('n') => out.push('\n'),
-            Some('t') => out.push('\t'),
-            Some('r') => out.push('\r'),
-            Some('"') => out.push('"'),
-            Some('\\') => out.push('\\'),
-            Some(other) => return Err(format!("bad escape: \\{}", other)),
-            None => return Err("trailing backslash".into()),
+fn flatten_toml(
+    prefix: &str,
+    table: &toml::Table,
+    out: &mut Vec<(String, String)>,
+) -> Result<(), String> {
+    for (k, v) in table {
+        let key = if prefix.is_empty() {
+            k.clone()
+        } else {
+            format!("{}.{}", prefix, k)
+        };
+        match v {
+            toml::Value::Table(t) => flatten_toml(&key, t, out)?,
+            toml::Value::String(s) => out.push((key, s.clone())),
+            toml::Value::Integer(i) => out.push((key, i.to_string())),
+            toml::Value::Boolean(b) => out.push((key, b.to_string())),
+            toml::Value::Float(f) => out.push((key, f.to_string())),
+            toml::Value::Array(_) => return Err(format!("{}: arrays not supported", key)),
+            toml::Value::Datetime(_) => return Err(format!("{}: datetimes not supported", key)),
         }
     }
-    Ok(out)
-}
-
-fn stringify(v: &TomlValue) -> String {
-    match v {
-        TomlValue::String(s) => s.clone(),
-        TomlValue::Int(n) => n.to_string(),
-        TomlValue::Bool(b) => b.to_string(),
-    }
+    Ok(())
 }
 
 fn parse_bool_str(s: &str) -> Result<bool, String> {
@@ -322,16 +254,11 @@ fn parse_color_str(s: &str) -> Result<Vec<u8>, String> {
 impl Config {
     pub fn from_toml(s: &str) -> Result<Self, String> {
         let mut cfg = Self::default();
-        let sections = parse_toml(s)?;
-        for (section, kvs) in &sections {
-            for (k, v) in kvs {
-                let dotted = if section.is_empty() {
-                    k.clone()
-                } else {
-                    format!("{}.{}", section, k)
-                };
-                cfg.apply_kv(&dotted, &stringify(v), "")?;
-            }
+        let table: toml::Table = s.parse().map_err(|e: toml::de::Error| e.to_string())?;
+        let mut kvs: Vec<(String, String)> = Vec::new();
+        flatten_toml("", &table, &mut kvs)?;
+        for (k, v) in &kvs {
+            cfg.apply_kv(k, v, "")?;
         }
         Ok(cfg)
     }

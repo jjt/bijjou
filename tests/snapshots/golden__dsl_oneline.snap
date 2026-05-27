@@ -3,11 +3,13 @@ source: tests/golden.rs
 description: "JSON commit rows piped through the elastic_tab DSL. Mixed graph widths and field widths exercise the right-pad-with-dashes alignment; a root commit (single `root` key) bypasses the template; an `├─╯` graph-only row passes through verbatim."
 expression: visualize(&output)
 ---
-@\e[38;5;8m╶╴\e[39mabcdef/1 7c0177 TU 260509·1438 default@   version B
-\e[38;5;8m𜸩\e[39m ○qzwtry\e[38;5;8m╶╴\e[39m e62c4e TU 260509·1438 ws2@   no description
+@\e[38;5;8m╶─╴\e[39mabcdef/1 7c0177 TU 260509·1438 default@ version B
+\e[38;5;8m𜸩\e[39m ○ qzwtry\e[38;5;8m╶─╴\e[39me62c4e TU 260509·1438 ws2@ no description
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
-\e[38;5;8m𜸩\e[39m ○abcdef/0 2ae826 TU 260509·1438    version C
+\e[38;5;8m𜸩\e[39m ○ abcdef/0 2ae826 TU 260509·1438 version C
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
-○\e[38;5;8m╶╴\e[39mwosytr\e[38;5;8m╶╴\e[39m 912122 TU 260509·1436  main  main: edit shared
-○\e[38;5;8m╶╴\e[39mxsnkqp\e[38;5;8m╶╴\e[39m 48a20a TU 260509·1436    base: shared file
-◆  zzzzzz root() 000000
+○\e[38;5;8m╶─╴\e[39mwosytr\e[38;5;8m╶─╴\e[39m912122 TU 260509·1436 main main: edit shared
+○\e[38;5;8m╶─╴\e[39mxsnkqp\e[38;5;8m╶─╴\e[39m48a20a TU 260509·1436 base: shared file
+○\e[38;5;8m─\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m╴\e[39medglft\e[38;5;8m╶─╴\e[39m7a3b9e TU 260509·1436 edge-last graph: dash run should drop left cap
+\e[38;5;8m𜸩\e[39m\e[38;5;8m──╴\e[39medghd\e[38;5;8m╶──╴\e[39m7a3b9f TU 260509·1436 single edge col: leading dash run skips left cap
+◆\e[38;5;8m╶╴\e[39mzzzzzz root() 000000

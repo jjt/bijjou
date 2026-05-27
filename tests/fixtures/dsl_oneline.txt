@@ -5,4 +5,6 @@
 ├─╯
 ○  {"change_id":"wosytr","commit_id":"912122","author":"TU","timestamp":"260509·1436","labels":"","working_copies":"","bookmarks":"main","tags":"","description":"main: edit shared"}
 ○  {"change_id":"xsnkqp","commit_id":"48a20a","author":"TU","timestamp":"260509·1436","labels":"","working_copies":"","bookmarks":"","tags":"","description":"base: shared file"}
+○ │   {"change_id":"edglft","commit_id":"7a3b9e","author":"TU","timestamp":"260509·1436","labels":"","working_copies":"","bookmarks":"","tags":"","description":"edge-last graph: dash run should drop left cap"}
+│   {"change_id":"edghd","commit_id":"7a3b9f","author":"TU","timestamp":"260509·1436","labels":"","working_copies":"","bookmarks":"","tags":"","description":"single edge col: leading dash run skips left cap"}
 ◆  {"root":"zzzzzz root() 000000"}

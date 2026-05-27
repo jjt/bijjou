@@ -200,55 +200,232 @@ pub fn collect_widths(
     }
 }
 
-// Pass-2: render the template into `out`. Each elastic-tab emits its
-// value followed by enough fill cells to reach the field's max width
-// from pass-1. Fill is one space when only one cell short; runs of two
-// or more cells are emitted as dashes with cap glyphs at the ends.
+// A render segment is one chunk of output. `Content` is opaque bytes (a
+// tag value, or non-space literal text from the template) that must pass
+// through unchanged. `Ws` is touchable whitespace (literal spaces from
+// the template, elastic-tab pad cells, or the leading graph→content gap)
+// that the rules in `render_row` may strip or fill with dashes.
+#[derive(Debug, Clone)]
+enum Seg {
+    Content(Vec<u8>),
+    Ws(usize),
+    EmptyTag,
+}
+
+// Render one row using the four-rule model documented in
+// `config.default.toml`:
+//   1. Leading whitespace before the first non-whitespace character is
+//      preserved verbatim.
+//   2. When a %{} block emits empty bytes, every whitespace cell between
+//      that block and the nearest non-whitespace character to its left
+//      collapses to zero.
+//   3. After steps 1-2 and the elastic-tab column alignment have been
+//      applied, any run of consecutive whitespace cells is filled with
+//      dashes (single cells stay as spaces; runs of two or more become a
+//      capped dash run).
+//   4. Bytes that came out of a %{} block (a Field or ElasticTab value)
+//      are never modified — internal whitespace inside a value passes
+//      through untouched.
+// `leading_pad` is prepended as a Ws segment so the graph→content gap
+// emitted by `emit_classified` participates in steps 2-3 alongside the
+// template's own whitespace.
 pub fn render_row(
     template: &Template,
     fields: &HashMap<String, Vec<u8>>,
-    _start_col: usize,
+    leading_pad: usize,
+    leading_left: LeftSide,
     widths: &HashMap<String, usize>,
     out: &mut Vec<u8>,
 ) {
+    let mut segs: Vec<Seg> = Vec::new();
+    if leading_pad > 0 {
+        segs.push(Seg::Ws(leading_pad));
+    }
     for node in &template.nodes {
         match node {
-            Node::Literal(b) => out.extend_from_slice(b),
+            Node::Literal(b) => push_literal_segs(b, &mut segs),
             Node::Field(name) => {
-                if let Some(v) = fields.get(name) {
-                    out.extend_from_slice(v);
+                let value = fields.get(name).map(|v| v.as_slice()).unwrap_or(&[]);
+                if value.is_empty() {
+                    segs.push(Seg::EmptyTag);
+                } else {
+                    segs.push(Seg::Content(value.to_vec()));
                 }
             }
             Node::ElasticTab(name) => {
-                let value: &[u8] = fields.get(name).map(|v| v.as_slice()).unwrap_or(&[]);
+                let value = fields.get(name).map(|v| v.as_slice()).unwrap_or(&[]);
                 let vw = visible_width(value);
                 let target = widths.get(name).copied().unwrap_or(vw);
-                out.extend_from_slice(value);
-                emit_pad(target.saturating_sub(vw), out);
+                let pad = target.saturating_sub(vw);
+                if value.is_empty() {
+                    segs.push(Seg::EmptyTag);
+                } else {
+                    segs.push(Seg::Content(value.to_vec()));
+                }
+                if pad > 0 {
+                    segs.push(Seg::Ws(pad));
+                }
+            }
+        }
+    }
+    apply_rule_2(&mut segs);
+    emit_segs(&segs, leading_left, out);
+}
+
+// Split a Literal node into alternating Ws / Content segments based on
+// runs of ASCII space. Multi-byte UTF-8 sequences are not space chars, so
+// they go into Content runs.
+fn push_literal_segs(bytes: &[u8], segs: &mut Vec<Seg>) {
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b' ' {
+            let start = i;
+            while i < bytes.len() && bytes[i] == b' ' {
+                i += 1;
+            }
+            segs.push(Seg::Ws(i - start));
+        } else {
+            let start = i;
+            while i < bytes.len() && bytes[i] != b' ' {
+                i += 1;
+            }
+            segs.push(Seg::Content(bytes[start..i].to_vec()));
+        }
+    }
+}
+
+// Rule 2: for each `EmptyTag`, walk left and drop every preceding `Ws`
+// segment until reaching the first `Content`. EmptyTag segments are
+// transparent for the walk (they represent zero-width tags). If no
+// Content lies to the left, rule 1 wins and nothing is stripped.
+fn apply_rule_2(segs: &mut Vec<Seg>) {
+    let mut i = 0;
+    while i < segs.len() {
+        if !matches!(segs[i], Seg::EmptyTag) {
+            i += 1;
+            continue;
+        }
+        let has_anchor_left = segs[..i].iter().any(|s| matches!(s, Seg::Content(_)));
+        if has_anchor_left {
+            // Pop trailing Ws and EmptyTag entries leftward from i, then
+            // drop the EmptyTag itself.
+            let mut j = i;
+            while j > 0 {
+                match &segs[j - 1] {
+                    Seg::Ws(_) => {
+                        segs.remove(j - 1);
+                        j -= 1;
+                        i -= 1;
+                    }
+                    Seg::EmptyTag => {
+                        j -= 1;
+                    }
+                    Seg::Content(_) => break,
+                }
+            }
+        }
+        // Drop the EmptyTag marker — it carried no bytes anyway.
+        segs.remove(i);
+    }
+}
+
+// What sits immediately to the left of a Ws run. Drives whether the run's
+// left end emits a `╶` cap (next to a node or to interior content),
+// a plain `─` (next to a graph edge — caps never face edges), or simply
+// a space (the run is only one cell wide with no graph context).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LeftSide {
+    GraphNode,
+    GraphEdge,
+    Content,
+}
+
+// Walk segments, combining adjacent Ws into single dash-fill calls so
+// rule 3 (consecutive whitespace becomes dashes) applies across literal,
+// pad, and graph-gap cells uniformly.
+//
+// `leading_left` describes the prefix sitting to the left of the first
+// Ws (before any Content has been emitted). Once Content appears, every
+// subsequent Ws sees Content on its left.
+fn emit_segs(segs: &[Seg], leading_left: LeftSide, out: &mut Vec<u8>) {
+    let mut i = 0;
+    let mut content_emitted = false;
+    while i < segs.len() {
+        match &segs[i] {
+            Seg::Content(bytes) => {
+                out.extend_from_slice(bytes);
+                content_emitted = true;
+                i += 1;
+            }
+            Seg::Ws(_) => {
+                let mut total = 0;
+                while i < segs.len() {
+                    if let Seg::Ws(n) = &segs[i] {
+                        total += n;
+                        i += 1;
+                    } else {
+                        break;
+                    }
+                }
+                let left = if content_emitted {
+                    LeftSide::Content
+                } else {
+                    leading_left
+                };
+                emit_pad(total, left, out);
+            }
+            Seg::EmptyTag => {
+                // Rule 2 should have removed these; treat any survivor as
+                // zero-width and skip.
+                i += 1;
             }
         }
     }
 }
 
 pub fn emit_pad_public(cells: usize, out: &mut Vec<u8>) {
-    emit_pad(cells, out);
+    emit_pad(cells, LeftSide::GraphNode, out);
 }
 
-fn emit_pad(cells: usize, out: &mut Vec<u8>) {
+// Decides cap glyphs based on what's immediately to the left of the run:
+//   - GraphNode: opening cap `╶` faces the node (single cells stay as
+//     a literal space — a lone `╶` next to a node reads as visual noise).
+//   - GraphEdge: drop the opening cap — edges never get caps facing them
+//     (single cells emit the closing cap `╴` so the run still terminates
+//     against the content on the right).
+//   - Content: legacy behavior — opening cap `╶`, single cells stay as
+//     a literal space.
+// The closing cap on the right is always emitted (when caps are enabled)
+// because every Ws run that survives rule 2 is followed by Content.
+fn emit_pad(cells: usize, left: LeftSide, out: &mut Vec<u8>) {
     if cells == 0 {
         return;
     }
+    let c = cfg();
+    let caps_enabled = !c.dash_start.is_empty();
     if cells == 1 {
-        out.push(b' ');
+        if !caps_enabled {
+            out.push(b' ');
+            return;
+        }
+        match left {
+            LeftSide::GraphNode => out.push(b' '),
+            LeftSide::GraphEdge => {
+                out.extend_from_slice(&c.dim_on);
+                out.extend_from_slice(closing_cap(&c.dash_start).as_bytes());
+                out.extend_from_slice(FG_RESET);
+            }
+            LeftSide::Content => out.push(b' '),
+        }
         return;
     }
-    let c = cfg();
     out.extend_from_slice(&c.dim_on);
-    let head_cap = !c.dash_start.is_empty();
+    let suppress_left_cap = matches!(left, LeftSide::GraphEdge);
+    let opening_cap = caps_enabled && !suppress_left_cap;
     for idx in 0..cells {
-        if head_cap && idx == 0 {
+        if opening_cap && idx == 0 {
             out.extend_from_slice(c.dash_start.as_bytes());
-        } else if head_cap && idx + 1 == cells && !c.dash_start.is_empty() {
+        } else if caps_enabled && idx + 1 == cells {
             // Reuse dash_start as both opening and closing cap; the
             // existing config models a single cap glyph used at both
             // ends of a run (e.g. `╶─╴`). When dash_start is set we
@@ -346,7 +523,11 @@ mod tests {
     }
 
     #[test]
-    fn elastic_tab_right_pads_to_max_width() {
+    fn elastic_tab_pad_combines_with_literal_space() {
+        // Rule 3: pad (3 cells) + literal " " (1 cell) = 4 ws cells, all
+        // dashed together. r1 (narrow change_id) gets dashes; r2 (widest)
+        // has no pad, so only the literal space contributes a single cell
+        // and stays as a space.
         let t = Template::parse("%{elastic_tab(change_id)} %{description}").unwrap();
         let r1: HashMap<String, Vec<u8>> = [
             ("change_id".to_string(), b"abc".to_vec()),
@@ -365,43 +546,82 @@ mod tests {
         collect_widths(&t, &r2, 0, &mut widths);
         assert_eq!(widths.get("change_id").copied(), Some(6));
 
-        // r1's change_id is 3 wide; pad to width 6 with 3 dash cells.
         let mut out = Vec::new();
-        render_row(&t, &r1, 0, &widths, &mut out);
+        render_row(&t, &r1, 0, LeftSide::Content, &widths, &mut out);
         let s = String::from_utf8_lossy(&out);
         assert!(s.starts_with("abc"));
-        assert!(s.contains(" short"));
+        assert!(s.ends_with("short"));
         assert!(s.contains("╶") || s.contains("─"), "expected dash pad: {}", s);
 
-        // r2 is the widest row, so no pad after change_id.
         let mut out2 = Vec::new();
-        render_row(&t, &r2, 0, &widths, &mut out2);
+        render_row(&t, &r2, 0, LeftSide::Content, &widths, &mut out2);
         assert_eq!(out2, b"abcdef longer");
     }
 
     #[test]
-    fn elastic_tab_single_cell_pad_is_space() {
-        let t = Template::parse("%{elastic_tab(a)} %{description}").unwrap();
-        let r1: HashMap<String, Vec<u8>> = [
-            ("a".to_string(), b"ab".to_vec()),
-            ("description".to_string(), b"x".to_vec()),
+    fn empty_field_collapses_preceding_ws() {
+        // Rule 2: when %{labels} is empty, the literal " " between
+        // %{change_id} and %{labels} is stripped, and %{description}
+        // ends up sitting directly after its own preceding literal space.
+        let t = Template::parse("%{change_id} %{labels} %{description}").unwrap();
+        let fields: HashMap<String, Vec<u8>> = [
+            ("change_id".to_string(), b"abc".to_vec()),
+            ("labels".to_string(), b"".to_vec()),
+            ("description".to_string(), b"hi".to_vec()),
         ]
         .into_iter()
         .collect();
-        let r2: HashMap<String, Vec<u8>> = [
-            ("a".to_string(), b"abc".to_vec()),
-            ("description".to_string(), b"x".to_vec()),
-        ]
-        .into_iter()
-        .collect();
-        let mut widths = HashMap::new();
-        collect_widths(&t, &r1, 0, &mut widths);
-        collect_widths(&t, &r2, 0, &mut widths);
-        assert_eq!(widths.get("a").copied(), Some(3));
-
-        // 1-cell gap (3 - 2 = 1) → single literal space, not dashes.
         let mut out = Vec::new();
-        render_row(&t, &r1, 0, &widths, &mut out);
-        assert_eq!(out, b"ab  x");
+        render_row(&t, &fields, 0, LeftSide::Content, &HashMap::new(), &mut out);
+        assert_eq!(out, b"abc hi");
+    }
+
+    #[test]
+    fn leading_template_ws_is_preserved() {
+        // Rule 1: leading whitespace before the first non-ws content is
+        // preserved verbatim.
+        let t = Template::parse(" %{description}").unwrap();
+        let fields: HashMap<String, Vec<u8>> = [("description".to_string(), b"hi".to_vec())]
+            .into_iter()
+            .collect();
+        let mut out = Vec::new();
+        render_row(&t, &fields, 0, LeftSide::Content, &HashMap::new(), &mut out);
+        assert_eq!(out, b" hi");
+    }
+
+    #[test]
+    fn empty_first_field_keeps_leading_ws_and_collapses_right() {
+        // Rule 1 protects the leading " " (no non-ws content to its
+        // left). Rule 2 is strictly left-only, so the " " after the
+        // empty field also survives; the two cells combine under rule 3
+        // into a dash fill before the next non-ws content.
+        let t = Template::parse(" %{labels} %{description}").unwrap();
+        let fields: HashMap<String, Vec<u8>> = [
+            ("labels".to_string(), b"".to_vec()),
+            ("description".to_string(), b"hi".to_vec()),
+        ]
+        .into_iter()
+        .collect();
+        let mut out = Vec::new();
+        render_row(&t, &fields, 0, LeftSide::Content, &HashMap::new(), &mut out);
+        let s = String::from_utf8_lossy(&out);
+        assert!(s.ends_with("hi"));
+        assert!(s.contains("╶") || s.contains("─"), "expected dash fill: {}", s);
+    }
+
+    #[test]
+    fn leading_pad_combines_with_template_leading_ws() {
+        // graph_pad passed via `leading_pad` joins the template's own
+        // leading " " into a single dash run.
+        let t = Template::parse(" %{change_id}").unwrap();
+        let fields: HashMap<String, Vec<u8>> = [("change_id".to_string(), b"abc".to_vec())]
+            .into_iter()
+            .collect();
+        let mut out = Vec::new();
+        render_row(&t, &fields, 2, LeftSide::GraphNode, &HashMap::new(), &mut out);
+        // 2 leading_pad + 1 literal = 3 ws cells → dashes; abuts "abc".
+        let s = String::from_utf8_lossy(&out);
+        assert!(s.ends_with("abc"));
+        assert!(s.contains("╶") || s.contains("─"), "expected dash pad: {}", s);
     }
 }

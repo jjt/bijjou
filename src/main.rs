@@ -38,7 +38,7 @@ use std::io::{self, Read, Write};
 
 use crate::ansi::skip_csi;
 use crate::config::{cfg, Activate, Config, Pager};
-use crate::dsl::{collect_widths, parse_json_oneline, render_row, Template};
+use crate::dsl::{collect_widths, parse_json_oneline, render_row, LeftSide, Template};
 use crate::output::write_output;
 use crate::render::{contains_bytes, emit_dim_graph, emit_line, find_boundary, strip_trailing_nl};
 
@@ -46,6 +46,7 @@ pub enum RowKind {
     Commit {
         graph_end: usize,
         graph_col: usize,
+        last_is_edge: bool,
         fields: HashMap<String, Vec<u8>>,
     },
     Root {
@@ -88,6 +89,7 @@ pub fn classify_row(body: &[u8]) -> RowKind {
     RowKind::Commit {
         graph_end: p.graph_end,
         graph_col: p.graph_col,
+        last_is_edge: p.last_is_edge,
         fields,
     }
 }
@@ -105,22 +107,25 @@ pub fn emit_classified(
         RowKind::Commit {
             graph_end,
             graph_col,
+            last_is_edge,
             fields,
         } => {
             emit_dim_graph(&body[..*graph_end], out);
-            // Right-pad graph to the widest column across commit rows so
-            // every row's template content starts at the same offset.
-            // Pad < 2 cells stays as plain spaces; >= 2 emits a dashed
-            // run with cap glyphs (matches elastic_tab fill style).
-            crate::dsl::emit_pad_public(
-                max_graph_col.saturating_sub(*graph_col),
-                out,
-            );
-            render_row(template, fields, max_graph_col, widths, out);
+            // Pass the graph→content gap through to `render_row` as a
+            // leading ws segment so it participates in rules 1-3
+            // (collapse on empty fields, dash-fill across adjacent
+            // whitespace) alongside the template's own whitespace.
+            let leading_pad = max_graph_col.saturating_sub(*graph_col);
+            let leading_left = if *last_is_edge {
+                LeftSide::GraphEdge
+            } else {
+                LeftSide::GraphNode
+            };
+            render_row(template, fields, leading_pad, leading_left, widths, out);
         }
         RowKind::Root { graph_end, value } => {
             emit_dim_graph(&body[..*graph_end], out);
-            out.extend_from_slice(b"  ");
+            crate::dsl::emit_pad_public(2, out);
             out.extend_from_slice(value);
         }
         RowKind::Passthrough => {
