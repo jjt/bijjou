@@ -81,69 +81,69 @@ expression: visualize(&output)
 𜸩 𜸩 𜸩 ◆  wlrnxq b75902 KL 260313·1055 tests: remove `Eq`, `PartialEq` from `CheckoutStats`
 𜸩 𜸩 𜸩 ◆  nqyzly 2f26e0 KL 260313·1055 tests: change the length of test change id to 20 bytes
 𜸩 𜸩 𜸩 ◆  rlxkom bdcf65 KL 260313·1055 gitattributes: read gitattributes files
-𜸩 𜸩 ◆─𜸩  oqrysr 47d28f SJ 260411·2205 merge: PR #9068 (LFS ignore-filters) + main
+𜸩 𜸩 ◆╶𜸩  oqrysr 47d28f SJ 260411·2205 merge: PR #9068 (LFS ignore-filters) + main
 𜸚𜸟𜸟𜸟𜸶 𜸩
-𜸩 𜸩 ◆─𜸩  qwpmty 5e3a5a GI 260313·0240 git-lfs: access git attributes to ignore filtered files
-𜸩 𜸩 ◆─𜸩  rwkort b0ab9c GI 260313·0239 git-lfs: add ignore filters option
-𜸩 𜸩 ◆─𜸩  muppnu 26f3ff GI 260313·0239 git-attributes: add git attributes file support
+𜸩 𜸩 ◆╶𜸩  qwpmty 5e3a5a GI 260313·0240 git-lfs: access git attributes to ignore filtered files
+𜸩 𜸩 ◆╶𜸩  rwkort b0ab9c GI 260313·0239 git-lfs: add ignore filters option
+𜸩 𜸩 ◆╶𜸩  muppnu 26f3ff GI 260313·0239 git-attributes: add git attributes file support
 𜸩 𜸩 𜸨𜸟𜹃
-𜸩 ◆─𜸩  pssyur 0b6c35 SJ 260411·2137 workspace-cli@upstream workspace forget: clean up Git worktree when forgetting colocated workspace
-𜸩 ◆─𜸩  psknup 69de8c SJ 260411·2134 op_store: add per-workspace git_head tracking
-𜸩 ◆─𜸩  snzxlp d0f058 SJ 260411·2047 git import: check all worktrees' HEAD for external changes
-𜸩 ◆─𜸩  lkoulo 456a77 SJ 260411·2047 workspace add --colocate: create Git worktree for colocated workspace
-𜸩 ◆─𜸩  xmuwus 6944e2 CR 260411·2047 colocated-workspaces@upstream workspace: Add worktree support to MaybeColocatedGitRepo
-𜸩 ◆─𜸩  lpqwzu 4a71c7 CR 260411·1936 cli: fix 'collocated' typo in doc comment
-𜸩 ◆─𜸩  tqutrm 2a266e CR 260411·1936 git: make GitBackend colocation-aware
-𜸩 ◆─𜸩  vtstut 590566 CR 260411·1936 git: Add MaybeColocatedGitRepo helper
-𜸩 ◆─𜸩  powyrs 1d6a19 CR 260411·1936 git: box all `gix::open::Error` as clippy keeps warning about it
-𜸩 ◆─𜸩  wuxxsv d87de2 CR 260411·1936 workspace: Reload the repo from disk in `workspace add`
-𜸩 ◆─𜸩  ylnvzx b650bb CR 260411·1936 workspace: Make backend factories aware of the workspace root
+𜸩 ◆╶𜸩  pssyur 0b6c35 SJ 260411·2137 workspace-cli@upstream workspace forget: clean up Git worktree when forgetting colocated workspace
+𜸩 ◆╶𜸩  psknup 69de8c SJ 260411·2134 op_store: add per-workspace git_head tracking
+𜸩 ◆╶𜸩  snzxlp d0f058 SJ 260411·2047 git import: check all worktrees' HEAD for external changes
+𜸩 ◆╶𜸩  lkoulo 456a77 SJ 260411·2047 workspace add --colocate: create Git worktree for colocated workspace
+𜸩 ◆╶𜸩  xmuwus 6944e2 CR 260411·2047 colocated-workspaces@upstream workspace: Add worktree support to MaybeColocatedGitRepo
+𜸩 ◆╶𜸩  lpqwzu 4a71c7 CR 260411·1936 cli: fix 'collocated' typo in doc comment
+𜸩 ◆╶𜸩  tqutrm 2a266e CR 260411·1936 git: make GitBackend colocation-aware
+𜸩 ◆╶𜸩  vtstut 590566 CR 260411·1936 git: Add MaybeColocatedGitRepo helper
+𜸩 ◆╶𜸩  powyrs 1d6a19 CR 260411·1936 git: box all `gix::open::Error` as clippy keeps warning about it
+𜸩 ◆╶𜸩  wuxxsv d87de2 CR 260411·1936 workspace: Reload the repo from disk in `workspace add`
+𜸩 ◆╶𜸩  ylnvzx b650bb CR 260411·1936 workspace: Make backend factories aware of the workspace root
 𜸨𜸟𜹃 𜸩
-𜸩 ◆─𜸩  uypoqp d3fc09 a  260411·2230 ase/uypoqpqkxklz@upstream progress with fast path etc
+𜸩 ◆╶𜸩  uypoqp d3fc09 a  260411·2230 ase/uypoqpqkxklz@upstream progress with fast path etc
 𜸨𜸟𜹃 𜸩
-◆───𜸩  kkwtko 8df450 Mv 260411·1530 arrange: make rows as high as needed for template
-◆───𜸩  ysprrm fdf9f5 r  260410·1952 cli: support line range based file fixing for 'jj fix'.
-◆───𜸩  yqkzyv be85bb r  260410·1952 fix: implement core logic for formatting only modified lines
-◆───𜸩  vykynp 9a6bcd r  260410·1952 tests: update TestFileFixer to use explicit replacements map.
-◆───𜸩  qsxrqv 6a52e6 PM 260410·1828 core_tenets: Clarify the "having as few states as possible" one
-𜸩 ◆─𜸩  mqxwqt 86ea1f PM 260410·2049 push-mqxwqtnwnpts@upstream run: Flesh out a bare implementation of `jj run`
+◆╶──𜸩  kkwtko 8df450 Mv 260411·1530 arrange: make rows as high as needed for template
+◆╶──𜸩  ysprrm fdf9f5 r  260410·1952 cli: support line range based file fixing for 'jj fix'.
+◆╶──𜸩  yqkzyv be85bb r  260410·1952 fix: implement core logic for formatting only modified lines
+◆╶──𜸩  vykynp 9a6bcd r  260410·1952 tests: update TestFileFixer to use explicit replacements map.
+◆╶──𜸩  qsxrqv 6a52e6 PM 260410·1828 core_tenets: Clarify the "having as few states as possible" one
+𜸩 ◆╶𜸩  mqxwqt 86ea1f PM 260410·2049 push-mqxwqtnwnpts@upstream run: Flesh out a bare implementation of `jj run`
 𜸨𜸟𜹃 𜸩
-◆───𜸩  vyzruw 0879d2 YN 260409·2322 cli: git-push: push tracked tags in default/specified revsets
-◆───𜸩  wmzuml 53e5ea FG 260409·2158 status: filter untracked paths by fileset
-◆───𜸩  pyxrlq 0e9f7b GL 260409·2059 github: suppress github-env zizmor warning in setup-windows action
-◆───𜸩  xzklsx c62044 GL 260409·2059 github: suppress dangerous-triggers zizmor warning in pr workflow
-◆───𜸩  syxoqk 9a3159 GL 260409·2059 github: fix bot-conditions zizmor warning in dependabot workflow
-◆───𜸩  srzoxm 3eea1e MG 260409·1203 docs: fix setting name for Gerrit remote
-◆───𜸩  xyxkkm f2e1e0 d  260409·0322 github: bump taiki-e/install-action in the github-dependencies group
-◆───𜸩  kuyltu 85461a YN 260409·0114 cli: git-push: add --tag=NAME flag, push tracked tags
-◆───𜸩  zpttln dea4df YN 260409·0114 cli: git-push: extract remote_symbol variable to save vertical space
-◆───𜸩  xqqtrl a27336 YN 260409·0114 cli: git-push: pass around GitPushRefTargets, loop over bookmarks and tags
-◆───𜸩  tlpptp e1aadd YN 260409·0114 cli: git-push: rephrase stats messages for ease of constructing programmatically
-◆───𜸩  ktlxmw 98619c YN 260409·0114 cli: git-push: move clap ArgGroup configuration to field attributes
-◆───𜸩  ukwwyy 0c9604 j  260408·1901 gitignore: Switch to the gix-ignore library
-𜸩 ◆─𜸩  spmrpk/4 5f9fce PM 260408·1741 (divergent) pm/spmrpksxmyvz@upstream transaction: Add `maybe_publish`
+◆╶──𜸩  vyzruw 0879d2 YN 260409·2322 cli: git-push: push tracked tags in default/specified revsets
+◆╶──𜸩  wmzuml 53e5ea FG 260409·2158 status: filter untracked paths by fileset
+◆╶──𜸩  pyxrlq 0e9f7b GL 260409·2059 github: suppress github-env zizmor warning in setup-windows action
+◆╶──𜸩  xzklsx c62044 GL 260409·2059 github: suppress dangerous-triggers zizmor warning in pr workflow
+◆╶──𜸩  syxoqk 9a3159 GL 260409·2059 github: fix bot-conditions zizmor warning in dependabot workflow
+◆╶──𜸩  srzoxm 3eea1e MG 260409·1203 docs: fix setting name for Gerrit remote
+◆╶──𜸩  xyxkkm f2e1e0 d  260409·0322 github: bump taiki-e/install-action in the github-dependencies group
+◆╶──𜸩  kuyltu 85461a YN 260409·0114 cli: git-push: add --tag=NAME flag, push tracked tags
+◆╶──𜸩  zpttln dea4df YN 260409·0114 cli: git-push: extract remote_symbol variable to save vertical space
+◆╶──𜸩  xqqtrl a27336 YN 260409·0114 cli: git-push: pass around GitPushRefTargets, loop over bookmarks and tags
+◆╶──𜸩  tlpptp e1aadd YN 260409·0114 cli: git-push: rephrase stats messages for ease of constructing programmatically
+◆╶──𜸩  ktlxmw 98619c YN 260409·0114 cli: git-push: move clap ArgGroup configuration to field attributes
+◆╶──𜸩  ukwwyy 0c9604 j  260408·1901 gitignore: Switch to the gix-ignore library
+𜸩 ◆╶𜸩  spmrpk/4 5f9fce PM 260408·1741 (divergent) pm/spmrpksxmyvz@upstream transaction: Add `maybe_publish`
 𜸨𜸟𜹃 𜸩
-◆───𜸩  wzytul f7bbff Mv 260408·1509 description_util: delete unused field TextEditor::dir
-◆───𜸩  zyvulp ae6edd RP 260408·0607 git: expand allowed branch keys to include rebase
-◆───𜸩  nmqnlr 4a9101 d  260408·0017 build(deps): bump vite from 6.4.1 to 6.4.2 in /web/docs
-◆───𜸩  zvlypl eb3bc7 LG 260407·2307 docs: Describe how to view a `change-id` header using `git` itself.
-◆───𜸩  rtzpoq 2bfceb LG 260407·2307 docs: Update `git` compatibility to make it clear that the change ID is written by default.
-◆───𜸩  zwtxrv/0 8e5e0b a  260407·1711 (divergent) docs: rename 'Settings' to 'Configuration' in menu #7011
-◆───𜸩  trxykk cc11f3 BT 260407·1230 repo: make some functions async
-◆───𜸩  skvvym 6ec075 BT 260407·1230 evolution: make some functions async
-◆───𜸩  xqovsn 222ebf BT 260407·1230 dag_walk_async: make `topo_order_*` functions async
-◆───𜸩  kzylyu c38d69 Mv 260407·0517 templater: deprecate `Operation.tags()` in favor of `.attributes()`
-◆───𜸩  qlpnnz 901421 d  260407·0138 cargo: bump the cargo-dependencies group with 5 updates
-◆───𜸩  yosluw ff85aa h  260406·2230 docs: add JayJay to community tools page
-𜸩 ◆─𜸩  zwtxrv/1 a4d54f a  260407·1810 (divergent) ase/zwtxrvyrkyox@upstream docs: rename 'Settings' to 'Configuration' in menu #7011
+◆╶──𜸩  wzytul f7bbff Mv 260408·1509 description_util: delete unused field TextEditor::dir
+◆╶──𜸩  zyvulp ae6edd RP 260408·0607 git: expand allowed branch keys to include rebase
+◆╶──𜸩  nmqnlr 4a9101 d  260408·0017 build(deps): bump vite from 6.4.1 to 6.4.2 in /web/docs
+◆╶──𜸩  zvlypl eb3bc7 LG 260407·2307 docs: Describe how to view a `change-id` header using `git` itself.
+◆╶──𜸩  rtzpoq 2bfceb LG 260407·2307 docs: Update `git` compatibility to make it clear that the change ID is written by default.
+◆╶──𜸩  zwtxrv/0 8e5e0b a  260407·1711 (divergent) docs: rename 'Settings' to 'Configuration' in menu #7011
+◆╶──𜸩  trxykk cc11f3 BT 260407·1230 repo: make some functions async
+◆╶──𜸩  skvvym 6ec075 BT 260407·1230 evolution: make some functions async
+◆╶──𜸩  xqovsn 222ebf BT 260407·1230 dag_walk_async: make `topo_order_*` functions async
+◆╶──𜸩  kzylyu c38d69 Mv 260407·0517 templater: deprecate `Operation.tags()` in favor of `.attributes()`
+◆╶──𜸩  qlpnnz 901421 d  260407·0138 cargo: bump the cargo-dependencies group with 5 updates
+◆╶──𜸩  yosluw ff85aa h  260406·2230 docs: add JayJay to community tools page
+𜸩 ◆╶𜸩  zwtxrv/1 a4d54f a  260407·1810 (divergent) ase/zwtxrvyrkyox@upstream docs: rename 'Settings' to 'Configuration' in menu #7011
 𜸨𜸟𜹃 𜸩
-◆───𜸩  mkzksr 8129f4 JR 260406·1814 gitignore: switch matching to non-recursive
-◆───𜸩  qwqorq 09ede0 j  260406·1810 diff.git: Add a show-path-prefix option to disable a/ and b/ prefixes
-𜸩 ◆─𜸩  rlsskl 0d0adf JS 260406·1037 push-rlssklskvqsl@upstream dag_walk_async: silence clippy redundant closure warnings
+◆╶──𜸩  mkzksr 8129f4 JR 260406·1814 gitignore: switch matching to non-recursive
+◆╶──𜸩  qwqorq 09ede0 j  260406·1810 diff.git: Add a show-path-prefix option to disable a/ and b/ prefixes
+𜸩 ◆╶𜸩  rlsskl 0d0adf JS 260406·1037 push-rlssklskvqsl@upstream dag_walk_async: silence clippy redundant closure warnings
 𜸨𜸟𜹃 𜸩
-◆───𜸩  xnlvqw 984dd2 Mv 260406·1429 log: rely on revset engine for intersection of prioritized revset
-◆───𜸩  qzknxu 773896 YN 260405·2311 git: add tags handling to push_refs()
-◆───𜸩  zslytw 91a144 YN 260405·2311 git: parameterize remote matcher of find_git_tag_oid_to_copy()
-◆───𜸩  stozqm 733bae YN 260405·2311 git: use gix::ObjectId in low-level push functions
-◆───𜸩  rxpqxv 2d19df YN 260405·2311 git: extract and use helper to convert CommitId to gix::ObjectId
-◆───𜸩  wlmpoz 62aa9f Mv 260405·1712 dag_walk_async: make heads() async and concurrent
+◆╶──𜸩  xnlvqw 984dd2 Mv 260406·1429 log: rely on revset engine for intersection of prioritized revset
+◆╶──𜸩  qzknxu 773896 YN 260405·2311 git: add tags handling to push_refs()
+◆╶──𜸩  zslytw 91a144 YN 260405·2311 git: parameterize remote matcher of find_git_tag_oid_to_copy()
+◆╶──𜸩  stozqm 733bae YN 260405·2311 git: use gix::ObjectId in low-level push functions
+◆╶──𜸩  rxpqxv 2d19df YN 260405·2311 git: extract and use helper to convert CommitId to gix::ObjectId
+◆╶──𜸩  wlmpoz 62aa9f Mv 260405·1712 dag_walk_async: make heads() async and concurrent

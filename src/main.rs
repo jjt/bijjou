@@ -210,6 +210,7 @@ KEYS
   [layout]
     dash                                    string
     dash-start                              string
+    dash-end                                string
 
   [template]
     oneline                                 DSL string (see config.default.toml)

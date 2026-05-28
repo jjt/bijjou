@@ -3,6 +3,7 @@ use std::sync::OnceLock;
 
 pub const DEFAULT_DASH: &str = "─";
 pub const DEFAULT_DASH_START: &str = "╶";
+pub const DEFAULT_DASH_END: &str = "╴";
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EMPTY_ICON: &str = "";
@@ -118,6 +119,7 @@ pub struct Config {
     pub empty_immutable_icon: String,
     pub dash: String,
     pub dash_start: String,
+    pub dash_end: String,
     pub graph_horizontal: String,
     pub graph_vertical: String,
     pub graph_top_left: String,
@@ -156,6 +158,7 @@ impl Default for Config {
             empty_immutable_icon: DEFAULT_EMPTY_IMMUTABLE_ICON.to_string(),
             dash: DEFAULT_DASH.to_string(),
             dash_start: DEFAULT_DASH_START.to_string(),
+            dash_end: DEFAULT_DASH_END.to_string(),
             graph_horizontal: DEFAULT_GRAPH_HORIZONTAL.to_string(),
             graph_vertical: DEFAULT_GRAPH_VERTICAL.to_string(),
             graph_top_left: DEFAULT_GRAPH_TOP_LEFT.to_string(),
@@ -347,6 +350,7 @@ impl Config {
             "graph.edges.chars.elision" => self.graph_elision = value.to_string(),
             "layout.dash" => self.dash = value.to_string(),
             "layout.dash-start" => self.dash_start = value.to_string(),
+            "layout.dash-end" => self.dash_end = value.to_string(),
             "stream.enabled" => self.stream_enabled = parse_bool_str(value).map_err(mkerr)?,
             "stream.batch-size" => {
                 self.stream_batch_size = parse_batch_size(value).map_err(mkerr)?;
@@ -844,14 +848,16 @@ edge = 200
         let cfg = Config::from_toml("").unwrap();
         assert_eq!(cfg.dash, DEFAULT_DASH);
         assert_eq!(cfg.dash_start, DEFAULT_DASH_START);
+        assert_eq!(cfg.dash_end, DEFAULT_DASH_END);
     }
 
     #[test]
     fn layout_toml_dash_override() {
-        let s = "[layout]\ndash = \".\"\ndash-start = \"<\"\n";
+        let s = "[layout]\ndash = \".\"\ndash-start = \"<\"\ndash-end = \">\"\n";
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.dash, ".");
         assert_eq!(cfg.dash_start, "<");
+        assert_eq!(cfg.dash_end, ">");
     }
 
     #[test]
@@ -859,5 +865,12 @@ edge = 200
         let mut cfg = Config::default();
         cfg.apply_cli(args(&["--layout__dash-start=<"])).unwrap();
         assert_eq!(cfg.dash_start, "<");
+    }
+
+    #[test]
+    fn cli_layout_dash_end() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--layout__dash-end=>"])).unwrap();
+        assert_eq!(cfg.dash_end, ">");
     }
 }

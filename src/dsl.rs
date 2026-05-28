@@ -387,16 +387,17 @@ pub fn emit_pad_public(cells: usize, out: &mut Vec<u8>) {
     emit_pad(cells, LeftSide::GraphNode, out);
 }
 
-// Decides cap glyphs based on what's immediately to the left of the run:
-//   - GraphNode: opening cap `╶` faces the node (single cells stay as
-//     a literal space — a lone `╶` next to a node reads as visual noise).
-//   - GraphEdge: drop the opening cap — edges never get caps facing them
-//     (single cells emit the closing cap `╴` so the run still terminates
-//     against the content on the right).
-//   - Content: legacy behavior — opening cap `╶`, single cells stay as
-//     a literal space.
-// The closing cap on the right is always emitted (when caps are enabled)
-// because every Ws run that survives rule 2 is followed by Content.
+// Decides which glyphs fill the run based on what sits to the left:
+//   - GraphNode: run starts with `dash_start` (cell right of the node).
+//     Single cells stay as a literal space — a lone `dash_start` next to
+//     a node reads as visual noise.
+//   - GraphEdge: the left end is suppressed — dashes never overwrite or
+//     abut directly onto a graph edge glyph. Single cells emit `dash_end`
+//     so the run still terminates against the content on the right.
+//   - Content: behaves like GraphNode — opening with `dash_start`, single
+//     cells stay as a literal space.
+// The right end of every multi-cell run is `dash_end` (cell left of the
+// content the run terminates against).
 fn emit_pad(cells: usize, left: LeftSide, out: &mut Vec<u8>) {
     if cells == 0 {
         return;
@@ -412,7 +413,7 @@ fn emit_pad(cells: usize, left: LeftSide, out: &mut Vec<u8>) {
             LeftSide::GraphNode => out.push(b' '),
             LeftSide::GraphEdge => {
                 out.extend_from_slice(&c.dim_on);
-                out.extend_from_slice(closing_cap(&c.dash_start).as_bytes());
+                out.extend_from_slice(c.dash_end.as_bytes());
                 out.extend_from_slice(FG_RESET);
             }
             LeftSide::Content => out.push(b' '),
@@ -426,28 +427,12 @@ fn emit_pad(cells: usize, left: LeftSide, out: &mut Vec<u8>) {
         if opening_cap && idx == 0 {
             out.extend_from_slice(c.dash_start.as_bytes());
         } else if caps_enabled && idx + 1 == cells {
-            // Reuse dash_start as both opening and closing cap; the
-            // existing config models a single cap glyph used at both
-            // ends of a run (e.g. `╶─╴`). When dash_start is set we
-            // mirror it for the closing cell.
-            out.extend_from_slice(closing_cap(&c.dash_start).as_bytes());
+            out.extend_from_slice(c.dash_end.as_bytes());
         } else {
             out.extend_from_slice(c.dash.as_bytes());
         }
     }
     out.extend_from_slice(FG_RESET);
-}
-
-// Map the opening cap glyph (default `╶`, U+2576) to the matching
-// closing cap (default `╴`, U+2574). Both are half-line glyphs from the
-// box-drawing block. Falls back to the input when no known pair matches,
-// so a custom dash_start still gives a usable (if uncapped) closing.
-fn closing_cap(open: &str) -> std::borrow::Cow<'_, str> {
-    match open {
-        "╶" => std::borrow::Cow::Borrowed("╴"),
-        "╷" => std::borrow::Cow::Borrowed("╵"),
-        other => std::borrow::Cow::Borrowed(other),
-    }
 }
 
 #[cfg(test)]

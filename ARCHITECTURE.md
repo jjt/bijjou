@@ -51,7 +51,7 @@ stdin → activation check → (stream | buffered) → render → output sink �
      text and `%{field}` lookups emit verbatim; `%{elastic_tab(field)}`
      emits the field value followed by `max_width - this_width` fill
      cells (one space if the gap is one cell; otherwise dashes with
-     `layout.dash-start` caps).
+     `layout.dash-start` / `layout.dash-end` caps).
    - Root: emit the graph prefix then the `root` value verbatim (no
      template) so root commits don't perturb column widths.
    - Passthrough: `emit_line` from `render.rs` handles the graph-only
@@ -79,6 +79,31 @@ stdin → activation check → (stream | buffered) → render → output sink �
 `[graph.nodes.chars].fallback` is a config-only key: not emitted by the
 default template, but recognized as a node icon in input so a custom
 template that emits a different glyph still parses correctly.
+
+## Dash spec
+
+A "dash run" is the filler placed between a graph node and the rest of
+the commit info on the same line. The spec is the single source of
+truth for both the intra-graph runs (`render.rs::flush_internal_run`)
+and the graph→content / inter-field runs (`dsl.rs::emit_pad`).
+
+- A dash run goes between a graph **node** (not a graph edge) and the
+  rest of the commit info on the line.
+- Dashes are logically continuous from the node out to the content;
+  graph **edges** appearing in the way puncture the run, but the run
+  resumes on the other side of the edge.
+- Dashes are never emitted on top of a graph edge cell.
+- Going left-to-right, the cell immediately right of a node uses
+  `layout.dash-start` (default `╶`) — but **only** if that cell is also
+  to the left of whitespace OR a graph edge. If the cell right of a node
+  sits directly to the left of another node, no dash is emitted at all
+  (the space is preserved). If it sits directly to the left of content,
+  it's the lone closing cell instead.
+- The cell immediately left of the content the run terminates against
+  uses `layout.dash-end` (default `╴`).
+- All other cells in the run use `layout.dash` (default `─`).
+
+Set `layout.dash-start = ""` to disable caps entirely.
 
 ## Config surface
 

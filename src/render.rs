@@ -276,11 +276,18 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
 }
 
 // Replace a pending internal space run with dashes when the line has already
-// seen its node and the run is followed by another graph char. The first dash
-// is swapped for `dash_start` only when the run abuts a node on the left AND
-// another node on the right — edges never get cap glyphs facing them, since
-// `╶`/`╴` are meant to attach a dash run to a node or content boundary, not
-// to a graph edge that already terminates in a glyph of its own.
+// seen its node and the run is followed by another graph char.
+//
+// Rules (per the dash spec):
+//   - The cell immediately right of a node gets `dash_start` if and only if
+//     that cell is also to the left of whitespace OR a graph edge — i.e.,
+//     the run is multi-cell, or it's a single cell between a node and an
+//     edge. A single-cell run between two nodes emits NO dash at all (the
+//     space is preserved).
+//   - `dash_end` is never emitted here: intra-graph runs always terminate
+//     at another graph char (never content), and the closing cap is meant
+//     to attach the run to the content boundary on the right. The DSL's
+//     content-side pad is responsible for that cap.
 fn flush_internal_run(
     out: &mut Vec<u8>,
     run_start: &mut Option<usize>,
@@ -298,10 +305,17 @@ fn flush_internal_run(
     if !(seen_node && right_is_graph && count > 0) {
         return;
     }
+    // Single-cell gap between two nodes: emit no dash; keep the space.
+    if count == 1 && left_was_node && right_is_node {
+        return;
+    }
     let original: Vec<u8> = out[start..].to_vec();
     out.truncate(start);
     out.extend_from_slice(&c.dim_on);
-    let head_cap = left_was_node && right_is_node && !c.dash_start.is_empty();
+    // After the early return above, any run with `left_was_node` either has
+    // count > 1 (next cell is whitespace) or terminates at an edge — both
+    // qualify for `dash_start`.
+    let head_cap = left_was_node && !c.dash_start.is_empty();
     for idx in 0..count {
         if head_cap && idx == 0 {
             out.extend_from_slice(c.dash_start.as_bytes());
