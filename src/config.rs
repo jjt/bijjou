@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
@@ -29,7 +30,9 @@ pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
 pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
 pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
-pub const DEFAULT_TEMPLATE_ONELINE: &str = " %{elastic_tab(change_id)} %{elastic_tab(commit_id)} %{elastic_tab(author)} %{elastic_tab(timestamp)} %{working_copies} %{bookmarks} %{tags} %{description}";
+pub const DEFAULT_LOG_ONELINE_NAME: &str = "log_oneline";
+pub const DEFAULT_LOG_ONELINE_BODY: &str = " %{elastic_tab(change_id)} %{elastic_tab(commit_id)} %{elastic_tab(author)} %{elastic_tab(timestamp)} %{working_copies} %{bookmarks} %{tags} %{description}";
+pub const BIJJOU_TEMPLATE_NAME_FIELD: &str = "bijjou_template_name";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BatchSize {
@@ -141,7 +144,7 @@ pub struct Config {
     pub stream_enabled: bool,
     pub stream_batch_size: BatchSize,
     pub debug_force_screen_height: Option<usize>,
-    pub template_oneline: String,
+    pub templates: HashMap<String, String>,
 }
 
 impl Default for Config {
@@ -180,7 +183,14 @@ impl Default for Config {
             stream_enabled: true,
             stream_batch_size: BatchSize::default(),
             debug_force_screen_height: None,
-            template_oneline: DEFAULT_TEMPLATE_ONELINE.to_string(),
+            templates: {
+                let mut m = HashMap::new();
+                m.insert(
+                    DEFAULT_LOG_ONELINE_NAME.to_string(),
+                    DEFAULT_LOG_ONELINE_BODY.to_string(),
+                );
+                m
+            },
         }
     }
 }
@@ -355,7 +365,16 @@ impl Config {
             "stream.batch-size" => {
                 self.stream_batch_size = parse_batch_size(value).map_err(mkerr)?;
             }
-            "template.oneline" => self.template_oneline = value.to_string(),
+            k if k.starts_with("templates.") => {
+                let name = &k["templates.".len()..];
+                if name.is_empty() || name.contains('.') {
+                    return Err(mkerr(format!(
+                        "expected `templates.<name>` with a flat name, got {:?}",
+                        k
+                    )));
+                }
+                self.templates.insert(name.to_string(), value.to_string());
+            }
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
             "debug.force-screen-height" => {

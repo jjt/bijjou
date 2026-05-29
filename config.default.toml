@@ -122,16 +122,30 @@
 # dash-start = "╶"
 # dash-end   = "╴"
 
-[template]
-# DSL string controlling per-commit content rendering. `%{name}` looks
-# up a JSON field from the jj template output; `%{func(arg)}` is a
-# function call. The only function currently supported is
-# `elastic_tab(field)`, which emits the field value followed by enough
-# fill cells to reach the batch-wide max width for that field — so the
-# next column's left edge aligns across rows.
+[templates]
+# DSL strings controlling per-commit content rendering. Each entry is a
+# named template keyed under `templates.<name>`. The jj template must
+# include a `bijjou_template_name` field whose value is one of these
+# names — bijjou looks the name up and renders the row with the matching
+# DSL.
 #
-# Real newlines inside this string collapse to single spaces. To embed
-# a literal newline in the output, write `\n` (the two-char escape).
+# Body grammar: `%{field}` looks up a field from the jj record;
+# `%{func(arg)}` is a function call. The only function currently
+# supported is `elastic_tab(field)`, which emits the field value
+# followed by enough fill cells to reach the batch-wide max width for
+# that field (per template) — so the next column's left edge aligns
+# across rows.
+#
+# Real newlines inside a body collapse to single spaces. To embed a
+# literal newline in the output, write `\n` (the two-char escape).
+#
+# Special cases:
+#   - An empty body (e.g. `log_oneline = ""`) renders nothing past the
+#     graph for rows that name that template — useful when the row's
+#     payload is informational only.
+#   - If a row names a template that isn't configured, bijjou writes
+#     `no bijjou template for <name>` in bright black where the row
+#     content would otherwise sit.
 #
 # Whitespace handling (applied in order per row):
 #
@@ -156,7 +170,7 @@
 #
 # Default:
 #
-# oneline = ''' %{elastic_tab(change_id)} %{elastic_tab(commit_id)} %{elastic_tab(author)} %{elastic_tab(timestamp)} %{working_copies} %{bookmarks} %{tags} %{description}'''
+# log_oneline = ''' %{elastic_tab(change_id)} %{elastic_tab(commit_id)} %{elastic_tab(author)} %{elastic_tab(timestamp)} %{working_copies} %{bookmarks} %{tags} %{description}'''
 
 [colors]
 # `dash-filler` / `edge`: integer 0-255 (256-color palette) or "#rrggbb"

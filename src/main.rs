@@ -36,9 +36,9 @@ mod stream;
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 
-use crate::ansi::skip_csi;
-use crate::config::{cfg, Activate, Config, Pager};
-use crate::dsl::{collect_widths, parse_json_oneline, parse_nul_oneline, render_row, LeftSide, Template};
+use crate::ansi::{skip_csi, FG_RESET};
+use crate::config::{cfg, Activate, Config, Pager, BIJJOU_TEMPLATE_NAME_FIELD};
+use crate::dsl::{collect_widths, parse_json_oneline, parse_nul_oneline, render_row, LeftSide, Node, Template};
 use crate::output::write_output;
 use crate::render::{contains_bytes, emit_dim_graph, emit_line, find_boundary, strip_trailing_nl};
 
@@ -47,6 +47,7 @@ pub enum RowKind {
         graph_end: usize,
         graph_col: usize,
         last_is_edge: bool,
+        template_name: Option<String>,
         fields: HashMap<String, Vec<u8>>,
     },
     Root {
@@ -54,6 +55,29 @@ pub enum RowKind {
         value: Vec<u8>,
     },
     Passthrough,
+}
+
+// A `templates.<name>` entry compiled at startup. `Empty` carries no template
+// body — the row's content is dropped, only the graph prefix is emitted.
+pub enum CompiledTemplate {
+    Empty,
+    Parsed(Template),
+}
+
+pub fn compile_templates(
+    map: &HashMap<String, String>,
+) -> Result<HashMap<String, CompiledTemplate>, String> {
+    let mut out = HashMap::with_capacity(map.len());
+    for (name, body) in map {
+        let entry = if body.is_empty() {
+            CompiledTemplate::Empty
+        } else {
+            let tpl = Template::parse(body).map_err(|e| format!("templates.{}: {}", name, e))?;
+            CompiledTemplate::Parsed(tpl)
+        };
+        out.insert(name.clone(), entry);
+    }
+    Ok(out)
 }
 
 pub fn classify_row(body: &[u8]) -> RowKind {
@@ -76,7 +100,7 @@ pub fn classify_row(body: &[u8]) -> RowKind {
     let rest = &payload[i..];
     // NUL/RS-framed record: terminator `\x1e` is the format marker. Try
     // this first; fall back to JSON if not present.
-    let fields = if rest.contains(&0x1E) {
+    let mut fields = if rest.contains(&0x1E) {
         let Some(f) = parse_nul_oneline(rest) else {
             return RowKind::Passthrough;
         };
@@ -96,10 +120,14 @@ pub fn classify_row(body: &[u8]) -> RowKind {
             value,
         };
     }
+    let template_name = fields
+        .remove(BIJJOU_TEMPLATE_NAME_FIELD)
+        .and_then(|v| String::from_utf8(v).ok());
     RowKind::Commit {
         graph_end: p.graph_end,
         graph_col: p.graph_col,
         last_is_edge: p.last_is_edge,
+        template_name,
         fields,
     }
 }
@@ -107,8 +135,8 @@ pub fn classify_row(body: &[u8]) -> RowKind {
 pub fn emit_classified(
     line: &[u8],
     row: &RowKind,
-    template: &Template,
-    widths: &HashMap<String, usize>,
+    templates: &HashMap<String, CompiledTemplate>,
+    widths: &HashMap<String, HashMap<String, usize>>,
     max_graph_col: usize,
     out: &mut Vec<u8>,
 ) {
@@ -118,6 +146,7 @@ pub fn emit_classified(
             graph_end,
             graph_col,
             last_is_edge,
+            template_name,
             fields,
         } => {
             emit_dim_graph(&body[..*graph_end], out);
@@ -131,7 +160,30 @@ pub fn emit_classified(
             } else {
                 LeftSide::GraphNode
             };
-            render_row(template, fields, leading_pad, leading_left, widths, out);
+            let Some(name) = template_name.as_deref() else {
+                // Row parsed as fields but carried no `bijjou_template_name` —
+                // we have nothing to render with. Pass the rest of the line
+                // through verbatim instead of dropping the payload.
+                out.extend_from_slice(&body[*graph_end..]);
+                if trailing_nl {
+                    out.push(b'\n');
+                }
+                return;
+            };
+            match templates.get(name) {
+                Some(CompiledTemplate::Empty) => {
+                    // Configured but empty — render the graph only and drop
+                    // the rest of the row.
+                }
+                Some(CompiledTemplate::Parsed(template)) => {
+                    let empty_widths: HashMap<String, usize> = HashMap::new();
+                    let w = widths.get(name).unwrap_or(&empty_widths);
+                    render_row(template, fields, leading_pad, leading_left, w, out);
+                }
+                None => {
+                    emit_missing_template(name, leading_pad, leading_left, out);
+                }
+            }
         }
         RowKind::Root { graph_end, value } => {
             emit_dim_graph(&body[..*graph_end], out);
@@ -149,6 +201,24 @@ pub fn emit_classified(
     if trailing_nl {
         out.push(b'\n');
     }
+}
+
+// Render a single-row notice for a row whose `bijjou_template_name` doesn't
+// match any configured `templates.<name>`. The message is wrapped in the
+// dim SGR pair so it renders in bright black, matching the graph filler.
+fn emit_missing_template(name: &str, leading_pad: usize, leading_left: LeftSide, out: &mut Vec<u8>) {
+    let c = cfg();
+    let mut bytes = Vec::with_capacity(c.dim_on.len() + 32 + name.len() + FG_RESET.len());
+    bytes.extend_from_slice(&c.dim_on);
+    bytes.extend_from_slice(b"no bijjou template for ");
+    bytes.extend_from_slice(name.as_bytes());
+    bytes.extend_from_slice(FG_RESET);
+    let synth = Template {
+        nodes: vec![Node::Literal(b" ".to_vec()), Node::Field("__bijjou_msg".to_string())],
+    };
+    let mut fields: HashMap<String, Vec<u8>> = HashMap::with_capacity(1);
+    fields.insert("__bijjou_msg".to_string(), bytes);
+    render_row(&synth, &fields, leading_pad, leading_left, &HashMap::new(), out);
 }
 
 const HELP: &str = "\
@@ -222,8 +292,10 @@ KEYS
     dash-start                              string
     dash-end                                string
 
-  [template]
-    oneline                                 DSL string (see config.default.toml)
+  [templates]
+    <name>                                  DSL string (see config.default.toml).
+                                            Each row's `bijjou_template_name`
+                                            field selects `templates.<name>`.
 
   [stream]
     enabled                                 bool (default true)
@@ -514,23 +586,30 @@ fn run() -> io::Result<()> {
         }
     }
 
-    let template = Template::parse(&c.template_oneline).map_err(|e| {
-        io::Error::new(io::ErrorKind::InvalidData, format!("template.oneline: {}", e))
-    })?;
+    let templates = compile_templates(&c.templates)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     let lines = split_lines(&input);
     let rows: Vec<RowKind> = lines
         .iter()
         .map(|l| classify_row(strip_trailing_nl(l).0))
         .collect();
 
-    let mut widths: HashMap<String, usize> = HashMap::new();
+    let mut widths: HashMap<String, HashMap<String, usize>> = HashMap::new();
     let mut max_graph_col = 0usize;
     for row in &rows {
         if let RowKind::Commit {
-            graph_col, fields, ..
+            graph_col,
+            template_name,
+            fields,
+            ..
         } = row
         {
-            collect_widths(&template, fields, *graph_col, &mut widths);
+            if let Some(name) = template_name.as_deref() {
+                if let Some(CompiledTemplate::Parsed(template)) = templates.get(name) {
+                    let entry = widths.entry(name.to_string()).or_default();
+                    collect_widths(template, fields, *graph_col, entry);
+                }
+            }
             if *graph_col > max_graph_col {
                 max_graph_col = *graph_col;
             }
@@ -539,7 +618,7 @@ fn run() -> io::Result<()> {
 
     let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 16);
     for (line, row) in lines.iter().zip(rows.iter()) {
-        emit_classified(line, row, &template, &widths, max_graph_col, &mut out);
+        emit_classified(line, row, &templates, &widths, max_graph_col, &mut out);
     }
     write_output(&out, lines.len())
 }

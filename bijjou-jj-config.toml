@@ -1,12 +1,32 @@
 [templates]
-log = 'log_oneline_nul'
+log = 'log_oneline'
 
 [template-aliases]
-'log_oneline_nul' = 'log_oneline_nul(self)'
-'log_oneline_nul(commit)' = '''
+'diff_numstat' = 'diff_numstat(self)'
+'diff_numstat(commit)' = '''
+commit.diff().stat().files().map(|f|
+  separate("\x00",
+    "bijjou_template_name\x00diff_numstat",
+    "lines_added\x00" ++ label(if(f.lines_added() == 0, "rest", "diff added"), f.lines_added()),
+    "lines_removed\x00" ++ label(if(f.lines_removed() == 0, "rest", "diff removed"), f.lines_removed()),
+    "status_char\x00" ++ label(
+       if(f.status() == "modified", "diff modified",
+         if(f.status() == "added", "diff added",
+           if(f.status() == "removed", "diff removed",
+             if(f.status() == "copied", "diff copied",
+               if(f.status() == "renamed", "diff renamed", ""))))),
+       f.status_char()),
+    "path\x00" ++ f.display_diff_path(),
+  ) ++ "\x1e\n"
+).join("")
+'''
+
+'log_oneline' = 'log_oneline(self)'
+'log_oneline(commit)' = '''
 if(commit.root(),
   "root\x00" ++ format_root_commit(commit) ++ "\x1e\n",
   separate("\x00",
+    "bijjou_template_name\x00log_oneline",
     "change_id\x00" ++ format_short_change_id_with_change_offset(commit),
     "commit_id\x00" ++ format_short_commit_id(commit.commit_id()),
     "author\x00" ++ format_short_signature_oneline(commit.author()),

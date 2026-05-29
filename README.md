@@ -1,43 +1,27 @@
 # bijjou
 
-A post-processor for `jj log` output. Rewrites graph glyphs, dims edges,
-aligns content to a uniform column, and optionally fills the gap with a
-dash run pointing at each commit for easier alignment of node to commit information.
+A post-processor that takes `NUL` separated fields from custom jj templates
+(log, etc) and displays them according to bijjou templates.
 
-Bijjou reads stdin, processes it, and writes to stdout. It only touches
-graph rows — the rest of the stream is passed through byte-for-byte.
+We leverage jj's template system functionality to write pieces of 
 
 ## What it does
 
 - Replaces jj's box-drawing graph chars (`│ ╭ ╮ ─` …) with Unicode 16 Large
   Type Pieces by default, or any glyph you configure.
-- Aligns commit content across rows so every change id starts at the same
-  column. Dims edges and fills the gap between the graph and content with
-  a dash run (and optional arrow) for easier eye-tracking.
-- Replaces `jj diff --summary` status letters (`M A D R C`) with Nerd Font
-  icons, optionally colorizing the path to match. Strips `{}` braces from
-  rename/copy lines.
-- Streams output as input arrives, or processes the whole input at once.
+- Takes `NUL` separated fields and values from a jj template and provides a
+  simple templating language and a handful of layout functions
+- Provides `elastic_tab` for fields that vertically aligns the contents
+- Adds dashes between the graph nodes and the commit information 
+- Accepts streaming input and streams output in batches (see below for details)
 
-### Node icons
+## What it doesn't
 
-Bijjou does not rewrite jj's node glyphs (`@ ○ ◆ × ●`) at render time —
-jj's own template owns that. Run `bijjou jj-config` to emit a TOML
-snippet for your jj config that wires bijjou's `[graph.nodes.chars]`
-into `templates.log_node`:
+Bijjou does not replicate functionality of jj's templating system. For instance
+logic to colourize the shortest prefix of a change id.
 
-```sh
-bijjou jj-config >> ~/.config/jj/config.toml
-```
-
-Or splice the same template inline via shell substitution:
-
-```sh
-jj log $(bijjou jj-graph-node-config) --color=always | bijjou
-```
-
-(whitespace inside the TOML values is `\u`-escaped so `$(…)` word-splits
-the line at the argument boundaries only — no `eval` needed.)
+The general pattern is to emit a `NUL` separated hash map of keys with strings
+from a jj template and then write a bijjou template that lays them out.
 
 The pipe to `bijjou` matters even if you don't want the other
 post-processing. Without it, jj launches its builtin pager
@@ -82,31 +66,14 @@ Pipe `jj log` through bijjou:
 jj log --color=always | bijjou
 ```
 
-By default bijjou is in `always` mode: it processes every line of input.
-Set `--activate=auto` to gate processing on the presence of the activation
-marker (`BIJJOU_ACTIVATE`) in stdin, or `--activate=never` to force
-byte-for-byte passthrough.
+## Streaming
 
-Color output defaults to `auto` (emit when stdout is a terminal, strip
-otherwise). Override with `--color=always` or `--color=never`, or set
-`[ui] color = "..."` in the config file.
+Accepts streaming input. Emits streaming output, based on a static `batch-size`
+or based on the screen height (# of rows). The latter is intended for use
+with a pager, assuming that the pager's status line is a single row.
 
-bijjou detects jj's native `(empty)` and `(divergent)` log annotations out
-of the box — no jj config required. Setting `ui.color = "always"` is
-optional and only useful if you want jj's color choices preserved when
-output is piped (bijjou itself locates the graph column by codepoint, not
-by ANSI). See
-[`examples/jj-config-snippet.toml`](examples/jj-config-snippet.toml) for a
-minimal snippet.
-
-### Streaming
-
-Streaming is on by default: bijjou flushes batches as input arrives. Graph
-width is tracked across the whole stream and grows monotonically —
-alignment never shifts backwards. Disable with `--stream=false` to fall
-back to the buffered path, which aligns every line to the widest graph
-column in the input at the cost of waiting for EOF. See the comment in
-[`config.default.toml`](config.default.toml) for the trade-off.
+The batch size for the first page is `<rows> - 1`, and subsequent pages are 
+`(<rows> - 1) / 2`, since page down/up seems to move by half screens.
 
 ## Configuration
 
