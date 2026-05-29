@@ -1,0 +1,28 @@
+[templates]
+log = 'log_oneline_nul'
+
+[template-aliases]
+'log_oneline_nul' = 'log_oneline_nul(self)'
+'log_oneline_nul(commit)' = '''
+if(commit.root(),
+  "root\x00" ++ format_root_commit(commit) ++ "\x1e\n",
+  separate("\x00",
+    "change_id\x00" ++ format_short_change_id_with_change_offset(commit),
+    "commit_id\x00" ++ format_short_commit_id(commit.commit_id()),
+    "author\x00" ++ format_short_signature_oneline(commit.author()),
+    "timestamp\x00" ++ commit_timestamp(commit).format("%y%m%d·%H%M"),
+    "labels\x00" ++ format_commit_labels(commit),
+    "working_copies\x00" ++ commit.working_copies(),
+    "bookmarks\x00" ++ commit.bookmarks(),
+    "tags\x00" ++ commit.tags(),
+    if(config("ui.show-cryptographic-signatures").as_boolean(),
+      "signature\x00" ++ format_short_cryptographic_signature(commit.signature())),
+    if(commit.empty(),
+      "empty\x00" ++ empty_commit_marker),
+    "description\x00" ++ if(commit.description(),
+      commit.description().first_line(),
+      label("no_desc","no description"),
+    ),
+  ) ++ "\x1e\n",
+)
+'''

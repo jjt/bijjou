@@ -38,7 +38,7 @@ use std::io::{self, Read, Write};
 
 use crate::ansi::skip_csi;
 use crate::config::{cfg, Activate, Config, Pager};
-use crate::dsl::{collect_widths, parse_json_oneline, render_row, LeftSide, Template};
+use crate::dsl::{collect_widths, parse_json_oneline, parse_nul_oneline, render_row, LeftSide, Template};
 use crate::output::write_output;
 use crate::render::{contains_bytes, emit_dim_graph, emit_line, find_boundary, strip_trailing_nl};
 
@@ -73,10 +73,20 @@ pub fn classify_row(body: &[u8]) -> RowKind {
         }
         break;
     }
-    if i >= payload.len() || payload[i] != b'{' {
-        return RowKind::Passthrough;
-    }
-    let Some(fields) = parse_json_oneline(&payload[i..]) else {
+    let rest = &payload[i..];
+    // NUL/RS-framed record: terminator `\x1e` is the format marker. Try
+    // this first; fall back to JSON if not present.
+    let fields = if rest.contains(&0x1E) {
+        let Some(f) = parse_nul_oneline(rest) else {
+            return RowKind::Passthrough;
+        };
+        f
+    } else if !rest.is_empty() && rest[0] == b'{' {
+        let Some(f) = parse_json_oneline(rest) else {
+            return RowKind::Passthrough;
+        };
+        f
+    } else {
         return RowKind::Passthrough;
     };
     if fields.len() == 1 && fields.contains_key("root") {

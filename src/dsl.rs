@@ -88,6 +88,32 @@ fn parse_expr(s: &str) -> Result<Node, String> {
     }
 }
 
+// Flat NUL/RS-framed parser. Record shape:
+//   key1\0val1\0key2\0val2\0...\0keyN\0valN\x1e
+// A trailing `\x1e` is required as the record terminator. Values pass
+// through verbatim (ANSI ESC bytes etc. survive); no escaping needed
+// because neither `\0` nor `\x1e` occur in jj's normal output.
+pub fn parse_nul_oneline(bytes: &[u8]) -> Option<HashMap<String, Vec<u8>>> {
+    let rs_pos = bytes.iter().position(|&b| b == 0x1E)?;
+    let body = &bytes[..rs_pos];
+    if body.is_empty() {
+        return None;
+    }
+    let parts: Vec<&[u8]> = body.split(|&b| b == 0).collect();
+    if parts.len() < 2 || parts.len() % 2 != 0 {
+        return None;
+    }
+    let mut fields = HashMap::with_capacity(parts.len() / 2);
+    for chunk in parts.chunks(2) {
+        let key = std::str::from_utf8(chunk[0]).ok()?.to_string();
+        if key.is_empty() {
+            return None;
+        }
+        fields.insert(key, chunk[1].to_vec());
+    }
+    Some(fields)
+}
+
 // Flat JSON object parser. Keys and values are JSON strings; values may
 // contain raw ESC bytes (the jj template emits ANSI escapes inside the
 // string literal) and the standard `\"`, `\\`, `\n` escapes for the three
@@ -495,6 +521,52 @@ mod tests {
     fn json_oneline_rejects_non_object() {
         assert!(parse_json_oneline(b"[]").is_none());
         assert!(parse_json_oneline(b"plain").is_none());
+    }
+
+    #[test]
+    fn nul_oneline_basic() {
+        let bytes = b"change_id\x00abc\x00commit_id\x00123\x1e";
+        let m = parse_nul_oneline(bytes).unwrap();
+        assert_eq!(m.get("change_id").unwrap(), b"abc");
+        assert_eq!(m.get("commit_id").unwrap(), b"123");
+    }
+
+    #[test]
+    fn nul_oneline_preserves_raw_esc_and_newlines() {
+        let bytes = b"k\x00\x1b[1mhi\nthere\x1b[0m\x1e";
+        let m = parse_nul_oneline(bytes).unwrap();
+        assert_eq!(m.get("k").unwrap(), b"\x1b[1mhi\nthere\x1b[0m");
+    }
+
+    #[test]
+    fn nul_oneline_empty_value() {
+        let bytes = b"labels\x00\x00description\x00hi\x1e";
+        let m = parse_nul_oneline(bytes).unwrap();
+        assert_eq!(m.get("labels").unwrap().as_slice(), b"");
+        assert_eq!(m.get("description").unwrap(), b"hi");
+    }
+
+    #[test]
+    fn nul_oneline_root_record() {
+        let bytes = b"root\x00zzzzzz root() 000000\x1e";
+        let m = parse_nul_oneline(bytes).unwrap();
+        assert_eq!(m.len(), 1);
+        assert_eq!(m.get("root").unwrap(), b"zzzzzz root() 000000");
+    }
+
+    #[test]
+    fn nul_oneline_rejects_no_terminator() {
+        assert!(parse_nul_oneline(b"k\x00v").is_none());
+    }
+
+    #[test]
+    fn nul_oneline_rejects_odd_parts() {
+        assert!(parse_nul_oneline(b"k\x00v\x00orphan\x1e").is_none());
+    }
+
+    #[test]
+    fn nul_oneline_rejects_empty_key() {
+        assert!(parse_nul_oneline(b"\x00v\x1e").is_none());
     }
 
     #[test]
