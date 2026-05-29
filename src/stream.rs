@@ -4,7 +4,9 @@ use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 use crate::ansi::strip_sgr;
 use crate::config::{cfg, color_enabled, Activate, BatchSize, Pager};
 use crate::dsl::collect_widths;
-use crate::{classify_row, compile_templates, emit_classified, CompiledTemplate, RowKind};
+use crate::{
+    classify_row, compile_templates, emit_classified, CompiledTemplate, RowKind, TemplateMetrics,
+};
 use crate::render::{contains_bytes, strip_trailing_nl};
 
 pub fn run() -> io::Result<()> {
@@ -14,7 +16,7 @@ pub fn run() -> io::Result<()> {
     let mut reader = BufReader::new(io::stdin().lock());
     let templates = compile_templates(&c.templates)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-    let mut widths: HashMap<String, HashMap<String, usize>> = HashMap::new();
+    let mut metrics: HashMap<String, TemplateMetrics> = HashMap::new();
     let mut max_graph_col: usize = 0;
 
     let first = read_batch(&mut reader, first_size)?;
@@ -39,13 +41,13 @@ pub fn run() -> io::Result<()> {
         }
     }
 
-    process_batch(&first, &templates, &mut widths, &mut max_graph_col, &mut sink)?;
+    process_batch(&first, &templates, &mut metrics, &mut max_graph_col, &mut sink)?;
     loop {
         let batch = read_batch(&mut reader, rest_size)?;
         if batch.is_empty() {
             break;
         }
-        process_batch(&batch, &templates, &mut widths, &mut max_graph_col, &mut sink)?;
+        process_batch(&batch, &templates, &mut metrics, &mut max_graph_col, &mut sink)?;
     }
     sink.close()
 }
@@ -134,7 +136,7 @@ fn read_batch<R: BufRead>(reader: &mut R, batch_size: usize) -> io::Result<Vec<V
 fn process_batch(
     batch: &[Vec<u8>],
     templates: &HashMap<String, CompiledTemplate>,
-    widths: &mut HashMap<String, HashMap<String, usize>>,
+    metrics: &mut HashMap<String, TemplateMetrics>,
     max_graph_col: &mut usize,
     sink: &mut OutputSink,
 ) -> io::Result<()> {
@@ -143,8 +145,9 @@ fn process_batch(
         .map(|l| classify_row(strip_trailing_nl(l).0))
         .collect();
 
-    // Monotonic widen: widths only grow across batches so already-emitted
-    // rows above remain valid (column targets never shrink).
+    // Monotonic widen: widths and anchors only grow across batches so
+    // already-emitted rows above remain valid (column targets never
+    // shrink).
     for row in &rows {
         if let RowKind::Commit {
             graph_col,
@@ -155,8 +158,8 @@ fn process_batch(
         {
             if let Some(name) = template_name.as_deref() {
                 if let Some(CompiledTemplate::Parsed(template)) = templates.get(name) {
-                    let entry = widths.entry(name.to_string()).or_default();
-                    collect_widths(template, fields, *graph_col, entry);
+                    let entry = metrics.entry(name.to_string()).or_default();
+                    collect_widths(template, fields, &mut entry.widths, &mut entry.anchors);
                 }
             }
             if *graph_col > *max_graph_col {
@@ -167,7 +170,7 @@ fn process_batch(
 
     let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 16).sum());
     for (line, row) in batch.iter().zip(rows.iter()) {
-        emit_classified(line, row, templates, widths, *max_graph_col, &mut out);
+        emit_classified(line, row, templates, metrics, *max_graph_col, &mut out);
     }
     if color_enabled() {
         sink_write(sink, &out)

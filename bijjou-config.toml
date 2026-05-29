@@ -208,4 +208,4 @@ batch-size = "half-pager"
 
 [templates]
 log_oneline = ''' %{elastic_tab(change_id)} %{elastic_tab(commit_id)} %{elastic_tab(author)} %{elastic_tab(timestamp)} %{working_copies} %{bookmarks} %{tags} %{description}'''
-diff_numstat = ''' %{elastic_tab(lines_added)} %{elastic_tab(lines_removed)} %{elastic_tab(status_char)} %{path}'''
+diff_numstat = ''' %{lines_added} %{lines_removed} %{elastic_tab(status_char)} %{path}'''

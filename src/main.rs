@@ -64,6 +64,15 @@ pub enum CompiledTemplate {
     Parsed(Template),
 }
 
+// Per-template alignment state. `widths` is the row-wide max visible width
+// per elastic_tab field; `anchors` is the row-wide max natural column
+// before each elastic_tab. Both grow monotonically as rows are scanned.
+#[derive(Default)]
+pub struct TemplateMetrics {
+    pub widths: HashMap<String, usize>,
+    pub anchors: HashMap<String, usize>,
+}
+
 pub fn compile_templates(
     map: &HashMap<String, String>,
 ) -> Result<HashMap<String, CompiledTemplate>, String> {
@@ -136,7 +145,7 @@ pub fn emit_classified(
     line: &[u8],
     row: &RowKind,
     templates: &HashMap<String, CompiledTemplate>,
-    widths: &HashMap<String, HashMap<String, usize>>,
+    metrics: &HashMap<String, TemplateMetrics>,
     max_graph_col: usize,
     out: &mut Vec<u8>,
 ) {
@@ -177,8 +186,12 @@ pub fn emit_classified(
                 }
                 Some(CompiledTemplate::Parsed(template)) => {
                     let empty_widths: HashMap<String, usize> = HashMap::new();
-                    let w = widths.get(name).unwrap_or(&empty_widths);
-                    render_row(template, fields, leading_pad, leading_left, w, out);
+                    let empty_anchors: HashMap<String, usize> = HashMap::new();
+                    let (w, a) = match metrics.get(name) {
+                        Some(m) => (&m.widths, &m.anchors),
+                        None => (&empty_widths, &empty_anchors),
+                    };
+                    render_row(template, fields, leading_pad, leading_left, w, a, out);
                 }
                 None => {
                     emit_missing_template(name, leading_pad, leading_left, out);
@@ -218,7 +231,15 @@ fn emit_missing_template(name: &str, leading_pad: usize, leading_left: LeftSide,
     };
     let mut fields: HashMap<String, Vec<u8>> = HashMap::with_capacity(1);
     fields.insert("__bijjou_msg".to_string(), bytes);
-    render_row(&synth, &fields, leading_pad, leading_left, &HashMap::new(), out);
+    render_row(
+        &synth,
+        &fields,
+        leading_pad,
+        leading_left,
+        &HashMap::new(),
+        &HashMap::new(),
+        out,
+    );
 }
 
 const HELP: &str = "\
@@ -594,7 +615,7 @@ fn run() -> io::Result<()> {
         .map(|l| classify_row(strip_trailing_nl(l).0))
         .collect();
 
-    let mut widths: HashMap<String, HashMap<String, usize>> = HashMap::new();
+    let mut metrics: HashMap<String, TemplateMetrics> = HashMap::new();
     let mut max_graph_col = 0usize;
     for row in &rows {
         if let RowKind::Commit {
@@ -606,8 +627,8 @@ fn run() -> io::Result<()> {
         {
             if let Some(name) = template_name.as_deref() {
                 if let Some(CompiledTemplate::Parsed(template)) = templates.get(name) {
-                    let entry = widths.entry(name.to_string()).or_default();
-                    collect_widths(template, fields, *graph_col, entry);
+                    let entry = metrics.entry(name.to_string()).or_default();
+                    collect_widths(template, fields, &mut entry.widths, &mut entry.anchors);
                 }
             }
             if *graph_col > max_graph_col {
@@ -618,7 +639,7 @@ fn run() -> io::Result<()> {
 
     let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 16);
     for (line, row) in lines.iter().zip(rows.iter()) {
-        emit_classified(line, row, &templates, &widths, max_graph_col, &mut out);
+        emit_classified(line, row, &templates, &metrics, max_graph_col, &mut out);
     }
     write_output(&out, lines.len())
 }
