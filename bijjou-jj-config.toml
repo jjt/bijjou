@@ -43,6 +43,6 @@ if(commit.root(),
       commit.description().first_line(),
       label("no_desc","no description"),
     ),
-  ) ++ "\x1e\n",
+  ) ++ "\x1e\n" ++ if(commit.current_working_copy(), diff_numstat(commit)),
 )
 '''
