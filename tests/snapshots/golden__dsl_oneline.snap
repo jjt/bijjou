@@ -10,6 +10,6 @@ expression: visualize(&output)
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
 ○\e[38;5;8m╶─╴\e[39mwosytr\e[38;5;8m╶─╴\e[39m912122 TU 260509·1436 main main: edit shared
 ○\e[38;5;8m╶─╴\e[39mxsnkqp\e[38;5;8m╶─╴\e[39m48a20a TU 260509·1436 base: shared file
-○\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m╴\e[39medglft\e[38;5;8m╶─╴\e[39m7a3b9e TU 260509·1436 edge-last graph: dash run should drop left cap
-\e[38;5;8m𜸩\e[39m\e[38;5;8m──╴\e[39medghd\e[38;5;8m╶──╴\e[39m7a3b9f TU 260509·1436 single edge col: leading dash run skips left cap
+○\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m edglft   7a3b9e TU 260509·1436 edge-last graph: dash run should drop left cap
+\e[38;5;8m𜸩\e[39m   edghd    7a3b9f TU 260509·1436 single edge col: leading dash run skips left cap
 ◆\e[38;5;8m╶╴\e[39mzzzzzz root() 000000

@@ -373,9 +373,15 @@ pub enum LeftSide {
 // `leading_left` describes the prefix sitting to the left of the first
 // Ws (before any Content has been emitted). Once Content appears, every
 // subsequent Ws sees Content on its left.
+//
+// Rows whose graph prefix ends in an edge (`leading_left == GraphEdge`)
+// skip dash filling entirely: dashes look like a continuation of the
+// edge glyph, so every whitespace cell on those rows stays a plain space
+// even after content has been emitted.
 fn emit_segs(segs: &[Seg], leading_left: LeftSide, out: &mut Vec<u8>) {
     let mut i = 0;
     let mut content_emitted = false;
+    let edge_rooted = matches!(leading_left, LeftSide::GraphEdge);
     while i < segs.len() {
         match &segs[i] {
             Seg::Content(bytes) => {
@@ -393,12 +399,18 @@ fn emit_segs(segs: &[Seg], leading_left: LeftSide, out: &mut Vec<u8>) {
                         break;
                     }
                 }
-                let left = if content_emitted {
-                    LeftSide::Content
+                if edge_rooted {
+                    for _ in 0..total {
+                        out.push(b' ');
+                    }
                 } else {
-                    leading_left
-                };
-                emit_pad(total, left, out);
+                    let left = if content_emitted {
+                        LeftSide::Content
+                    } else {
+                        leading_left
+                    };
+                    emit_pad(total, left, out);
+                }
             }
             Seg::EmptyTag => {
                 // Rule 2 should have removed these; treat any survivor as
