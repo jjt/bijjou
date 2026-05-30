@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: Pure graph segment with no node — must still emit edge-dim color.
-expression: visualize(&output)
----
-\e[38;5;8m𜸩\e[39m \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m

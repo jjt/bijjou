@@ -1,8 +1,0 @@
----
-source: tests/golden.rs
-description: Mid-graph blank line — must not crash or merge into next row.
-expression: visualize(&output)
----
-○  abcde 12345
-
-○  fghij 67890

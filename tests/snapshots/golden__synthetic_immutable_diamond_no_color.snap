@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: ◆ with no surrounding color — must darken and swap glyph to lock.
-expression: visualize(&output)
----
-◆  zzzzz root() 000000

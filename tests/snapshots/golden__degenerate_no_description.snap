@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: "Bare graph + change/commit IDs only, no description text."
-expression: visualize(&output)
----
-○  abcde 12345

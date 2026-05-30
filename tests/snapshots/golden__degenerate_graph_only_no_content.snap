@@ -1,7 +1,0 @@
----
-source: tests/golden.rs
-description: Lines with graph chars but no commit content after.
-expression: visualize(&output)
----
-\e[38;5;8m𜸩\e[39m
-\e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m

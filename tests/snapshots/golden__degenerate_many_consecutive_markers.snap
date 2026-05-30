@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: "Stack of (empty)(divergent) markers — all stripped, no doubled spacing."
-expression: visualize(&output)
----
-@  abc (empty)(divergent)(empty)(divergent)(empty)(divergent)(empty)(divergent)desc

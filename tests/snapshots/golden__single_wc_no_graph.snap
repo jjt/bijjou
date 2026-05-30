@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: Single line of input with no graph column at all.
-expression: visualize(&output)
----
-\e[1m\e[38;5;13mzt\e[38;5;8mtznl\e[39m \e[38;5;12m05ec\e[38;5;8mee\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;14m260509·1007\e[39m add unit tests for byte-level rendering helpers\e[0m

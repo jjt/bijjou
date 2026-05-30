@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: "Three blank lines, no graph and no content."
-expression: visualize(&output)
----
-

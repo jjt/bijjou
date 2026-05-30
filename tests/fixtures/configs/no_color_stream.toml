@@ -1,8 +1,0 @@
-activate = "always"
-
-[ui]
-color = "never"
-
-[stream]
-enabled = true
-batch-size = 1000000

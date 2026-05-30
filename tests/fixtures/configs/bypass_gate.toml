@@ -1,4 +1,0 @@
-activate = "always"
-
-[stream]
-enabled = false

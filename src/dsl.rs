@@ -415,13 +415,12 @@ pub enum LeftSide {
 // subsequent Ws sees Content on its left.
 //
 // Rows whose graph prefix ends in an edge (`leading_left == GraphEdge`)
-// skip dash filling entirely: dashes look like a continuation of the
-// edge glyph, so every whitespace cell on those rows stays a plain space
-// even after content has been emitted.
+// still dash-fill: `emit_pad` drops the left cap so the run abuts the
+// edge glyph with a plain dash rather than a `╶`, but the dashes (and the
+// closing `╴` against content) are emitted as on any other row.
 fn emit_segs(segs: &[Seg], leading_left: LeftSide, out: &mut Vec<u8>) {
     let mut i = 0;
     let mut content_emitted = false;
-    let edge_rooted = matches!(leading_left, LeftSide::GraphEdge);
     while i < segs.len() {
         match &segs[i] {
             Seg::Content(bytes) => {
@@ -440,18 +439,12 @@ fn emit_segs(segs: &[Seg], leading_left: LeftSide, out: &mut Vec<u8>) {
                         _ => break,
                     }
                 }
-                if edge_rooted {
-                    for _ in 0..total {
-                        out.push(b' ');
-                    }
+                let left = if content_emitted {
+                    LeftSide::Content
                 } else {
-                    let left = if content_emitted {
-                        LeftSide::Content
-                    } else {
-                        leading_left
-                    };
-                    emit_pad(total, left, out);
-                }
+                    leading_left
+                };
+                emit_pad(total, left, out);
             }
             Seg::EmptyTag => {
                 // Rule 2 should have removed these; treat any survivor as

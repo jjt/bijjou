@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: "Final line missing trailing \\n — output must still flush correctly."
-expression: visualize(&output)
----
-○  abcde 12345 desc

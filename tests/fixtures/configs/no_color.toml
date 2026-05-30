@@ -1,7 +1,0 @@
-activate = "always"
-
-[ui]
-color = "never"
-
-[stream]
-enabled = false

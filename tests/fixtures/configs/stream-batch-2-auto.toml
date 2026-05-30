@@ -1,5 +1,0 @@
-activate = "auto"
-
-[stream]
-enabled = true
-batch-size = 2

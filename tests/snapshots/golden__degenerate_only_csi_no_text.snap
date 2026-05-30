@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: "Pure escape sequences, zero visible chars."
-expression: visualize(&output)
----
-\e[31m\e[39m

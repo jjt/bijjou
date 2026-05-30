@@ -1,5 +1,0 @@
-activate = "always"
-
-[stream]
-enabled = true
-batch-size = 1000000

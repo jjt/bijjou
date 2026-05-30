@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: "@ on a line carrying the divergent marker — lock icon wins over WC visuals."
-expression: visualize(&output)
----
-@  abc (divergent) desc

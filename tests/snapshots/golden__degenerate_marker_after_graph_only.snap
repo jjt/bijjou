@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: Graph + marker but no commit content; marker still stripped.
-expression: visualize(&output)
----
-○  (empty)

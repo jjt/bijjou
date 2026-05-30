@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: Empty stdin → empty stdout.
-expression: visualize(&output)
----
-

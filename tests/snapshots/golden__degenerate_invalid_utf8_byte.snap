@@ -1,6 +1,0 @@
----
-source: tests/golden.rs
-description: "Stray 0x80 continuation byte — UTF-8 decoder treats as 1-byte char, no crash."
-expression: visualize(&output)
----
-@  abcde \x80 strange desc

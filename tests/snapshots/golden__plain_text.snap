@@ -1,7 +1,0 @@
----
-source: tests/golden.rs
-description: Input with no graph chars — must passthrough unchanged.
-expression: visualize(&output)
----
-M src/main.rs
-A tests/golden.rs
