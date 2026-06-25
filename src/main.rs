@@ -258,7 +258,7 @@ KEYS
     dash-end                                string
 
   [templates]
-    <name>                                  DSL string (see config.default.toml).
+    <name>                                  DSL string (see bijjou-config.toml).
                                             Each row's `bijjou_template_name`
                                             field selects `templates.<name>`.
 
@@ -275,7 +275,7 @@ KEYS
   [colors]                                  int 0-255 | \"#rrggbb\"
     dash-filler  graph-edge
 
-See config.default.toml for defaults and discussion.
+See bijjou-config.toml for defaults and discussion.
 ";
 
 fn main() {

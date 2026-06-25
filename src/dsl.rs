@@ -187,7 +187,7 @@ enum Seg {
 }
 
 // Render one row using the four-rule model documented in
-// `config.default.toml`:
+// `bijjou-config.toml`:
 //   1. Leading whitespace before the first non-whitespace character is
 //      preserved verbatim.
 //   2. When a %{} block emits empty bytes, every whitespace cell between

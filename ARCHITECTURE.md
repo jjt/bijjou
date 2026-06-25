@@ -3,34 +3,54 @@
 `bijjou` = stdin/stdout filter. Post-process `jj log` output: rewrite edge
 glyphs, dim edges, and re-render per-commit content from a NUL/RS-framed
 payload (emitted by a custom jj log template — see `bijjou-jj-config.toml`)
-through a small templating DSL. Lines that aren't framed commit rows pass
-through byte-for-byte. Node glyphs themselves are owned by jj's template —
-bijjou recognizes them but never rewrites them.
+through a small templating DSL. Each payload names a bijjou template via a
+`bijjou_template_name` field, which selects one of the configured
+`[templates]` entries. Lines that aren't framed commit rows pass through
+byte-for-byte. Node glyphs themselves are owned by jj's template — bijjou
+recognizes them but never rewrites them.
 
 ## Pipeline
 
 ```
-stdin → activation check → (stream | buffered) → render → output sink → stdout|pager
+stdin → activation check → (stream | buffered) → classify → render → output sink → stdout|pager
 ```
 
 - **Activate gate** (`Activate::Never|Auto|Always`): `Never` = raw copy.
-  `Auto` = look for the `bijjou_template_name` field in input, else passthrough.
-- **Stream vs buffered**: `[stream].enabled` switches paths.
-  - Stream (`stream.rs`): read in batches, emit per line, flush as input
-    arrives.
-  - Buffered (`main.rs::run`): slurp stdin, emit one pass.
+  `Auto` = look for the `bijjou_template_name` field in input, else
+  passthrough (in streaming mode the scan is limited to the first batch).
+  `Always` (default) = process every line.
+- **Stream vs buffered**: `[stream].enabled` switches paths (default on).
+  - Stream (`stream.rs`): read in batches, two-pass per batch, flush as
+    input arrives. Batch size is `[stream].batch-size` — a fixed line
+    count (default 128) or `half-pager` (first batch = `rows-1`, each
+    later batch = `(rows-1)/2`).
+  - Buffered (`main.rs::run`): slurp stdin, two-pass once, emit.
+
+## Templates
+
+A `[templates]` table maps names → DSL bodies, compiled once at startup
+into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
+`bijjou_template_name` field picks the entry to render with:
+
+- **Parsed** body → render the row through the DSL.
+- **Empty** body (`name = ""`) → emit the graph prefix only, drop the
+  rest of the row.
+- **Missing** (name not in `[templates]`) → emit a dim
+  `no bijjou template for <name>` notice where content would go.
+- **No name** (row parsed as fields but carried no `bijjou_template_name`)
+  → pass the rest of the line through verbatim instead of dropping it.
 
 ## Modules
 
 | File         | Job                                                                                      |
 | ------------ | ---------------------------------------------------------------------------------------- |
-| `main.rs`    | Arg parse, config load chain, dispatch buffered path                                      |
-| `config.rs`  | Config struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
+| `main.rs`    | Arg parse, config load chain, dispatch (stream vs buffered). Owns the shared row core: `RowKind`, `classify_row`, `emit_classified`, template compilation, and per-template `TemplateMetrics` (max widths + anchors). |
+| `config.rs`  | `Config` struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
 | `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
-| `render.rs`  | Parse line → `Parsed{graph_col, graph_end, content_start}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job. |
-| `dsl.rs`     | Templating DSL + NUL/RS-framed record parser (`parse_nul_oneline`). `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render: collect max visible widths, then emit each row with right-padded elastic-tab fields. |
-| `stream.rs`  | Batched reader, two-pass per batch with monotonic widening (column targets never shrink as new batches arrive), `OutputSink` (stdout or piped pager). |
-| `output.rs`  | Buffered path's terminal write / pager spawn                                              |
+| `render.rs`  | Parse line → `Parsed{graph_col, graph_end, content_start, last_is_edge}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job. |
+| `dsl.rs`     | Templating DSL + NUL/RS-framed record parser (`parse_nul_oneline`). `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render (`collect_widths` → `render_row`): pass 1 records each elastic-tab field's max visible width **and** max natural column (anchor); pass 2 left-pads to the anchor so the field's left edge lines up, then right-pads the value to the max width. Whitespace follows a 4-rule model (see below). |
+| `stream.rs`  | Batched reader (`read_batch`), two-pass per batch with monotonic widening (widths, anchors, and `graph_col` targets never shrink as new batches arrive), `OutputSink` (stdout or pager spawned via `std::process::Command`/`posix_spawn`). |
+| `output.rs`  | Buffered path's terminal write / pager exec (`fork` + `execvp`, replacing bijjou's process)  |
 
 ## Render flow per line
 
@@ -40,26 +60,51 @@ stdin → activation check → (stream | buffered) → render → output sink �
    followed by a space or an edge (the column gap jj pads after every
    node). This means custom `log_node` glyphs (□, Nerd-Font PUA, …) are
    handled without enumerating them; content is never misread because its
-   first glyph always sits past the gap.
+   first glyph always sits past the gap. `last_is_edge` records whether
+   the prefix ended on an edge or a node.
 2. `classify_row` → after the graph prefix, look for a NUL/RS-framed
    payload (`key\0val\0…\x1e`, emitted by the custom jj log template).
-   Lines that parse become `RowKind::Commit{graph_col, fields}`; a record
+   Lines that parse become `RowKind::Commit` (carrying `graph_col`,
+   `graph_end`, `last_is_edge`, `template_name`, and `fields`); a record
    that is just `root\0<value>` becomes `RowKind::Root`; anything else
    stays `RowKind::Passthrough`.
-3. Pass 1 over the buffer (or batch): collect per-field max visible
-   widths (`collect_widths`) and the overall max `graph_col` across
-   commit rows.
+3. Pass 1 over the buffer (or batch): per named template, `collect_widths`
+   records each elastic-tab field's max visible width and max natural
+   column (anchor); also track the overall max `graph_col` across commit
+   rows.
 4. Pass 2 — `emit_classified`:
    - Commit: `emit_dim_graph` for the graph prefix, right-pad to the
-     max graph column, then `render_row` walks the template: literal
-     text and `%{field}` lookups emit verbatim; `%{elastic_tab(field)}`
-     emits the field value followed by `max_width - this_width` fill
-     cells (one space if the gap is one cell; otherwise dashes with
+     max graph column (handed to the DSL as a leading pad), then dispatch
+     on the row's template (Parsed / Empty / missing / no-name; see
+     **Templates**). For a Parsed body, `render_row` walks the template:
+     literal text and `%{field}` lookups emit verbatim;
+     `%{elastic_tab(field)}` left-pads to the field's anchor, emits the
+     value, then emits `max_width - this_width` right-pad fill cells (one
+     space if the gap is one cell; otherwise dashes with
      `layout.dash-start` / `layout.dash-end` caps).
-   - Root: emit the graph prefix then the `root` value verbatim (no
-     template) so root commits don't perturb column widths.
+   - Root: emit the graph prefix then a 2-cell pad and the `root` value
+     verbatim (no template) so root commits don't perturb column widths.
    - Passthrough: `emit_line` from `render.rs` handles the graph-only
      and unframed cases (just the edge-dim rewrite + verbatim tail).
+
+## DSL whitespace model
+
+`render_row` classifies output into segments (`Content`, touchable `Ws`,
+elastic-tab left-pad `Anchor`, and zero-width `EmptyTag`) and applies four
+rules in order:
+
+1. Leading whitespace before the first non-whitespace character is
+   preserved verbatim (never collapses, even when the first field is empty).
+2. When a `%{}` block emits empty bytes, every whitespace cell between it
+   and the nearest non-whitespace character to its **left** collapses to
+   zero. `Anchor` cells stop the walk — column-alignment survives empty
+   values.
+3. After rules 1-2 and elastic-tab alignment, any run of consecutive
+   whitespace cells is dash-filled (single cells stay spaces; runs of two
+   or more become a capped dash run). The graph→content gap participates
+   in this fill alongside the template's own whitespace.
+4. Bytes that came out of a `%{}` block are never modified — internal
+   whitespace inside a value passes through untouched.
 
 ## Dash spec
 
@@ -91,23 +136,29 @@ Set `layout.dash-start = ""` to disable caps entirely.
 Single global `OnceLock<Config>` via `cfg()`. Three merge layers:
 
 1. `Config::load` → read TOML from `$BIJJOU_CONFIG` | XDG | `~/.config/...`.
-   Writes default on first run.
+   Writes the embedded `bijjou-config.toml` to the XDG path on first run.
 2. `apply_env` → `BIJJOU__SECTION__KEY=VAL`.
-3. `apply_cli` → `--key__sub=val`.
+3. `apply_cli` → `--key__sub=val` (plus shorthands `--activate`,
+   `--color`, `--stream[=bool]`).
 
-Keys: top-level (`activate`, `pager`),
-`[ui]`, `[layout]`, `[template]`, `[stream]`,
-`[graph.edges.chars]`, `[colors]`. Full ref: `config.default.toml`.
+Keys: top-level (`activate`, `pager`), `[ui].color`,
+`[layout]` (`dash`, `dash-start`, `dash-end`), `[templates].<name>`,
+`[stream]` (`enabled`, `batch-size` = int | `"half-pager"`),
+`[graph.edges.chars]`, `[colors]` (`dash-filler`, `graph-edge`), plus the
+hidden `debug.force-screen-height`. Full ref: `bijjou-config.toml`.
 
 ## Output
 
 - TTY + `pager=auto|always` + `$PAGER` set → spawn pager subprocess,
   pipe bytes.
 - Else → `stdout.write_all`.
-- `--color=auto` strips SGR when stdout not a TTY (via `ansi::strip_sgr`).
+- `--color=auto` strips SGR when stdout not a TTY (via `ansi::strip_sgr`;
+  gated by `config::color_enabled`).
 
 ## Tests
 
-- `tests/golden.rs` + `insta` snapshots under `tests/snapshots/`. Run
+- `tests/golden.rs` + `insta` snapshots under `tests/snapshots/`, rendered
+  under `bijjou-config.toml` with `ui.color` forced on. Run
   `mise run test-insta`. Review with `cargo insta review`.
-- Unit tests inline in `render.rs`, `ansi.rs`, `stream.rs`, `config.rs`.
+- Unit tests inline in `render.rs`, `dsl.rs`, `ansi.rs`, `stream.rs`,
+  `config.rs`.

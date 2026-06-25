@@ -355,7 +355,7 @@ impl Config {
     }
 }
 
-const EXAMPLE_CONFIG: &str = include_str!("../config.default.toml");
+const EXAMPLE_CONFIG: &str = include_str!("../bijjou-config.toml");
 
 fn default_config_target() -> Option<PathBuf> {
     if let Ok(v) = std::env::var("XDG_CONFIG_HOME") {

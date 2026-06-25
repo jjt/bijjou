@@ -137,18 +137,16 @@ CLI flags: `--<key>=<value>`, replace `.` with `__`.
 jj log | bijjou --graph__edges__chars__horizontal=X
 ```
 
-See [`config.default.toml`](config.default.toml) for every key, default,
+See [`bijjou-config.toml`](bijjou-config.toml) for every key, default,
 and explanatory comment. Quick reference:
 
 | Section               | Keys                                                                                                |
 | --------------------- | --------------------------------------------------------------------------------------------------- |
 | (top level)           | `activate`, `pager`                                                                                 |
 | `[ui]`                | `color` (auto\|always\|never)                                                                       |
-| `[layout]`            | `align`, `gap`, `dash`, `dash-arrow`, `dash-margin`                                                 |
-| `[filter]`            | `hide-vertical-only-lines`                                                                          |
-| `[details]`           | `align-offset`, `diffstat-separator`                                                                |
-| `[stream]`            | `enabled`, `batch-size`                                                                             |
-| `[commits.markers]`   | `empty`, `divergent`                                                                                |
+| `[layout]`            | `dash`, `dash-start`, `dash-end`                                                                    |
+| `[templates]`         | `<name>` (DSL body; a row's `bijjou_template_name` selects one)                                     |
+| `[stream]`            | `enabled`, `batch-size` (int or `"half-pager"`)                                                     |
 | `[graph.edges.chars]` | `horizontal`, `vertical`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `tee-right`, `tee-left`, `tee-down`, `tee-up`, `cross`, `elision` |
 | `[colors]`            | `dash-filler`, `graph-edge` (int 0–255 or `"#rrggbb"`)                              |
 
