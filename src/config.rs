@@ -19,7 +19,6 @@ pub const DEFAULT_GRAPH_TEE_DOWN: &str = "𜸠";
 pub const DEFAULT_GRAPH_TEE_UP: &str = "𜹀";
 pub const DEFAULT_GRAPH_CROSS: &str = "𜸺";
 pub const DEFAULT_GRAPH_ELISION: &str = "𜹀";
-pub const DEFAULT_ACTIVATION_MARKER: &str = "BIJJOU_ACTIVATE";
 pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
 pub const DEFAULT_LOG_ONELINE_NAME: &str = "log_oneline";
 pub const DEFAULT_LOG_ONELINE_BODY: &str = " %{elastic_tab(change_id)} %{elastic_tab(commit_id)} %{elastic_tab(author)} %{elastic_tab(timestamp)} %{working_copies} %{bookmarks} %{tags} %{description}";
@@ -88,19 +87,6 @@ pub fn parse_color(s: &str) -> Result<Color, String> {
     }
 }
 
-pub fn validate_activation_marker(m: &str) -> Result<(), String> {
-    if m.is_empty() {
-        return Err("activation-marker: must not be empty".into());
-    }
-    if let Some(c) = m.chars().find(|c| c.is_control()) {
-        return Err(format!(
-            "activation-marker: contains non-printable character {:?}",
-            c
-        ));
-    }
-    Ok(())
-}
-
 pub struct Config {
     pub dash: String,
     pub dash_start: String,
@@ -119,7 +105,6 @@ pub struct Config {
     pub graph_elision: String,
     pub dim_on: Vec<u8>,
     pub edge_dim_on: Vec<u8>,
-    pub activation_marker: String,
     pub activate: Activate,
     pub pager: Pager,
     pub color: Color,
@@ -149,7 +134,6 @@ impl Default for Config {
             graph_elision: DEFAULT_GRAPH_ELISION.to_string(),
             dim_on: DEFAULT_DIM_ON.to_vec(),
             edge_dim_on: DEFAULT_EDGE_DIM_ON.to_vec(),
-            activation_marker: DEFAULT_ACTIVATION_MARKER.to_string(),
             activate: Activate::default(),
             pager: Pager::default(),
             color: Color::default(),
@@ -306,10 +290,6 @@ impl Config {
             "activate" => self.activate = parse_activate(value).map_err(mkerr)?,
             "pager" => self.pager = parse_pager(value).map_err(mkerr)?,
             "ui.color" => self.color = parse_color(value).map_err(mkerr)?,
-            "activation-marker" => {
-                validate_activation_marker(value).map_err(mkerr)?;
-                self.activation_marker = value.to_string();
-            }
             "graph.edges.chars.horizontal" => self.graph_horizontal = value.to_string(),
             "graph.edges.chars.vertical" => self.graph_vertical = value.to_string(),
             "graph.edges.chars.top-left" => self.graph_top_left = value.to_string(),
@@ -488,36 +468,10 @@ edge = 200
     }
 
     #[test]
-    fn toml_activation_marker_override() {
-        let s = "activation-marker = \"XX\"\n";
-        let cfg = Config::from_toml(s).unwrap();
-        assert_eq!(cfg.activation_marker, "XX");
-    }
-
-    #[test]
-    fn toml_activation_marker_empty_is_error() {
-        let s = "activation-marker = \"\"\n";
-        let err = match Config::from_toml(s) {
-            Err(e) => e,
-            Ok(_) => panic!("expected error"),
-        };
-        assert!(err.contains("activation-marker"), "got: {}", err);
-    }
-
-    #[test]
-    fn toml_activation_marker_control_char_is_error() {
-        let s = "activation-marker = \"AB\\nCD\"\n";
-        let err = match Config::from_toml(s) {
-            Err(e) => e,
-            Ok(_) => panic!("expected error"),
-        };
-        assert!(err.contains("non-printable"), "got: {}", err);
-    }
-
-    #[test]
-    fn toml_default_activation_marker_matches_const() {
-        let cfg = Config::from_toml("").unwrap();
-        assert_eq!(cfg.activation_marker, DEFAULT_ACTIVATION_MARKER);
+    fn toml_activation_marker_key_is_now_unknown() {
+        // The configurable marker was removed; auto mode keys off the
+        // `bijjou_template_name` field in the input instead.
+        assert!(Config::from_toml("activation-marker = \"XX\"\n").is_err());
     }
 
     #[test]

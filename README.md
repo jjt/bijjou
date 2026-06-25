@@ -140,7 +140,7 @@ and explanatory comment. Quick reference:
 
 | Section               | Keys                                                                                                |
 | --------------------- | --------------------------------------------------------------------------------------------------- |
-| (top level)           | `activate`, `activation-marker`, `pager`                                                            |
+| (top level)           | `activate`, `pager`                                                                                 |
 | `[ui]`                | `color` (auto\|always\|never)                                                                       |
 | `[layout]`            | `align`, `gap`, `dash`, `dash-arrow`, `dash-margin`                                                 |
 | `[filter]`            | `hide-vertical-only-lines`                                                                          |

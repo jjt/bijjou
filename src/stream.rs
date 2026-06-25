@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 
 use crate::ansi::strip_sgr;
-use crate::config::{cfg, color_enabled, Activate, BatchSize, Pager};
+use crate::config::{cfg, color_enabled, Activate, BatchSize, Pager, BIJJOU_TEMPLATE_NAME_FIELD};
 use crate::dsl::collect_widths;
 use crate::{
     classify_row, compile_templates, emit_classified, CompiledTemplate, RowKind, TemplateMetrics,
@@ -25,7 +25,6 @@ pub fn run() -> io::Result<()> {
     }
 
     if c.activate == Activate::Auto {
-        let marker = c.activation_marker.as_bytes();
         let mut concatenated_len = 0usize;
         for line in &first {
             concatenated_len += line.len();
@@ -34,7 +33,7 @@ pub fn run() -> io::Result<()> {
         for line in &first {
             joined.extend_from_slice(line);
         }
-        if !contains_bytes(&joined, marker) {
+        if !contains_bytes(&joined, BIJJOU_TEMPLATE_NAME_FIELD.as_bytes()) {
             sink_write(&mut sink, &joined)?;
             passthrough(&mut reader, &mut sink)?;
             return sink.close();

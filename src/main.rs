@@ -257,12 +257,11 @@ CONFIGURATION
   is pre-scanned so every line in it shares the batch-wide max graph_col.
   Subsequent batches widen monotonically per-line as wider rows arrive, and
   alignment never shifts backwards. In streaming `auto` activation mode the
-  marker scan is limited to the first batch; if the marker isn't there, the
-  rest of stdin is passed through verbatim.
+  scan for the `bijjou_template_name` field is limited to the first batch;
+  if it isn't there, the rest of stdin is passed through verbatim.
 
 KEYS
   activate                                  auto|always|never
-  activation-marker                         string
   pager                                     auto|always|never
 
   [ui]
@@ -453,8 +452,7 @@ fn run() -> io::Result<()> {
     io::stdin().read_to_end(&mut input)?;
 
     if c.activate == Activate::Auto {
-        let marker = c.activation_marker.as_bytes();
-        if !contains_bytes(&input, marker) {
+        if !contains_bytes(&input, BIJJOU_TEMPLATE_NAME_FIELD.as_bytes()) {
             let mut out = io::stdout().lock();
             out.write_all(&input)?;
             out.flush()?;

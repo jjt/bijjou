@@ -14,7 +14,7 @@ stdin → activation check → (stream | buffered) → render → output sink �
 ```
 
 - **Activate gate** (`Activate::Never|Auto|Always`): `Never` = raw copy.
-  `Auto` = look for `activation-marker` in input, else passthrough.
+  `Auto` = look for the `bijjou_template_name` field in input, else passthrough.
 - **Stream vs buffered**: `[stream].enabled` switches paths.
   - Stream (`stream.rs`): read in batches, emit per line, flush as input
     arrives.
@@ -96,7 +96,7 @@ Single global `OnceLock<Config>` via `cfg()`. Three merge layers:
 2. `apply_env` → `BIJJOU__SECTION__KEY=VAL`.
 3. `apply_cli` → `--key__sub=val`.
 
-Keys: top-level (`activate`, `pager`, `activation-marker`),
+Keys: top-level (`activate`, `pager`),
 `[ui]`, `[layout]`, `[template]`, `[stream]`,
 `[graph.edges.chars]`, `[colors]`. Full ref: `config.default.toml`.
 

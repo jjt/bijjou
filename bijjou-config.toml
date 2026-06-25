@@ -18,8 +18,9 @@
 #   `--activate` with no value is shorthand for `--activate=auto`.
 
 # Processing mode: one of "auto", "always", "never".
-#   auto   — gate on `activation-marker`.
-#   always — process every line regardless of marker presence (default).
+#   auto   — process only if the `bijjou_template_name` field appears in the
+#            input; otherwise pass stdin through byte-for-byte.
+#   always — process every line regardless (default).
 #   never  — passthrough stdin byte-for-byte without processing.
 # The `--activate=<auto|always|never>` CLI flag overrides this; `--activate`
 # with no value resolves to "auto".
@@ -27,19 +28,6 @@
 # Default: "always"
 #
 # activate = "always"
-
-# Opt-in marker. In `auto` mode, bijjou processes input only if this byte
-# sequence appears at least once anywhere in stdin. All occurrences are
-# stripped from output. When absent (and mode is auto), stdin is passed
-# through byte-for-byte. Must be a non-empty string of printable characters;
-# empty or control-char markers are a configuration error. To always process
-# regardless of input, set `activate = "always"` instead.
-#
-# Default: "BIJJOU_ACTIVATE"
-# Pair with a jj template that emits the marker — see
-# examples/jj-config-snippet.toml.
-#
-# activation-marker = "BIJJOU_ACTIVATE"
 
 # Pager mode: one of "auto", "always", "never".
 #   auto   — page only when $PAGER is set and stdout is a terminal (default).
@@ -173,10 +161,10 @@
 # as wider rows arrive (and never shrink). Same input → different output
 # between the two modes for any log that fans out after the first batch.
 #
-# When `activate = "auto"` and streaming is on, the activation-marker scan is
-# limited to the first batch. If the marker isn't there, the rest of stdin is
-# passed through byte-for-byte without further processing. Set
-# `activate = "always"` to skip the scan entirely.
+# When `activate = "auto"` and streaming is on, the scan for the
+# `bijjou_template_name` field is limited to the first batch. If it isn't
+# there, the rest of stdin is passed through byte-for-byte without further
+# processing. Set `activate = "always"` to skip the scan entirely.
 #
 # `batch-size` accepts a positive integer or the string "half-pager", which
 # sizes the first batch to (terminal_rows - 1) and each subsequent batch to
