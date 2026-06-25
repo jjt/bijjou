@@ -3,10 +3,10 @@ use std::io::{self, BufRead, BufReader, Read};
 
 use crate::ansi::strip_sgr;
 use crate::config::{cfg, color_enabled, Activate, BatchSize, BIJJOU_TEMPLATE_NAME_FIELD};
-use crate::dsl::collect_widths;
 use crate::output::OutputSink;
 use crate::{
-    classify_row, compile_templates, emit_classified, CompiledTemplate, RowKind, TemplateMetrics,
+    accumulate_metrics, classify_row, compile_templates, emit_classified, CompiledTemplate,
+    RowKind, TemplateMetrics,
 };
 use crate::render::{contains_bytes, strip_trailing_nl};
 
@@ -146,27 +146,8 @@ fn process_batch(
         .collect();
 
     // Monotonic widen: widths and anchors only grow across batches so
-    // already-emitted rows above remain valid (column targets never
-    // shrink).
-    for row in &rows {
-        if let RowKind::Commit {
-            graph_col,
-            template_name,
-            fields,
-            ..
-        } = row
-        {
-            if let Some(name) = template_name.as_deref() {
-                if let Some(CompiledTemplate::Parsed(template)) = templates.get(name) {
-                    let entry = metrics.entry(name.to_string()).or_default();
-                    collect_widths(template, fields, &mut entry.widths, &mut entry.anchors);
-                }
-            }
-            if *graph_col > *max_graph_col {
-                *max_graph_col = *graph_col;
-            }
-        }
-    }
+    // already-emitted rows above remain valid (column targets never shrink).
+    accumulate_metrics(&rows, templates, metrics, max_graph_col);
 
     let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 16).sum());
     for (line, row) in batch.iter().zip(rows.iter()) {

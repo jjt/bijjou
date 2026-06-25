@@ -105,6 +105,38 @@ pub fn classify_row(body: &[u8]) -> RowKind {
     }
 }
 
+// Pass-1 accumulation shared by the buffered and streaming paths: fold every
+// commit row's elastic-tab widths/anchors into `metrics` and widen
+// `max_graph_col`. Widths and anchors only grow (collect_widths takes maxima),
+// so calling this across successive streaming batches widens monotonically and
+// never invalidates rows already emitted above.
+pub fn accumulate_metrics(
+    rows: &[RowKind],
+    templates: &HashMap<String, CompiledTemplate>,
+    metrics: &mut HashMap<String, TemplateMetrics>,
+    max_graph_col: &mut usize,
+) {
+    for row in rows {
+        if let RowKind::Commit {
+            graph_col,
+            template_name,
+            fields,
+            ..
+        } = row
+        {
+            if let Some(name) = template_name.as_deref() {
+                if let Some(CompiledTemplate::Parsed(template)) = templates.get(name) {
+                    let entry = metrics.entry(name.to_string()).or_default();
+                    collect_widths(template, fields, &mut entry.widths, &mut entry.anchors);
+                }
+            }
+            if *graph_col > *max_graph_col {
+                *max_graph_col = *graph_col;
+            }
+        }
+    }
+}
+
 pub fn emit_classified(
     line: &[u8],
     row: &RowKind,
@@ -367,25 +399,7 @@ fn run() -> io::Result<()> {
 
     let mut metrics: HashMap<String, TemplateMetrics> = HashMap::new();
     let mut max_graph_col = 0usize;
-    for row in &rows {
-        if let RowKind::Commit {
-            graph_col,
-            template_name,
-            fields,
-            ..
-        } = row
-        {
-            if let Some(name) = template_name.as_deref() {
-                if let Some(CompiledTemplate::Parsed(template)) = templates.get(name) {
-                    let entry = metrics.entry(name.to_string()).or_default();
-                    collect_widths(template, fields, &mut entry.widths, &mut entry.anchors);
-                }
-            }
-            if *graph_col > max_graph_col {
-                max_graph_col = *graph_col;
-            }
-        }
-    }
+    accumulate_metrics(&rows, &templates, &mut metrics, &mut max_graph_col);
 
     let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 16);
     for (line, row) in lines.iter().zip(rows.iter()) {
