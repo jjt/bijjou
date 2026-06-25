@@ -126,13 +126,13 @@ If no file is present, bijjou writes a default one to the XDG path on first run.
 Env vars: prefix `BIJJOU__`, replace `.` with `__` and `-` with `_`. Uppercase is canonical, lowercase is accepted too.
 
 ```shell
-BIJJOU__GRAPH__NODES__CHARS__WORKING_COPY=X jj log | bijjou
+BIJJOU__GRAPH__EDGES__CHARS__HORIZONTAL=X jj log | bijjou
 ```
 
 CLI flags: `--<key>=<value>`, replace `.` with `__`.
 
 ```sh
-jj log | bijjou --graph__nodes__chars__working-copy=X
+jj log | bijjou --graph__edges__chars__horizontal=X
 ```
 
 See [`config.default.toml`](config.default.toml) for every key, default,
@@ -147,9 +147,8 @@ and explanatory comment. Quick reference:
 | `[details]`           | `align-offset`, `diffstat-separator`                                                                |
 | `[stream]`            | `enabled`, `batch-size`                                                                             |
 | `[commits.markers]`   | `empty`, `divergent`                                                                                |
-| `[graph.nodes.chars]` | `working-copy`, `mutable`, `immutable`, `conflict`, `hidden`, `fallback`, `empty`, `working-copy-empty`, `empty-immutable` |
 | `[graph.edges.chars]` | `horizontal`, `vertical`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `tee-right`, `tee-left`, `tee-down`, `tee-up`, `cross`, `elision` |
-| `[colors]`            | `dash-filler`, `edge` (int 0–255 or `"#rrggbb"`); `graph-node` (jj color spec, e.g. `"ansi-color-242"`)                                    |
+| `[colors]`            | `dash-filler`, `edge` (int 0–255 or `"#rrggbb"`)                                    |
 
 Run `bijjou --help` for the same reference inline.
 

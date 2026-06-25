@@ -12,9 +12,9 @@
 # Overrides (low → high precedence): config file < env vars < CLI flags.
 #   Env: prefix `BIJJOU__`, replace `.` with `__` and `-` with `_`.
 #     Uppercase is canonical; lowercase also accepted.
-#     e.g. `graph.nodes.chars.working-copy` → `BIJJOU__GRAPH__NODES__CHARS__WORKING_COPY`
+#     e.g. `graph.edges.chars.horizontal` → `BIJJOU__GRAPH__EDGES__CHARS__HORIZONTAL`
 #   CLI: `--<key>=<value>`, replace `.` with `__`.
-#     e.g. `--graph__nodes__chars__working-copy=X`
+#     e.g. `--graph__edges__chars__horizontal=X`
 #   `--activate` with no value is shorthand for `--activate=auto`.
 
 # Processing mode: one of "auto", "always", "never".
@@ -61,29 +61,6 @@
 # Default: "auto"
 #
 # color = "auto"
-
-[graph.nodes.chars]
-# Icons substituted into the jj template emitted by
-# `bijjou jj-config` / `bijjou jj-graph-node-config`. Bijjou itself no
-# longer rewrites node glyphs at render time — jj produces them
-# directly via the template. Every configured icon is also recognized as
-# part of a graph prefix when parsing input, so alignment still works if
-# you swap defaults.
-#
-# `hidden`   — `!self` branch, i.e. a divergent slot with no commit.
-# `fallback` — additional icon recognized as a node in input but not
-#              emitted by the default template; bump this if you use a
-#              custom jj template that emits something we don’t list.
-#
-# working-copy       = "■"
-# mutable            = "●"
-# immutable          = ""
-# conflict           = ""
-# hidden             = "🮀"
-# fallback           = "●"
-# empty              = ""
-# working-copy-empty = "□"
-# empty-immutable    = ""
 
 [graph.edges.chars]
 # Single-cell replacements for jj's box-drawing graph chars. Defaults are
@@ -178,11 +155,6 @@
 #
 # dash-filler — color of the internal dash filler between graph chars.
 # edge        — color of graph edges (lines, corners, tees, crosses).
-#
-# Node glyph color is left alone — bijjou no longer emits any
-# `colors.graph_node` / `colors.node` override. jj's own color
-# resolution applies, so style node glyphs via the standard jj
-# `colors.*` config if you want to change them.
 #
 # dash-filler  = 8
 # edge         = 8

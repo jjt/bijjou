@@ -1,31 +1,3 @@
-// 2026-05-08 Notes on combinations of revision state:
-//
-// Forbidden pairs:
-//   - hidden + working copy — WC always visible (it @, reachable)
-//   - hidden + divergent — divergent need ≥2 visible commits same change_id
-//
-//   All other combos legal. So:
-//
-//   - conflicted, empty, working copy — orthogonal. Mix any subset freely.
-//   - hidden — combine w/ conflicted, empty only.
-//   - divergent — combine w/ conflicted, empty, working copy (one of divergent pair can be @).
-//
-//   Examples valid:
-//   - empty working copy (default jj new)
-//   - conflicted working copy (rebase conflict in @)
-//   - divergent conflicted empty working copy (all four except hidden)
-//   - hidden conflicted empty (abandoned dead end)
-//
-//   Examples invalid:
-//   - hidden working copy
-//   - hidden divergent (anything)
-//
-//   Since C,E,WC,I are most common we use the log node:
-//   - WC is the hex icon and green
-//   - I is a lock icon, takes precedence over WC icon
-//   - C is the color red, takes precedence over the WC color
-//   - E is a hollow version of the icon
-
 mod ansi;
 mod config;
 mod dsl;
@@ -249,18 +221,6 @@ USAGE
   bijjou [SUBCOMMAND] [OPTIONS] < input
 
 SUBCOMMANDS
-  jj-config                 print a TOML snippet for jj's config that wires
-                            bijjou's configured node icons into jj's
-                            `templates.log_node`. Drop this into your jj
-                            config (or a `--config` file).
-  jj-graph-node-config      print `--config templates.log_node=...` flags
-                            in a form ready for direct `$(...)` expansion:
-                              jj log $(bijjou jj-graph-node-config) | bijjou
-                            Whitespace inside the TOML values is escaped as
-                            `\\u0020` so bash word-splits the line at the
-                            argument boundaries only. Pipe through bijjou
-                            (or use --no-pager) — jj's builtin pager
-                            escapes PUA codepoints as `<U+XXXX>` text.
   log-oneline-json          print a jj log template expression that emits
                             one JSON object per commit, with ANSI color
                             sequences preserved inside the string values.
@@ -288,10 +248,10 @@ CONFIGURATION
 
   Env vars: prefix BIJJOU__, replace '.' with '__' and '-' with '_'.
     Uppercase is the canonical form; lowercase is also accepted.
-    e.g. BIJJOU__GRAPH__NODES__CHARS__WORKING_COPY=X
+    e.g. BIJJOU__GRAPH__EDGES__CHARS__HORIZONTAL=X
 
   CLI flags: --<key>=<value>, replace '.' with '__'.
-    e.g. --graph__nodes__chars__working-copy=X
+    e.g. --graph__edges__chars__horizontal=X
 
   Streaming mode flushes output in batches as input arrives. The first batch
   is pre-scanned so every line in it shares the batch-wide max graph_col.
@@ -321,10 +281,6 @@ KEYS
   [stream]
     enabled                                 bool (default true)
     batch-size                              int >= 1 (default 128)
-
-  [graph.nodes.chars]                       string (each)
-    working-copy  mutable  immutable  conflict  hidden  fallback
-    empty  working-copy-empty  empty-immutable
 
   [graph.edges.chars]                       string (each)
     horizontal  vertical
@@ -362,14 +318,6 @@ fn main() {
     }
     if let Some(sub) = subcommand {
         match sub.as_str() {
-            "jj-config" => {
-                print!("{}", render_jj_config(&cfg_obj));
-                return;
-            }
-            "jj-graph-node-config" => {
-                println!("{}", render_jj_graph_node_config(&cfg_obj));
-                return;
-            }
             "log-oneline-json" => {
                 println!("{}", render_log_oneline_json_inline());
                 return;
@@ -410,99 +358,6 @@ fn split_subcommand(argv: Vec<String>) -> (Option<String>, Vec<String>) {
         }
     }
     (sub, flags)
-}
-
-// Substitute the configured icons into the jj template body the user adds
-// to their jj config (or feeds via --config). Icons are wrapped in
-// `raw_escape_sequence(...)` so jj's TTY output filter doesn't rewrite
-// Private Use Area glyphs (Nerd Font icons) as `<U+XXXX>` text — the
-// filter ships with recent jj versions to guard against terminal
-// injection from commit text, but trips on legitimate icons we inject
-// from config.
-//
-// Two structural workarounds:
-//   - The whole label-and-icon expression sits inside `if(self, …, …)`.
-//     For elided revisions self is None, so `self.current_working_copy()`
-//     and `self.conflict()` (used inside the label) would raise
-//     `<Error: No Commit available>` if evaluated; lifting the !self case
-//     to an outer if avoids touching self in that branch.
-//   - The icon branches use a nested `if(cond, then, else)` chain rather
-//     than `coalesce(...)` because `raw_escape_sequence(...)` reads as
-//     null inside coalesce, which would silently fall through every arm.
-//
-// Keep this body identical to `render_log_node_template_inline` so the
-// two subcommands stay in lockstep.
-fn render_log_node_template_body(cfg: &Config) -> String {
-    format!(
-        "if(self,\n  label(\n    separate(\" \",\n      if(self.current_working_copy(), \"working_copy\"),\n      if(self.conflict(), \"conflicted\"),\n      \"graph_node\",\n    ),\n    if(current_working_copy && empty, raw_escape_sequence(\"{wc_empty}\"),\n    if(current_working_copy, raw_escape_sequence(\"{wc}\"),\n    if(immutable && empty, raw_escape_sequence(\"{empty_immutable}\"),\n    if(immutable, raw_escape_sequence(\"{immutable}\"),\n    if(empty, raw_escape_sequence(\"{empty}\"),\n    if(conflict, raw_escape_sequence(\"{conflict}\"),\n       raw_escape_sequence(\"{mutable}\")))))))\n  ),\n  raw_escape_sequence(\"{hidden}\")\n)",
-        hidden = cfg.hidden_icon,
-        wc_empty = cfg.wc_empty_icon,
-        wc = cfg.wc_icon,
-        empty_immutable = cfg.empty_immutable_icon,
-        immutable = cfg.immutable_icon,
-        empty = cfg.empty_icon,
-        conflict = cfg.conflict_icon,
-        mutable = cfg.mutable_icon,
-    )
-}
-
-fn render_log_node_template_inline(cfg: &Config) -> String {
-    format!(
-        "if(self, label(separate(\" \", if(self.current_working_copy(), \"working_copy\"), if(self.conflict(), \"conflicted\"), \"graph_node\"), if(current_working_copy && empty, raw_escape_sequence(\"{wc_empty}\"), if(current_working_copy, raw_escape_sequence(\"{wc}\"), if(immutable && empty, raw_escape_sequence(\"{empty_immutable}\"), if(immutable, raw_escape_sequence(\"{immutable}\"), if(empty, raw_escape_sequence(\"{empty}\"), if(conflict, raw_escape_sequence(\"{conflict}\"), raw_escape_sequence(\"{mutable}\")))))))), raw_escape_sequence(\"{hidden}\"))",
-        hidden = cfg.hidden_icon,
-        wc_empty = cfg.wc_empty_icon,
-        wc = cfg.wc_icon,
-        empty_immutable = cfg.empty_immutable_icon,
-        immutable = cfg.immutable_icon,
-        empty = cfg.empty_icon,
-        conflict = cfg.conflict_icon,
-        mutable = cfg.mutable_icon,
-    )
-}
-
-// Multi-line TOML snippet ready to drop into a jj config file.
-fn render_jj_config(cfg: &Config) -> String {
-    format!(
-        "templates.log_node = '''\n{}\n'''\n",
-        render_log_node_template_body(cfg),
-    )
-}
-
-// Wrap a string as a TOML basic string (double-quoted) with every char
-// that would tokenize under bash word-splitting (whitespace) encoded as a
-// `\uXXXX` escape. jj's TOML parser turns the escapes back into the
-// original chars, so the produced token survives `$(…)` substitution as a
-// single argument — no shell quoting and no `eval` needed.
-fn toml_basic_string_space_safe(s: &str) -> String {
-    let mut out = String::with_capacity(s.len() + 2);
-    out.push('"');
-    for ch in s.chars() {
-        match ch {
-            '\\' => out.push_str("\\\\"),
-            '"' => out.push_str("\\\""),
-            // Whitespace must be escaped so $(...) word-splitting does not
-            // chop a value in half.   (space) is the common case;
-            // tabs/newlines/CRs are escaped here too for safety.
-            ' ' => out.push_str("\\u0020"),
-            '\t' => out.push_str("\\u0009"),
-            '\n' => out.push_str("\\u000A"),
-            '\r' => out.push_str("\\u000D"),
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-    out
-}
-
-// Single-line `--config KEY=VAL` ready for direct shell substitution:
-// `jj log $(bijjou jj-graph-node-config) | bijjou`. The value is a TOML
-// basic string whose whitespace is `\u`-escaped so the line word-splits
-// into exactly two args regardless of icon contents.
-fn render_jj_graph_node_config(cfg: &Config) -> String {
-    format!(
-        "--config templates.log_node={}",
-        toml_basic_string_space_safe(&render_log_node_template_inline(cfg)),
-    )
 }
 
 // One-line jj template that emits a JSON object per commit. Root commit

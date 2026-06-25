@@ -58,34 +58,15 @@ fn is_graph_char(cp: u32) -> bool {
     is_node_char(cp)
 }
 
-// A "node" is any codepoint that a jj template might emit at the rightmost
-// graph column. Includes jj's built-in node chars (back-compat when no
-// template override is applied) plus every configured node icon — so bijjou
-// recognizes whatever the user's template emits as part of the graph
-// prefix, not as content.
+// A "node" is any codepoint jj emits at the rightmost graph column: its
+// built-in node chars `@ ○ ● ◆ ×`. bijjou recognizes them to find where the
+// graph prefix ends, but forwards them unchanged — jj's template owns the
+// glyph and its color.
 fn is_node_char(cp: u32) -> bool {
-    if matches!(
+    matches!(
         cp,
         WC_CP | MUTABLE_CP | ALTERNATE_CP | IMMUTABLE_CP | CONFLICT_CP
-    ) {
-        return true;
-    }
-    let c = cfg();
-    let icons = [
-        &c.wc_icon,
-        &c.mutable_icon,
-        &c.immutable_icon,
-        &c.conflict_icon,
-        &c.empty_icon,
-        &c.wc_empty_icon,
-        &c.empty_immutable_icon,
-        &c.hidden_icon,
-        &c.fallback_icon,
-    ];
-    icons
-        .iter()
-        .filter_map(|s| s.chars().next())
-        .any(|ch| ch as u32 == cp)
+    )
 }
 
 fn map_graph_char(cp: u32) -> Option<&'static str> {
@@ -187,9 +168,8 @@ pub fn has_graph_char(body: &[u8]) -> bool {
 }
 
 // Node bytes pass through unchanged: jj's template (or upstream emitter) is
-// responsible for picking the right icon and label color. Bijjou forwards
-// the bytes plus their surrounding ANSI verbatim. See `bijjou jj-config`
-// for a template that wires bijjou's icon config into jj.
+// responsible for picking the right glyph and label color. Bijjou forwards
+// the bytes plus their surrounding ANSI verbatim.
 fn emit_node(raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
     out.extend_from_slice(ansi);
     out.extend_from_slice(raw);

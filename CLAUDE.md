@@ -17,19 +17,6 @@ codepoint can be represented as a literal character, write the literal
 character. Don't reach for `\u{...}` escapes for printability or
 "safety" — the file is UTF-8 and the constants render fine.
 
-### Do not run `mise run install` during the refactor
-
-User pinned an older bijjou binary at rev `z` on their system so they
-can keep using stable bijjou while the content-rendering refactor is
-in flight. Don't install over it.
-
-**Why:** auto-installing the half-finished working copy would replace
-their stable tool with a build that can't yet render commit content.
-
-**How to apply:** build/test locally (`cargo build`, `cargo test`)
-during this refactor work, but skip any `install` task. Re-enable only
-when the user signals shippable.
-
 ### Never auto-accept snapshot changes — present the diff for review
 
 When golden/insta snapshots differ, show the user the diff and let them

@@ -7,15 +7,6 @@ pub const DEFAULT_DASH_START: &str = "╶";
 pub const DEFAULT_DASH_END: &str = "╴";
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;8m";
-pub const DEFAULT_EMPTY_ICON: &str = "";
-pub const DEFAULT_WC_EMPTY_ICON: &str = "□";
-pub const DEFAULT_EMPTY_IMMUTABLE_ICON: &str = "";
-pub const DEFAULT_WC_ICON: &str = "■";
-pub const DEFAULT_MUTABLE_ICON: &str = "●";
-pub const DEFAULT_IMMUTABLE_ICON: &str = "";
-pub const DEFAULT_CONFLICT_ICON: &str = "";
-pub const DEFAULT_HIDDEN_ICON: &str = "🮀";
-pub const DEFAULT_FALLBACK_ICON: &str = "●";
 pub const DEFAULT_GRAPH_HORIZONTAL: &str = "𜸟";
 pub const DEFAULT_GRAPH_VERTICAL: &str = "𜸩";
 pub const DEFAULT_GRAPH_TOP_LEFT: &str = "𜸚";
@@ -111,15 +102,6 @@ pub fn validate_activation_marker(m: &str) -> Result<(), String> {
 }
 
 pub struct Config {
-    pub wc_icon: String,
-    pub mutable_icon: String,
-    pub immutable_icon: String,
-    pub conflict_icon: String,
-    pub hidden_icon: String,
-    pub fallback_icon: String,
-    pub empty_icon: String,
-    pub wc_empty_icon: String,
-    pub empty_immutable_icon: String,
     pub dash: String,
     pub dash_start: String,
     pub dash_end: String,
@@ -150,15 +132,6 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            wc_icon: DEFAULT_WC_ICON.to_string(),
-            mutable_icon: DEFAULT_MUTABLE_ICON.to_string(),
-            immutable_icon: DEFAULT_IMMUTABLE_ICON.to_string(),
-            conflict_icon: DEFAULT_CONFLICT_ICON.to_string(),
-            hidden_icon: DEFAULT_HIDDEN_ICON.to_string(),
-            fallback_icon: DEFAULT_FALLBACK_ICON.to_string(),
-            empty_icon: DEFAULT_EMPTY_ICON.to_string(),
-            wc_empty_icon: DEFAULT_WC_EMPTY_ICON.to_string(),
-            empty_immutable_icon: DEFAULT_EMPTY_IMMUTABLE_ICON.to_string(),
             dash: DEFAULT_DASH.to_string(),
             dash_start: DEFAULT_DASH_START.to_string(),
             dash_end: DEFAULT_DASH_END.to_string(),
@@ -337,15 +310,6 @@ impl Config {
                 validate_activation_marker(value).map_err(mkerr)?;
                 self.activation_marker = value.to_string();
             }
-            "graph.nodes.chars.working-copy" => self.wc_icon = value.to_string(),
-            "graph.nodes.chars.mutable" => self.mutable_icon = value.to_string(),
-            "graph.nodes.chars.immutable" => self.immutable_icon = value.to_string(),
-            "graph.nodes.chars.conflict" => self.conflict_icon = value.to_string(),
-            "graph.nodes.chars.hidden" => self.hidden_icon = value.to_string(),
-            "graph.nodes.chars.fallback" => self.fallback_icon = value.to_string(),
-            "graph.nodes.chars.empty" => self.empty_icon = value.to_string(),
-            "graph.nodes.chars.working-copy-empty" => self.wc_empty_icon = value.to_string(),
-            "graph.nodes.chars.empty-immutable" => self.empty_immutable_icon = value.to_string(),
             "graph.edges.chars.horizontal" => self.graph_horizontal = value.to_string(),
             "graph.edges.chars.vertical" => self.graph_vertical = value.to_string(),
             "graph.edges.chars.top-left" => self.graph_top_left = value.to_string(),
@@ -486,14 +450,14 @@ mod tests {
     #[test]
     fn toml_parses_section_string_int() {
         let s = r#"
-[graph.nodes.chars]
-working-copy = "X"
+[graph.edges.chars]
+horizontal = "X"
 
 [colors]
 edge = 200
 "#;
         let cfg = Config::from_toml(s).unwrap();
-        assert_eq!(cfg.wc_icon, "X");
+        assert_eq!(cfg.graph_horizontal, "X");
         assert_eq!(cfg.edge_dim_on, b"\x1b[38;5;200m".to_vec());
     }
 
@@ -506,7 +470,7 @@ edge = 200
 
     #[test]
     fn toml_unknown_key_errors() {
-        let s = "[graph.nodes.chars]\nbogus = \"x\"\n";
+        let s = "[graph.edges.chars]\nbogus = \"x\"\n";
         assert!(Config::from_toml(s).is_err());
     }
 
@@ -519,7 +483,7 @@ edge = 200
     #[test]
     fn toml_empty_input_yields_default() {
         let cfg = Config::from_toml("").unwrap();
-        assert_eq!(cfg.wc_icon, DEFAULT_WC_ICON);
+        assert_eq!(cfg.dash, DEFAULT_DASH);
         assert_eq!(cfg.dim_on, DEFAULT_DIM_ON);
     }
 
@@ -695,9 +659,9 @@ edge = 200
     #[test]
     fn cli_nested_key_dots_via_double_underscore() {
         let mut cfg = Config::default();
-        cfg.apply_cli(args(&["--graph__nodes__chars__working-copy=X"]))
+        cfg.apply_cli(args(&["--graph__edges__chars__horizontal=X"]))
             .unwrap();
-        assert_eq!(cfg.wc_icon, "X");
+        assert_eq!(cfg.graph_horizontal, "X");
     }
 
     #[test]
@@ -746,16 +710,16 @@ edge = 200
     #[test]
     fn env_key_double_underscore_becomes_dot() {
         assert_eq!(
-            env_key_to_config_key("GRAPH__NODES__CHARS__WORKING_COPY"),
-            "graph.nodes.chars.working-copy"
+            env_key_to_config_key("GRAPH__EDGES__CHARS__TOP_LEFT"),
+            "graph.edges.chars.top-left"
         );
     }
 
     #[test]
     fn env_key_lowercase_hyphen_form_unchanged() {
         assert_eq!(
-            env_key_to_config_key("graph__nodes__chars__working-copy"),
-            "graph.nodes.chars.working-copy"
+            env_key_to_config_key("graph__edges__chars__top-left"),
+            "graph.edges.chars.top-left"
         );
     }
 

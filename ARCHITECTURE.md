@@ -4,8 +4,8 @@
 glyphs, dim edges, and re-render per-commit content from a JSON payload
 (emitted by `bijjou log-oneline-json`) through a small templating DSL.
 Lines that aren't JSON commit rows pass through byte-for-byte. Node
-glyphs themselves are owned by jj's template (see `bijjou jj-config`) —
-bijjou recognizes them but never rewrites them.
+glyphs themselves are owned by jj's template — bijjou recognizes them
+but never rewrites them.
 
 ## Pipeline
 
@@ -27,7 +27,7 @@ stdin → activation check → (stream | buffered) → render → output sink �
 | `main.rs`    | Arg parse, config load chain, dispatch buffered path                                      |
 | `config.rs`  | Config struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
 | `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
-| `render.rs`  | Parse line → `Parsed{graph_col, graph_end, content_start}`, recognize edges (box-drawing) and nodes (jj defaults + configured icons), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job via the `graph_node` label set by the template. |
+| `render.rs`  | Parse line → `Parsed{graph_col, graph_end, content_start}`, recognize edges (box-drawing) and nodes (jj's `@ ○ ● ◆ ×`), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job. |
 | `dsl.rs`     | Templating DSL + flat JSON parser. `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render: collect max visible widths, then emit each row with right-padded elastic-tab fields. |
 | `stream.rs`  | Batched reader, two-pass per batch with monotonic widening (column targets never shrink as new batches arrive), `OutputSink` (stdout or piped pager). |
 | `output.rs`  | Buffered path's terminal write / pager spawn                                              |
@@ -35,9 +35,8 @@ stdin → activation check → (stream | buffered) → render → output sink �
 ## Render flow per line
 
 1. `find_boundary` → locate end of graph prefix. A position is "graph"
-   if its codepoint is in the box-drawing range, is the elision char, is
-   one of jj's default node chars (`@ ○ ◆ × ●`), or matches the first
-   codepoint of any configured `[graph.nodes.chars]` icon.
+   if its codepoint is in the box-drawing range, is the elision char, or
+   is one of jj's default node chars (`@ ○ ◆ × ●`).
 2. `classify_row` → after the graph prefix, look for a `{...}` JSON
    payload (jj's `log-oneline-json` template output). Lines that parse
    become `RowKind::Commit{graph_col, fields}`; the special `{"root":...}`
@@ -59,26 +58,9 @@ stdin → activation check → (stream | buffered) → render → output sink �
 
 ## Subcommands
 
-- `bijjou jj-config` — emit a multi-line TOML snippet for a jj config
-  file (`templates.log_node` + `colors.graph_node`). The template body
-  substitutes the configured icons for `hidden`, `working-copy[-empty]`,
-  `immutable[+empty]`, `empty`, `conflict`, and `mutable` (used for
-  non-empty mutable / catch-all).
-- `bijjou jj-graph-node-config` — same template body, one-line
-  `--config templates.log_node=… --config colors.graph_node=…`. Values
-  are TOML basic strings with every whitespace char encoded as `\uXXXX`,
-  so the line word-splits at argument boundaries when expanded with
-  `$(…)` and jj's TOML parser still sees the original whitespace:
-    `jj log $(bijjou jj-graph-node-config) | bijjou`
-  No shell quoting, no `eval` — this avoids the failure mode where
-  shell quotes embedded in command output reach jj literally.
 - `bijjou log-oneline-json` — emit a jj log template expression that
   produces one JSON object per commit. Intended for use with the
   forthcoming content-DSL renderer.
-
-`[graph.nodes.chars].fallback` is a config-only key: not emitted by the
-default template, but recognized as a node icon in input so a custom
-template that emits a different glyph still parses correctly.
 
 ## Dash spec
 
@@ -116,8 +98,7 @@ Single global `OnceLock<Config>` via `cfg()`. Three merge layers:
 
 Keys: top-level (`activate`, `pager`, `activation-marker`),
 `[ui]`, `[layout]`, `[template]`, `[stream]`,
-`[graph.nodes.chars]`, `[graph.edges.chars]`,
-`[colors]`. Full ref: `config.default.toml`.
+`[graph.edges.chars]`, `[colors]`. Full ref: `config.default.toml`.
 
 ## Output
 
