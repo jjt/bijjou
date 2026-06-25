@@ -248,10 +248,14 @@ CONFIGURATION
 
   Env vars: prefix BIJJOU__, replace '.' with '__' and '-' with '_'.
     Uppercase is the canonical form; lowercase is also accepted.
-    e.g. BIJJOU__GRAPH__EDGES__CHARS__HORIZONTAL=X
+    e.g. graph.edges.chars.horizontal -> BIJJOU__GRAPH__EDGES__CHARS__HORIZONTAL=X
+         layout.dash-start            -> BIJJOU__LAYOUT__DASH_START=<
+         activate                     -> BIJJOU__ACTIVATE=auto
 
-  CLI flags: --<key>=<value>, replace '.' with '__'.
-    e.g. --graph__edges__chars__horizontal=X
+  CLI flags: --<key>=<value>, replace '.' with '__' (hyphens are kept as-is).
+    e.g. graph.edges.chars.horizontal -> --graph__edges__chars__horizontal=X
+         layout.dash-start            -> --layout__dash-start=<
+         templates.log_oneline        -> --templates__log_oneline='...'
 
   Streaming mode flushes output in batches as input arrives. The first batch
   is pre-scanned so every line in it shares the batch-wide max graph_col.
