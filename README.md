@@ -6,11 +6,10 @@ We leverage jj's template system functionality to write `NUL`-separated key/valu
 
 ## Example config
 
-With jj template(s)...
+With this jj template
 
 ```toml
 # jj config
-
 [template-aliases]
 bijjou_log_oneline' = 'bijjou_log_oneline(self)'
 bijjou_log_oneline(commit)' = '''
@@ -35,20 +34,16 @@ if(commit.root(),
 '''
 ```
 
-... and bijjou template(s) ...
+... and this bijjou config (note the matching `bijjou_template_name` of `bijjou_log_oneline` from above)
 
-```
+```toml
 # bijjou config
-
-# each key here matches the value of `bijjou_template_name` from jj
 [templates]
-# elastic_tab is a bijjou function
-# all other values are keys from the jj output
 bijjou_log_oneline = '''
   %{elastic_tab(change_id)} %{elastic_tab(commit_id)} %{elastic_tab(author)} %{elastic_tab(timestamp)} %{working_copies} %{bookmarks} %{tags} %{description}'''
 ```
 
-... we can pipe `jj` into `bijjou`:
+... we can pipe `jj` into `bijjou` to get this formatting:
 
 ```shell
 ❯ jj log -T bijjou_log_oneline | bijjou
@@ -88,13 +83,14 @@ bijjou_log_oneline = '''
 ❯
 ```
 
-Color is preserved if enabled from jj and bijjou.
+
+Color is preserved if enabled from jj and bijjou. By default jj will not emit color if it's being piped to a non-tty process, so you might have to add a config option or use the `--color=always` cli flag.
 
 The `elastic_tab()` function aligns the content in a column, and adds a horizontal guide line. You can see this in effect in the change ids: note how they are all aligned.
 
-One output replacement bijjou does is the graph edges which are replaced with something more aesthetic: Large Type Pieces from the [Symbols for Legacy Computing Supplement block](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing_Supplement) introduced in Unicode 16.0 ([unicode pdf](https://www.unicode.org/charts/PDF/Unicode-16.0/U160-1CC00.pdf)). You can configure them. More about that below.
+The one output replacement bijjou does handle is the graph edges, which are replaced with something more aesthetic: Large Type Pieces from the [Symbols for Legacy Computing Supplement block](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing_Supplement) introduced in Unicode 16.0 ([unicode pdf](https://www.unicode.org/charts/PDF/Unicode-16.0/U160-1CC00.pdf)). If you don't like those, you can configure the various graph edge characters to whatever you'd like. I can't stop you if you make them all the cowboy emoji, for example.
 
-Bijjou takes streaming input and by default streams output in batches, either a fixed size (default 128), or in "pager" mode. Pager mode is designed for use with pagers (shocking, I know). It sets the batch size based on screen height to reduce or avoid tears between page down/up events while paging.  _PS: I recommend [moor](https://github.com/walles/moor) as a pager. It's great._
+Bijjou takes streaming input and by default streams output in batches, either a fixed size (default 128), or in `half-pager` mode. This designed for use with pagers (shocking, I know). It sets the batch size based on screen height (`height/2 - 1`) to reduce or avoid tears between page down/up events while paging. The `-1` is there to acommodate for the status bar of pagers like `less` and `more`. _PS: I recommend [moor](https://github.com/walles/moor) as a pager. It's great._
 
 Output streaming can also be disabled via config.
 

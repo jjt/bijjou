@@ -2,24 +2,6 @@
 log = 'log_oneline'
 
 [template-aliases]
-'diff_numstat' = 'diff_numstat(self)'
-'diff_numstat(commit)' = '''
-commit.diff().stat().files().map(|f|
-  separate("\x00",
-    "bijjou_template_name\x00diff_numstat",
-    "lines_added\x00" ++ label(if(f.lines_added() == 0, "rest", "diff added"), f.lines_added()),
-    "lines_removed\x00" ++ label(if(f.lines_removed() == 0, "rest", "diff removed"), f.lines_removed()),
-    "status_char\x00" ++ label(
-       if(f.status() == "modified", "diff modified",
-         if(f.status() == "added", "diff added",
-           if(f.status() == "removed", "diff removed",
-             if(f.status() == "copied", "diff copied",
-               if(f.status() == "renamed", "diff renamed", ""))))),
-       f.status_char()),
-    "path\x00" ++ f.display_diff_path(),
-  ) ++ "\x1e\n"
-).join("")
-'''
 
 'log_oneline' = 'log_oneline(self)'
 'log_oneline(commit)' = '''
@@ -43,6 +25,6 @@ if(commit.root(),
       commit.description().first_line(),
       label("no_desc","no description"),
     ),
-  ) ++ "\x1e\n" ++ if(commit.current_working_copy(), diff_numstat(commit)),
+  ) ++ "\x1e\n"
 )
 '''

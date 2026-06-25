@@ -1,12 +1,9 @@
 ---
 source: tests/golden.rs
 description: tests/fixtures/local.txt rendered under bijjou-config.toml (matches out.local.txt).
-expression: visualize(&output)
+expression: "render_fixture(\"local.txt\")"
 ---
 \e[1m\e[38;5;2m@\e[0m\e[38;5;8m╶───╴\e[39m\e[1m\e[38;5;5msz\e[0m\e[38;5;8mswvzqs\e[39m \e[1m\e[38;5;4m38\e[0m\e[38;5;8me2b20a\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0759\e[39m \e[38;5;5mHYWC-baz\e[39m hydra working copy baz
-\e[38;5;8m𜸩\e[39m\e[38;5;8m────╴\e[39m\e[38;5;2m8\e[39m \e[38;5;1m15\e[39m \e[38;5;6mM\e[39m src/dsl.rs
-\e[38;5;8m𜸩\e[39m\e[38;5;8m────╴\e[39m\e[38;5;2m2\e[39m \e[38;5;1m2\e[39m\e[38;5;8m╶╴\e[39m\e[38;5;6mM\e[39m tests/snapshots/golden__dsl_oneline.snap
-\e[38;5;8m𜸩\e[39m\e[38;5;8m────╴\e[39m\e[38;5;2m2\e[39m \e[38;5;1m2\e[39m\e[38;5;8m╶╴\e[39m\e[38;5;6mM\e[39m tests/snapshots/golden__dsl_oneline_stream.snap
 \e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶─╴\e[39m\e[1m\e[38;5;5mq\e[0m\e[38;5;8mquxkvlu\e[39m \e[1m\e[38;5;4mb\e[0m\e[38;5;8made4917\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYWC-bar\e[39m hydra working copy bar
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
 \e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶─╴\e[39m\e[1m\e[38;5;5mpx\e[0m\e[38;5;8mlwqmlx\e[39m \e[1m\e[38;5;4mdec\e[0m\e[38;5;8m10e00\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYWC-foo\e[39m hydra working copy foo

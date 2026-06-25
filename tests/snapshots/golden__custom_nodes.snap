@@ -4,9 +4,6 @@ description: "tests/fixtures/custom_nodes.txt: custom log_node glyphs (■, PUA)
 expression: "render_fixture(\"custom_nodes.txt\")"
 ---
 \e[1m\e[38;5;2m■\e[0m \e[1m\e[38;5;5mtw\e[0m\e[38;5;8mwvww\e[39m \e[1m\e[38;5;4maf\e[0m\e[38;5;8m6e72\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260625·0518\e[39m \e[3m\e[38;5;8mno description\e[23m\e[39m
-\e[38;5;8m𜸩\e[39m\e[38;5;8m╴\e[39m\e[38;5;2m7\e[39m \e[38;5;1m3\e[39m\e[38;5;8m╶──╴\e[39m\e[38;5;3mM\e[39m ARCHITECTURE.md
-\e[38;5;8m𜸩\e[39m\e[38;5;8m╴\e[39m\e[38;5;2m118\e[39m \e[38;5;1m63\e[39m \e[38;5;3mM\e[39m src/render.rs
-\e[38;5;8m𜸩\e[39m\e[38;5;8m╴\e[39m\e[38;5;8m0\e[39m \e[38;5;8m0\e[39m\e[38;5;8m╶──╴\e[39m\e[38;5;2mA\e[39m tests/fixtures/custom_nodes.txt
 \e[38;5;8m \e[1m\e[38;5;5mtr\e[0m\e[38;5;8mllms\e[39m \e[1m\e[38;5;4mf\e[0m\e[38;5;8m64490\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260624·2012\e[39m \e[3m\e[38;5;8mno description\e[23m\e[39m
 \e[38;5;8m● \e[1m\e[38;5;5mq\e[0m\e[38;5;8moworl\e[39m \e[1m\e[38;5;4ma6\e[0m\e[38;5;8m00c1\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260624·2012\e[39m Rename colors.edge config key to colors.graph-edge
 \e[38;5;8m● \e[1m\e[38;5;5mm\e[0m\e[38;5;8mykxwr\e[39m \e[1m\e[38;5;4m2\e[0m\e[38;5;8m6a933\e[39m \e[38;2;255;199;83mME\e[39m \e[38;5;6m260624·2003\e[39m Improve --help env/CLI examples to show key transforms
