@@ -148,7 +148,7 @@ and explanatory comment. Quick reference:
 | `[stream]`            | `enabled`, `batch-size`                                                                             |
 | `[commits.markers]`   | `empty`, `divergent`                                                                                |
 | `[graph.edges.chars]` | `horizontal`, `vertical`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `tee-right`, `tee-left`, `tee-down`, `tee-up`, `cross`, `elision` |
-| `[colors]`            | `dash-filler`, `edge` (int 0–255 or `"#rrggbb"`)                                    |
+| `[colors]`            | `dash-filler`, `graph-edge` (int 0–255 or `"#rrggbb"`)                              |
 
 Run `bijjou --help` for the same reference inline.
 

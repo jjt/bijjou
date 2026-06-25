@@ -292,7 +292,7 @@ KEYS
     cross  elision
 
   [colors]                                  int 0-255 | \"#rrggbb\"
-    dash-filler  edge
+    dash-filler  graph-edge
 
 See config.default.toml for defaults and discussion.
 ";

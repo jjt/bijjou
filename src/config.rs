@@ -320,7 +320,7 @@ impl Config {
                 self.templates.insert(name.to_string(), value.to_string());
             }
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
-            "colors.edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
+            "colors.graph-edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
             "debug.force-screen-height" => {
                 let n: i64 = value
                     .parse()
@@ -434,7 +434,7 @@ mod tests {
 horizontal = "X"
 
 [colors]
-edge = 200
+graph-edge = 200
 "#;
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.graph_horizontal, "X");
@@ -443,7 +443,7 @@ edge = 200
 
     #[test]
     fn toml_color_hex_string() {
-        let s = "[colors]\nedge = \"#aabbcc\"\n";
+        let s = "[colors]\ngraph-edge = \"#aabbcc\"\n";
         let cfg = Config::from_toml(s).unwrap();
         assert_eq!(cfg.edge_dim_on, b"\x1b[38;2;170;187;204m".to_vec());
     }
@@ -456,7 +456,7 @@ edge = 200
 
     #[test]
     fn toml_color_out_of_range_errors() {
-        let s = "[colors]\nedge = 999\n";
+        let s = "[colors]\ngraph-edge = 999\n";
         assert!(Config::from_toml(s).is_err());
     }
 
@@ -622,7 +622,7 @@ edge = 200
     fn cli_color_int_and_hex() {
         let mut cfg = Config::default();
         cfg.apply_cli(args(&[
-            "--colors__edge=200",
+            "--colors__graph-edge=200",
             "--colors__dash-filler=#aabbcc",
         ]))
         .unwrap();

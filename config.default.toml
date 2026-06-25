@@ -138,14 +138,14 @@
 # log_oneline = ''' %{elastic_tab(change_id)} %{elastic_tab(commit_id)} %{elastic_tab(author)} %{elastic_tab(timestamp)} %{working_copies} %{bookmarks} %{tags} %{description}'''
 
 [colors]
-# `dash-filler` / `edge`: integer 0-255 (256-color palette) or "#rrggbb"
-#   hex string. Defaults: dash-filler = 8 (bright black), edge = 8 (bright black).
+# `dash-filler` / `graph-edge`: integer 0-255 (256-color palette) or "#rrggbb"
+#   hex string. Defaults: dash-filler = 8 (bright black), graph-edge = 8 (bright black).
 #
 # dash-filler — color of the internal dash filler between graph chars.
-# edge        — color of graph edges (lines, corners, tees, crosses).
+# graph-edge  — color of graph edges (lines, corners, tees, crosses).
 #
 # dash-filler  = 8
-# edge         = 8
+# graph-edge   = 8
 
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of

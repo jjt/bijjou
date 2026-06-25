@@ -135,13 +135,13 @@
 
 [colors]
 # Either an integer 0-255 (256-color palette) or a "#rrggbb" hex string.
-# Defaults: dash-filler = 240, edge = 240.
+# Defaults: dash-filler = 240, graph-edge = 240.
 #
 # dash-filler — color of the dash filler between graph and content.
-# edge        — color of graph edges (lines, corners, tees, crosses).
+# graph-edge  — color of graph edges (lines, corners, tees, crosses).
 #
 # dash-filler  = 240
-# edge         = "#5f5f5f"
+# graph-edge   = "#5f5f5f"
 
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of
