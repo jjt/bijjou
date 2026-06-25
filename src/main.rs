@@ -12,7 +12,9 @@ use crate::ansi::{skip_csi, FG_RESET};
 use crate::config::{cfg, Activate, Config, Pager, BIJJOU_TEMPLATE_NAME_FIELD};
 use crate::dsl::{collect_widths, parse_nul_oneline, render_row, LeftSide, Node, Template};
 use crate::output::write_output;
-use crate::render::{contains_bytes, emit_dim_graph, emit_line, find_boundary, strip_trailing_nl};
+use crate::render::{
+    contains_bytes, emit_dim_graph, emit_line, find_boundary, strip_trailing_nl, Parsed,
+};
 
 pub enum RowKind {
     Commit {
@@ -26,7 +28,12 @@ pub enum RowKind {
         graph_end: usize,
         value: Vec<u8>,
     },
-    Passthrough,
+    // Carries the graph boundary already located by `classify_row` (None when
+    // the line has no graph prefix at all) so `emit_classified` need not
+    // re-run `find_boundary`.
+    Passthrough {
+        parsed: Option<Parsed>,
+    },
 }
 
 // A `templates.<name>` entry compiled at startup. `Empty` carries no template
@@ -63,7 +70,7 @@ pub fn compile_templates(
 
 pub fn classify_row(body: &[u8]) -> RowKind {
     let Some(p) = find_boundary(body) else {
-        return RowKind::Passthrough;
+        return RowKind::Passthrough { parsed: None };
     };
     let payload = &body[p.content_start..];
     let mut i = 0;
@@ -81,10 +88,10 @@ pub fn classify_row(body: &[u8]) -> RowKind {
     let rest = &payload[i..];
     // NUL/RS-framed record: a `\x1e` terminator is the format marker.
     if !rest.contains(&0x1E) {
-        return RowKind::Passthrough;
+        return RowKind::Passthrough { parsed: Some(p) };
     }
     let Some(mut fields) = parse_nul_oneline(rest) else {
-        return RowKind::Passthrough;
+        return RowKind::Passthrough { parsed: Some(p) };
     };
     if fields.len() == 1 && fields.contains_key("root") {
         let value = fields.get("root").cloned().unwrap_or_default();
@@ -199,8 +206,7 @@ pub fn emit_classified(
             crate::dsl::emit_pad_public(2, out);
             out.extend_from_slice(value);
         }
-        RowKind::Passthrough => {
-            let parsed = find_boundary(body);
+        RowKind::Passthrough { parsed } => {
             // emit_line owns trailing newline handling for the passthrough
             // branch, so return early without our own \n append.
             emit_line(line, parsed.as_ref(), out);
