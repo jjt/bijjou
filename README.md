@@ -94,7 +94,9 @@ The `elastic_tab()` function aligns the content in a column, and adds a horizont
 
 One output replacement bijjou does is the graph edges which are replaced with something more aesthetic: Large Type Pieces from the [Symbols for Legacy Computing Supplement block](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing_Supplement) introduced in Unicode 16.0 ([unicode pdf](https://www.unicode.org/charts/PDF/Unicode-16.0/U160-1CC00.pdf)). You can configure them. More about that below.
 
-Bijjou takes streaming input and by default streams output in batches, either a fixed size (default 128), or in "pager" mode. Pager mode is designed for use with pagers (shocking, I know). It sets the batch size based on screen height to reduce or avoid tears between page down events. Streaming can also be disabled via config. _PS: I recommend [moor](https://github.com/walles/moor). It's great._
+Bijjou takes streaming input and by default streams output in batches, either a fixed size (default 128), or in "pager" mode. Pager mode is designed for use with pagers (shocking, I know). It sets the batch size based on screen height to reduce or avoid tears between page down/up events while paging.  _PS: I recommend [moor](https://github.com/walles/moor) as a pager. It's great._
+
+Output streaming can also be disabled via config.
 
 ## Install
 
