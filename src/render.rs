@@ -38,7 +38,6 @@ pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, out: &mut Vec<u8>) {
 
 const ELISION_CP: u32 = 0x7E; // ~
 
-#[allow(dead_code)]
 pub struct Parsed {
     pub graph_end: usize,
     pub content_start: usize,
