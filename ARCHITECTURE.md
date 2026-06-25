@@ -1,11 +1,11 @@
 # Architecture
 
 `bijjou` = stdin/stdout filter. Post-process `jj log` output: rewrite edge
-glyphs, dim edges, and re-render per-commit content from a JSON payload
-(emitted by `bijjou log-oneline-json`) through a small templating DSL.
-Lines that aren't JSON commit rows pass through byte-for-byte. Node
-glyphs themselves are owned by jj's template — bijjou recognizes them
-but never rewrites them.
+glyphs, dim edges, and re-render per-commit content from a NUL/RS-framed
+payload (emitted by a custom jj log template — see `bijjou-jj-config.toml`)
+through a small templating DSL. Lines that aren't framed commit rows pass
+through byte-for-byte. Node glyphs themselves are owned by jj's template —
+bijjou recognizes them but never rewrites them.
 
 ## Pipeline
 
@@ -28,7 +28,7 @@ stdin → activation check → (stream | buffered) → render → output sink �
 | `config.rs`  | Config struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
 | `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
 | `render.rs`  | Parse line → `Parsed{graph_col, graph_end, content_start}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job. |
-| `dsl.rs`     | Templating DSL + flat JSON parser. `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render: collect max visible widths, then emit each row with right-padded elastic-tab fields. |
+| `dsl.rs`     | Templating DSL + NUL/RS-framed record parser (`parse_nul_oneline`). `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render: collect max visible widths, then emit each row with right-padded elastic-tab fields. |
 | `stream.rs`  | Batched reader, two-pass per batch with monotonic widening (column targets never shrink as new batches arrive), `OutputSink` (stdout or piped pager). |
 | `output.rs`  | Buffered path's terminal write / pager spawn                                              |
 
@@ -41,10 +41,11 @@ stdin → activation check → (stream | buffered) → render → output sink �
    node). This means custom `log_node` glyphs (□, Nerd-Font PUA, …) are
    handled without enumerating them; content is never misread because its
    first glyph always sits past the gap.
-2. `classify_row` → after the graph prefix, look for a `{...}` JSON
-   payload (jj's `log-oneline-json` template output). Lines that parse
-   become `RowKind::Commit{graph_col, fields}`; the special `{"root":...}`
-   shape becomes `RowKind::Root`; anything else stays `RowKind::Passthrough`.
+2. `classify_row` → after the graph prefix, look for a NUL/RS-framed
+   payload (`key\0val\0…\x1e`, emitted by the custom jj log template).
+   Lines that parse become `RowKind::Commit{graph_col, fields}`; a record
+   that is just `root\0<value>` becomes `RowKind::Root`; anything else
+   stays `RowKind::Passthrough`.
 3. Pass 1 over the buffer (or batch): collect per-field max visible
    widths (`collect_widths`) and the overall max `graph_col` across
    commit rows.
@@ -58,13 +59,7 @@ stdin → activation check → (stream | buffered) → render → output sink �
    - Root: emit the graph prefix then the `root` value verbatim (no
      template) so root commits don't perturb column widths.
    - Passthrough: `emit_line` from `render.rs` handles the graph-only
-     and non-JSON cases (just the edge-dim rewrite + verbatim tail).
-
-## Subcommands
-
-- `bijjou log-oneline-json` — emit a jj log template expression that
-  produces one JSON object per commit. Intended for use with the
-  forthcoming content-DSL renderer.
+     and unframed cases (just the edge-dim rewrite + verbatim tail).
 
 ## Dash spec
 

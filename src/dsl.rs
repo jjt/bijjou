@@ -114,77 +114,6 @@ pub fn parse_nul_oneline(bytes: &[u8]) -> Option<HashMap<String, Vec<u8>>> {
     Some(fields)
 }
 
-// Flat JSON object parser. Keys and values are JSON strings; values may
-// contain raw ESC bytes (the jj template emits ANSI escapes inside the
-// string literal) and the standard `\"`, `\\`, `\n` escapes for the three
-// chars that would otherwise break JSON tokenization.
-pub fn parse_json_oneline(bytes: &[u8]) -> Option<HashMap<String, Vec<u8>>> {
-    let mut i = skip_ws(bytes, 0);
-    if i >= bytes.len() || bytes[i] != b'{' {
-        return None;
-    }
-    i += 1;
-    let mut fields: HashMap<String, Vec<u8>> = HashMap::new();
-    loop {
-        i = skip_ws(bytes, i);
-        if i < bytes.len() && bytes[i] == b'}' {
-            return Some(fields);
-        }
-        let (key, after_key) = read_json_string(bytes, i)?;
-        i = skip_ws(bytes, after_key);
-        if i >= bytes.len() || bytes[i] != b':' {
-            return None;
-        }
-        i = skip_ws(bytes, i + 1);
-        let (val, after_val) = read_json_string(bytes, i)?;
-        let key_str = String::from_utf8(key).ok()?;
-        fields.insert(key_str, val);
-        i = skip_ws(bytes, after_val);
-        if i >= bytes.len() {
-            return None;
-        }
-        match bytes[i] {
-            b',' => i += 1,
-            b'}' => return Some(fields),
-            _ => return None,
-        }
-    }
-}
-
-fn skip_ws(bytes: &[u8], mut i: usize) -> usize {
-    while i < bytes.len() && matches!(bytes[i], b' ' | b'\t') {
-        i += 1;
-    }
-    i
-}
-
-fn read_json_string(bytes: &[u8], mut i: usize) -> Option<(Vec<u8>, usize)> {
-    if i >= bytes.len() || bytes[i] != b'"' {
-        return None;
-    }
-    i += 1;
-    let mut out: Vec<u8> = Vec::new();
-    while i < bytes.len() {
-        let b = bytes[i];
-        if b == b'"' {
-            return Some((out, i + 1));
-        }
-        if b == b'\\' && i + 1 < bytes.len() {
-            match bytes[i + 1] {
-                b'"' => out.push(b'"'),
-                b'\\' => out.push(b'\\'),
-                b'n' => out.push(b'\n'),
-                _ => return None,
-            }
-            i += 2;
-            continue;
-        }
-        out.push(b);
-        i += 1;
-    }
-    None
-}
-
 // Count visible cells in a byte slice. CSI escapes are skipped; each
 // remaining codepoint counts as one cell.
 pub fn visible_width(bytes: &[u8]) -> usize {
@@ -539,34 +468,6 @@ mod tests {
     #[test]
     fn parse_unknown_function_errors() {
         assert!(Template::parse("%{wat(foo)}").is_err());
-    }
-
-    #[test]
-    fn json_oneline_basic() {
-        let bytes = br#"{"change_id":"abc","commit_id":"123"}"#;
-        let m = parse_json_oneline(bytes).unwrap();
-        assert_eq!(m.get("change_id").unwrap(), b"abc");
-        assert_eq!(m.get("commit_id").unwrap(), b"123");
-    }
-
-    #[test]
-    fn json_oneline_preserves_raw_esc() {
-        let bytes = b"{\"k\":\"\x1b[1mhi\x1b[0m\"}";
-        let m = parse_json_oneline(bytes).unwrap();
-        assert_eq!(m.get("k").unwrap(), b"\x1b[1mhi\x1b[0m");
-    }
-
-    #[test]
-    fn json_oneline_decodes_quote_and_backslash() {
-        let bytes = br#"{"k":"a\"b\\c\nd"}"#;
-        let m = parse_json_oneline(bytes).unwrap();
-        assert_eq!(m.get("k").unwrap(), b"a\"b\\c\nd");
-    }
-
-    #[test]
-    fn json_oneline_rejects_non_object() {
-        assert!(parse_json_oneline(b"[]").is_none());
-        assert!(parse_json_oneline(b"plain").is_none());
     }
 
     #[test]

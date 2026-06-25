@@ -10,7 +10,7 @@ use std::io::{self, Read, Write};
 
 use crate::ansi::{skip_csi, FG_RESET};
 use crate::config::{cfg, Activate, Config, Pager, BIJJOU_TEMPLATE_NAME_FIELD};
-use crate::dsl::{collect_widths, parse_json_oneline, parse_nul_oneline, render_row, LeftSide, Node, Template};
+use crate::dsl::{collect_widths, parse_nul_oneline, render_row, LeftSide, Node, Template};
 use crate::output::write_output;
 use crate::render::{contains_bytes, emit_dim_graph, emit_line, find_boundary, strip_trailing_nl};
 
@@ -79,19 +79,11 @@ pub fn classify_row(body: &[u8]) -> RowKind {
         break;
     }
     let rest = &payload[i..];
-    // NUL/RS-framed record: terminator `\x1e` is the format marker. Try
-    // this first; fall back to JSON if not present.
-    let mut fields = if rest.contains(&0x1E) {
-        let Some(f) = parse_nul_oneline(rest) else {
-            return RowKind::Passthrough;
-        };
-        f
-    } else if !rest.is_empty() && rest[0] == b'{' {
-        let Some(f) = parse_json_oneline(rest) else {
-            return RowKind::Passthrough;
-        };
-        f
-    } else {
+    // NUL/RS-framed record: a `\x1e` terminator is the format marker.
+    if !rest.contains(&0x1E) {
+        return RowKind::Passthrough;
+    }
+    let Some(mut fields) = parse_nul_oneline(rest) else {
         return RowKind::Passthrough;
     };
     if fields.len() == 1 && fields.contains_key("root") {
@@ -218,18 +210,7 @@ const HELP: &str = "\
 bijjou - jj log post-processor
 
 USAGE
-  bijjou [SUBCOMMAND] [OPTIONS] < input
-
-SUBCOMMANDS
-  log-oneline-json          print a jj log template expression that emits
-                            one JSON object per commit, with ANSI color
-                            sequences preserved inside the string values.
-                            Ready for direct `$(...)` expansion:
-                              jj log -T $(bijjou log-oneline-json)
-                            All whitespace outside string literals is
-                            stripped; intra-string spaces are encoded as
-                            jj's `\\x20` byte escape so bash word-splits
-                            the output into a single argument.
+  bijjou [OPTIONS] < input
 
 OPTIONS
   -h, --help                show this help and exit
@@ -303,7 +284,6 @@ fn main() {
         print!("{}", HELP);
         return;
     }
-    let (subcommand, flag_args) = split_subcommand(argv);
     let mut cfg_obj = match Config::load() {
         Ok(c) => c,
         Err(e) => {
@@ -315,21 +295,9 @@ fn main() {
         eprintln!("bijjou: {}", e);
         std::process::exit(2);
     }
-    if let Err(e) = cfg_obj.apply_cli(flag_args) {
+    if let Err(e) = cfg_obj.apply_cli(argv) {
         eprintln!("bijjou: {}", e);
         std::process::exit(2);
-    }
-    if let Some(sub) = subcommand {
-        match sub.as_str() {
-            "log-oneline-json" => {
-                println!("{}", render_log_oneline_json_inline());
-                return;
-            }
-            other => {
-                eprintln!("bijjou: unknown subcommand: {}", other);
-                std::process::exit(2);
-            }
-        }
     }
     if cfg_obj.pager == Pager::Always
         && std::env::var("PAGER")
@@ -348,81 +316,6 @@ fn main() {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }
-}
-
-fn split_subcommand(argv: Vec<String>) -> (Option<String>, Vec<String>) {
-    let mut sub: Option<String> = None;
-    let mut flags = Vec::with_capacity(argv.len());
-    for arg in argv {
-        if sub.is_none() && !arg.starts_with('-') {
-            sub = Some(arg);
-        } else {
-            flags.push(arg);
-        }
-    }
-    (sub, flags)
-}
-
-// One-line jj template that emits a JSON object per commit. Root commit
-// emits `{"root":"..."}`; every other commit emits one field per item
-// from the original `separate(...)` block in `log_oneline_json.toml`.
-//
-// ANSI escape sequences from `format_short_*` helpers are preserved
-// verbatim inside the JSON string values (raw ESC bytes, not ``
-// escapes), so a terminal that consumes the output gets colored
-// rendering. A `replace(...)` call wraps each value, encoding `"`, `\`,
-// and `\n` (raw newline) as JSON escape sequences — other bytes,
-// including ESC, pass through unchanged.
-//
-// Output has no whitespace outside string literals so it survives
-// unquoted `$(...)` substitution. The one literal space in the source
-// — inside `"no description"` — is encoded as jj's `\x20` byte escape.
-fn render_log_oneline_json_inline() -> String {
-    let jc = |value: &str| -> String {
-        let mut s = String::with_capacity(value.len() + 96);
-        s.push_str(r#"'"'++replace(regex:"[\"\\\\\\n]","#);
-        s.push_str(value);
-        s.push_str(r#",|m|if(m.get(0)=="\"","\\\"",if(m.get(0)=="\\","\\\\","\\n")))++'"'"#);
-        s
-    };
-    let fields: &[(&str, &str)] = &[
-        (r#"'"change_id":'"#, "format_short_change_id_with_change_offset(self)"),
-        (r#"'"commit_id":'"#, "format_short_commit_id(self.commit_id())"),
-        (r#"'"author":'"#, "format_short_signature_oneline(self.author())"),
-        (r#"'"timestamp":'"#, r#"commit_timestamp(self).format("%y%m%d·%H%M")"#),
-        (r#"'"labels":'"#, "format_commit_labels(self)"),
-        (r#"'"working_copies":'"#, "self.working_copies()"),
-        (r#"'"bookmarks":'"#, "self.bookmarks()"),
-        (r#"'"tags":'"#, "self.tags()"),
-    ];
-    let mut out = String::new();
-    out.push_str("if(self.root(),");
-    out.push_str(r#"'{"root":'++"#);
-    out.push_str(&jc("format_root_commit(self)"));
-    out.push_str(r#"++'}'++"\n",'{'++separate(',',"#);
-    let mut first = true;
-    for (key, val) in fields {
-        if !first {
-            out.push(',');
-        }
-        first = false;
-        out.push_str(key);
-        out.push_str("++");
-        out.push_str(&jc(val));
-    }
-    out.push(',');
-    out.push_str(r#"if(config("ui.show-cryptographic-signatures").as_boolean(),'"signature":'++"#);
-    out.push_str(&jc("format_short_cryptographic_signature(self.signature())"));
-    out.push_str("),");
-    out.push_str(r#"if(self.empty(),'"empty":'++"#);
-    out.push_str(&jc("empty_commit_marker"));
-    out.push_str("),");
-    out.push_str(r#"'"description":'++if(self.description(),"#);
-    out.push_str(&jc("self.description().first_line()"));
-    out.push(',');
-    out.push_str(&jc("label(\"no_desc\",\"no\\x20description\")"));
-    out.push_str(r#"))++'}'++"\n")"#);
-    out
 }
 
 fn split_lines(input: &[u8]) -> Vec<&[u8]> {
