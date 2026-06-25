@@ -27,7 +27,7 @@ stdin → activation check → (stream | buffered) → render → output sink �
 | `main.rs`    | Arg parse, config load chain, dispatch buffered path                                      |
 | `config.rs`  | Config struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
 | `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
-| `render.rs`  | Parse line → `Parsed{graph_col, graph_end, content_start}`, recognize edges (box-drawing) and nodes (jj's `@ ○ ● ◆ ×`), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job. |
+| `render.rs`  | Parse line → `Parsed{graph_col, graph_end, content_start}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job. |
 | `dsl.rs`     | Templating DSL + flat JSON parser. `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render: collect max visible widths, then emit each row with right-padded elastic-tab fields. |
 | `stream.rs`  | Batched reader, two-pass per batch with monotonic widening (column targets never shrink as new batches arrive), `OutputSink` (stdout or piped pager). |
 | `output.rs`  | Buffered path's terminal write / pager spawn                                              |
@@ -35,8 +35,12 @@ stdin → activation check → (stream | buffered) → render → output sink �
 ## Render flow per line
 
 1. `find_boundary` → locate end of graph prefix. A position is "graph"
-   if its codepoint is in the box-drawing range, is the elision char, or
-   is one of jj's default node chars (`@ ○ ◆ × ●`).
+   if its codepoint is an edge (box-drawing range or elision char), or
+   is a node — recognized structurally as any non-edge, non-space glyph
+   followed by a space or an edge (the column gap jj pads after every
+   node). This means custom `log_node` glyphs (□, Nerd-Font PUA, …) are
+   handled without enumerating them; content is never misread because its
+   first glyph always sits past the gap.
 2. `classify_row` → after the graph prefix, look for a `{...}` JSON
    payload (jj's `log-oneline-json` template output). Lines that parse
    become `RowKind::Commit{graph_col, fields}`; the special `{"root":...}`

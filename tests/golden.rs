@@ -71,14 +71,13 @@ fn visualize(bytes: &[u8]) -> String {
     out
 }
 
-// Single golden: pipe tests/fixtures/local.txt through bijjou under bijjou-config.toml and
-// snapshot the result. ui.color is forced to "always" so the SGR sequences are
-// stable regardless of whether the test runner is a TTY. out.local.txt holds a
-// human-readable copy of the same rendered output (raw ANSI bytes).
-#[test]
-fn local() {
+// Pipe a fixture through bijjou under bijjou-config.toml and snapshot the
+// result. ui.color is forced to "always" so the SGR sequences are stable
+// regardless of whether the test runner is a TTY.
+fn render_fixture(fixture: &str) -> String {
     let root = root_dir();
-    let input = std::fs::read(root.join("tests/fixtures/local.txt")).expect("tests/fixtures/local.txt");
+    let path = root.join("tests/fixtures").join(fixture);
+    let input = std::fs::read(&path).unwrap_or_else(|_| panic!("{}", path.display()));
 
     let output = Command::cargo_bin("bijjou")
         .expect("binary built")
@@ -91,7 +90,24 @@ fn local() {
         .stdout
         .clone();
 
+    visualize(&output)
+}
+
+// local.txt rendered under bijjou-config.toml (matches out.local.txt).
+#[test]
+fn local() {
     insta::with_settings!({description => "tests/fixtures/local.txt rendered under bijjou-config.toml (matches out.local.txt)."}, {
-        insta::assert_snapshot!("local", visualize(&output));
+        insta::assert_snapshot!("local", render_fixture("local.txt"));
+    });
+}
+
+// Regression: rows whose graph node is a custom `log_node` glyph (■ U+25A0,
+// Nerd-Font PUA U+F28D) must render, not pass through raw. Built-in nodes (●)
+// and edges share the fixture for contrast. Guards the structural node
+// detection in render.rs::is_node_at.
+#[test]
+fn custom_nodes() {
+    insta::with_settings!({description => "tests/fixtures/custom_nodes.txt: custom log_node glyphs (■, PUA) render via structural node detection."}, {
+        insta::assert_snapshot!("custom_nodes", render_fixture("custom_nodes.txt"));
     });
 }
