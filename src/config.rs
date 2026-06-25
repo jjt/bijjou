@@ -552,8 +552,10 @@ graph-edge = 200
 
     #[test]
     fn cli_bare_color_sets_always() {
-        let mut cfg = Config::default();
-        cfg.color = Color::Never;
+        let mut cfg = Config {
+            color: Color::Never,
+            ..Default::default()
+        };
         cfg.apply_cli(args(&["--color"])).unwrap();
         assert_eq!(cfg.color, Color::Always);
     }
@@ -597,8 +599,10 @@ graph-edge = 200
 
     #[test]
     fn cli_bare_activate_sets_always() {
-        let mut cfg = Config::default();
-        cfg.activate = Activate::Never;
+        let mut cfg = Config {
+            activate: Activate::Never,
+            ..Default::default()
+        };
         cfg.apply_cli(args(&["--activate"])).unwrap();
         assert_eq!(cfg.activate, Activate::Always);
     }
@@ -717,16 +721,20 @@ graph-edge = 200
 
     #[test]
     fn cli_bare_stream_sets_enabled() {
-        let mut cfg = Config::default();
-        cfg.stream_enabled = false;
+        let mut cfg = Config {
+            stream_enabled: false,
+            ..Default::default()
+        };
         cfg.apply_cli(args(&["--stream"])).unwrap();
         assert!(cfg.stream_enabled);
     }
 
     #[test]
     fn cli_stream_true() {
-        let mut cfg = Config::default();
-        cfg.stream_enabled = false;
+        let mut cfg = Config {
+            stream_enabled: false,
+            ..Default::default()
+        };
         cfg.apply_cli(args(&["--stream=true"])).unwrap();
         assert!(cfg.stream_enabled);
     }

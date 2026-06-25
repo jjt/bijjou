@@ -386,13 +386,13 @@ fn run() -> io::Result<()> {
     let mut input = Vec::new();
     io::stdin().read_to_end(&mut input)?;
 
-    if c.activate == Activate::Auto {
-        if !contains_bytes(&input, BIJJOU_TEMPLATE_NAME_FIELD.as_bytes()) {
-            let mut out = io::stdout().lock();
-            out.write_all(&input)?;
-            out.flush()?;
-            return Ok(());
-        }
+    if c.activate == Activate::Auto
+        && !contains_bytes(&input, BIJJOU_TEMPLATE_NAME_FIELD.as_bytes())
+    {
+        let mut out = io::stdout().lock();
+        out.write_all(&input)?;
+        out.flush()?;
+        return Ok(());
     }
 
     let templates = compile_templates(&c.templates)

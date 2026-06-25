@@ -100,7 +100,7 @@ pub fn parse_nul_oneline(bytes: &[u8]) -> Option<HashMap<String, Vec<u8>>> {
         return None;
     }
     let parts: Vec<&[u8]> = body.split(|&b| b == 0).collect();
-    if parts.len() < 2 || parts.len() % 2 != 0 {
+    if parts.len() < 2 || !parts.len().is_multiple_of(2) {
         return None;
     }
     let mut fields = HashMap::with_capacity(parts.len() / 2);
