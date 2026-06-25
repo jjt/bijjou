@@ -206,13 +206,91 @@ fn emit_edge(cp: u32, raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
 // graph chars (node or edge) is filled with the dash glyph, one dash per
 // space. Runs before the first node, or trailing past the last graph char,
 // stay as plain spaces.
+// What abuts an internal space run on its right when the run is flushed.
+// `NonGraph` covers a newline, end of buffer, or end of the graph prefix —
+// the run does not terminate at a graph char, so it is never dashed.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RightSide {
+    Node,
+    Edge,
+    NonGraph,
+}
+
+// Tracks an in-progress run of spaces inside the graph prefix so it can be
+// rewritten as dashes on flush. `seen_node`/`left_was_node` describe the graph
+// context to the run's left; both reset at each newline via `reset_line`.
+struct GraphRun {
+    seen_node: bool,
+    left_was_node: bool,
+    start: Option<usize>,
+    spaces: usize,
+}
+
+impl GraphRun {
+    fn new() -> Self {
+        GraphRun { seen_node: false, left_was_node: false, start: None, spaces: 0 }
+    }
+
+    fn reset_line(&mut self) {
+        self.seen_node = false;
+        self.left_was_node = false;
+    }
+
+    // Replace the pending internal space run with dashes when the line has
+    // already seen its node and the run is followed by another graph char.
+    //
+    // Rules (per the dash spec):
+    //   - The cell immediately right of a node gets `dash_start` if and only
+    //     if that cell is also to the left of whitespace OR a graph edge —
+    //     i.e., the run is multi-cell, or it's a single cell between a node
+    //     and an edge. A single-cell run between two nodes emits NO dash at
+    //     all (the space is preserved).
+    //   - `dash_end` is never emitted here: intra-graph runs always terminate
+    //     at another graph char (never content), and the closing cap is meant
+    //     to attach the run to the content boundary on the right. The DSL's
+    //     content-side pad is responsible for that cap.
+    fn flush(&mut self, out: &mut Vec<u8>, right: RightSide, c: &crate::config::Config) {
+        let Some(start) = self.start.take() else {
+            return;
+        };
+        let count = std::mem::replace(&mut self.spaces, 0);
+        let right_is_graph = matches!(right, RightSide::Node | RightSide::Edge);
+        if !(self.seen_node && right_is_graph && count > 0) {
+            return;
+        }
+        // Single-cell gap between two nodes: emit no dash; keep the space.
+        if count == 1 && self.left_was_node && right == RightSide::Node {
+            return;
+        }
+        let original: Vec<u8> = out[start..].to_vec();
+        out.truncate(start);
+        out.extend_from_slice(&c.dim_on);
+        // After the early return above, any run with `left_was_node` either
+        // has count > 1 (next cell is whitespace) or terminates at an edge —
+        // both qualify for `dash_start`.
+        let head_cap = self.left_was_node && !c.dash_start.is_empty();
+        for idx in 0..count {
+            if head_cap && idx == 0 {
+                out.extend_from_slice(c.dash_start.as_bytes());
+            } else {
+                out.extend_from_slice(c.dash.as_bytes());
+            }
+        }
+        out.extend_from_slice(FG_RESET);
+        // CSI bytes never contain literal space, so keeping non-space bytes
+        // preserves any colour setup that was buffered between the spaces.
+        for &b in &original {
+            if b != b' ' {
+                out.push(b);
+            }
+        }
+    }
+}
+
 pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
     let c = cfg();
     let mut i = 0;
-    let mut seen_node = false;
-    let mut prev_was_node = false;
-    let mut run_start: Option<usize> = None;
-    let mut run_space_count: usize = 0;
+    let mut run = GraphRun::new();
 
     while i < bytes.len() {
         let ansi_start = i;
@@ -222,28 +300,27 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
         let ansi = &bytes[ansi_start..i];
 
         if i >= bytes.len() {
-            flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, false, c);
+            run.flush(out, RightSide::NonGraph, c);
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
             break;
         }
 
         if bytes[i] == b'\n' {
-            flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, false, c);
+            run.flush(out, RightSide::NonGraph, c);
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
             out.push(b'\n');
-            seen_node = false;
-            prev_was_node = false;
+            run.reset_line();
             i += 1;
             continue;
         }
 
         if bytes[i] == b' ' {
-            if run_start.is_none() {
-                run_start = Some(out.len());
+            if run.start.is_none() {
+                run.start = Some(out.len());
             }
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
             out.push(b' ');
-            run_space_count += 1;
+            run.spaces += 1;
             i += 1;
             continue;
         }
@@ -253,77 +330,20 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
         // emit_dim_graph only ever receives a graph prefix, so every glyph
         // here is graph: anything that isn't an edge is the node.
         let cp_is_edge = is_edge_char(cp);
-        flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, true, !cp_is_edge, c);
+        let right = if cp_is_edge { RightSide::Edge } else { RightSide::Node };
+        run.flush(out, right, c);
         if cp_is_edge {
             emit_edge(cp, raw, ansi, out);
-            prev_was_node = false;
+            run.left_was_node = false;
         } else {
             emit_node(raw, ansi, out);
-            seen_node = true;
-            prev_was_node = true;
+            run.seen_node = true;
+            run.left_was_node = true;
         }
         i += len;
     }
 
-    flush_internal_run(out, &mut run_start, &mut run_space_count, seen_node, prev_was_node, false, false, c);
-}
-
-// Replace a pending internal space run with dashes when the line has already
-// seen its node and the run is followed by another graph char.
-//
-// Rules (per the dash spec):
-//   - The cell immediately right of a node gets `dash_start` if and only if
-//     that cell is also to the left of whitespace OR a graph edge — i.e.,
-//     the run is multi-cell, or it's a single cell between a node and an
-//     edge. A single-cell run between two nodes emits NO dash at all (the
-//     space is preserved).
-//   - `dash_end` is never emitted here: intra-graph runs always terminate
-//     at another graph char (never content), and the closing cap is meant
-//     to attach the run to the content boundary on the right. The DSL's
-//     content-side pad is responsible for that cap.
-fn flush_internal_run(
-    out: &mut Vec<u8>,
-    run_start: &mut Option<usize>,
-    run_space_count: &mut usize,
-    seen_node: bool,
-    left_was_node: bool,
-    right_is_graph: bool,
-    right_is_node: bool,
-    c: &crate::config::Config,
-) {
-    let Some(start) = run_start.take() else {
-        return;
-    };
-    let count = std::mem::replace(run_space_count, 0);
-    if !(seen_node && right_is_graph && count > 0) {
-        return;
-    }
-    // Single-cell gap between two nodes: emit no dash; keep the space.
-    if count == 1 && left_was_node && right_is_node {
-        return;
-    }
-    let original: Vec<u8> = out[start..].to_vec();
-    out.truncate(start);
-    out.extend_from_slice(&c.dim_on);
-    // After the early return above, any run with `left_was_node` either has
-    // count > 1 (next cell is whitespace) or terminates at an edge — both
-    // qualify for `dash_start`.
-    let head_cap = left_was_node && !c.dash_start.is_empty();
-    for idx in 0..count {
-        if head_cap && idx == 0 {
-            out.extend_from_slice(c.dash_start.as_bytes());
-        } else {
-            out.extend_from_slice(c.dash.as_bytes());
-        }
-    }
-    out.extend_from_slice(FG_RESET);
-    // CSI bytes never contain literal space, so keeping non-space bytes
-    // preserves any colour setup that was buffered between the spaces.
-    for &b in &original {
-        if b != b' ' {
-            out.push(b);
-        }
-    }
+    run.flush(out, RightSide::NonGraph, c);
 }
 
 #[cfg(test)]
