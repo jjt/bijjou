@@ -411,5 +411,5 @@ fn run() -> io::Result<()> {
     for (line, row) in lines.iter().zip(rows.iter()) {
         emit_classified(line, row, &templates, &metrics, max_graph_col, &mut out);
     }
-    write_output(&out, lines.len())
+    write_output(&out)
 }

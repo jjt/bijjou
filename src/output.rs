@@ -4,7 +4,7 @@ use std::io::{self, IsTerminal, Write};
 use crate::ansi::strip_sgr;
 use crate::config::{cfg, color_enabled, Pager};
 
-pub fn write_output(buf: &[u8], _line_count: usize) -> io::Result<()> {
+pub fn write_output(buf: &[u8]) -> io::Result<()> {
     let filtered: Cow<[u8]> = if color_enabled() {
         Cow::Borrowed(buf)
     } else {
