@@ -7,6 +7,7 @@ mod stream;
 
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
+use std::sync::OnceLock;
 
 use crate::ansi::{skip_csi, FG_RESET};
 use crate::config::{cfg, Activate, Config, Pager, BIJJOU_TEMPLATE_NAME_FIELD};
@@ -188,13 +189,16 @@ pub fn emit_classified(
                     // the rest of the row.
                 }
                 Some(CompiledTemplate::Parsed(template)) => {
-                    let empty_widths: HashMap<String, usize> = HashMap::new();
-                    let empty_anchors: HashMap<String, usize> = HashMap::new();
-                    let (w, a) = match metrics.get(name) {
-                        Some(m) => (&m.widths, &m.anchors),
-                        None => (&empty_widths, &empty_anchors),
-                    };
-                    render_row(template, fields, leading_pad, leading_left, w, a, out);
+                    let m = metrics.get(name).unwrap_or_else(|| empty_metrics());
+                    render_row(
+                        template,
+                        fields,
+                        leading_pad,
+                        leading_left,
+                        &m.widths,
+                        &m.anchors,
+                        out,
+                    );
                 }
                 None => {
                     emit_missing_template(name, leading_pad, leading_left, out);
@@ -203,7 +207,7 @@ pub fn emit_classified(
         }
         RowKind::Root { graph_end, value } => {
             emit_dim_graph(&body[..*graph_end], out);
-            crate::dsl::emit_pad_public(2, out);
+            crate::dsl::emit_node_pad(2, out);
             out.extend_from_slice(value);
         }
         RowKind::Passthrough { parsed } => {
@@ -233,15 +237,24 @@ fn emit_missing_template(name: &str, leading_pad: usize, leading_left: LeftSide,
     };
     let mut fields: HashMap<String, Vec<u8>> = HashMap::with_capacity(1);
     fields.insert("__bijjou_msg".to_string(), bytes);
+    let m = empty_metrics();
     render_row(
         &synth,
         &fields,
         leading_pad,
         leading_left,
-        &HashMap::new(),
-        &HashMap::new(),
+        &m.widths,
+        &m.anchors,
         out,
     );
+}
+
+// A shared, allocation-free empty metrics table for the no-recorded-widths
+// path (a template whose only row is the one being rendered now, or the
+// synthetic missing-template notice).
+fn empty_metrics() -> &'static TemplateMetrics {
+    static EMPTY: OnceLock<TemplateMetrics> = OnceLock::new();
+    EMPTY.get_or_init(TemplateMetrics::default)
 }
 
 const HELP: &str = "\

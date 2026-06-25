@@ -384,7 +384,9 @@ fn emit_segs(segs: &[Seg], leading_left: LeftSide, out: &mut Vec<u8>) {
     }
 }
 
-pub fn emit_pad_public(cells: usize, out: &mut Vec<u8>) {
+// Emit a fixed-width pad run sitting directly to the right of a graph node
+// (the gap between a root commit's graph prefix and its value).
+pub fn emit_node_pad(cells: usize, out: &mut Vec<u8>) {
     emit_pad(cells, LeftSide::GraphNode, out);
 }
 
