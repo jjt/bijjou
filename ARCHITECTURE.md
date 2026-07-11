@@ -44,12 +44,12 @@ into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
 
 | File         | Job                                                                                      |
 | ------------ | ---------------------------------------------------------------------------------------- |
-| `main.rs`    | Arg parse, config load chain, dispatch (stream vs buffered). Owns the shared row core: `RowKind`, `classify_row`, `emit_classified`, template compilation, and per-template `TemplateMetrics` (max widths + anchors). |
+| `main.rs`    | Arg parse, config load chain, dispatch (stream vs buffered). Owns the shared row core: `RowKind`, `classify_row`, `emit_classified`, template compilation, and per-template `TemplateMetrics` (position-keyed anchors). |
 | `config.rs`  | `Config` struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
 | `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
 | `render.rs`  | Parse line → `Parsed{graph_col, graph_end, content_start, last_is_edge}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job. |
-| `dsl.rs`     | Templating DSL + NUL/RS-framed record parser (`parse_nul_oneline`). `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render (`collect_widths` → `render_row`): pass 1 records each elastic-tab field's max visible width **and** max natural column (anchor); pass 2 left-pads to the anchor so the field's left edge lines up, then right-pads the value to the max width. Whitespace follows a 4-rule model (see below). |
-| `stream.rs`  | Batched reader (`read_batch`), two-pass per batch with monotonic widening (widths, anchors, and `graph_col` targets never shrink as new batches arrive), `OutputSink` (stdout or pager spawned via `std::process::Command`/`posix_spawn`). |
+| `dsl.rs`     | Templating DSL + NUL/RS-framed record parser (`parse_nul_oneline`). `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render (`collect_anchors` → `render_row`): pass 1 records each elastic-tab's max natural column (anchor), keyed by tab position; pass 2 left-pads to the anchor so the following content's left edge lines up. An arg-ful tab then emits its field inline; an arg-less tab emits nothing (`%{elastic_tab()}%{X}` == `%{elastic_tab(X)}`). Whitespace follows a 4-rule model (see below). |
+| `stream.rs`  | Batched reader (`read_batch`), two-pass per batch with monotonic widening (anchors and `graph_col` targets never shrink as new batches arrive), `OutputSink` (stdout or pager spawned via `std::process::Command`/`posix_spawn`). |
 | `output.rs`  | Buffered path's terminal write / pager exec (`fork` + `execvp`, replacing bijjou's process)  |
 
 ## Render flow per line
@@ -68,20 +68,19 @@ into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
    `graph_end`, `last_is_edge`, `template_name`, and `fields`); a record
    that is just `root\0<value>` becomes `RowKind::Root`; anything else
    stays `RowKind::Passthrough`.
-3. Pass 1 over the buffer (or batch): per named template, `collect_widths`
-   records each elastic-tab field's max visible width and max natural
-   column (anchor); also track the overall max `graph_col` across commit
-   rows.
+3. Pass 1 over the buffer (or batch): per named template, `collect_anchors`
+   records each elastic-tab's max natural column (anchor), keyed by tab
+   position; also track the overall max `graph_col` across commit rows.
 4. Pass 2 — `emit_classified`:
    - Commit: `emit_dim_graph` for the graph prefix, right-pad to the
      max graph column (handed to the DSL as a leading pad), then dispatch
      on the row's template (Parsed / Empty / missing / no-name; see
      **Templates**). For a Parsed body, `render_row` walks the template:
      literal text and `%{field}` lookups emit verbatim;
-     `%{elastic_tab(field)}` left-pads to the field's anchor, emits the
-     value, then emits `max_width - this_width` right-pad fill cells (one
-     space if the gap is one cell; otherwise dashes with
-     `layout.dash-start` / `layout.dash-end` caps).
+     `%{elastic_tab(...)}` left-pads to its column's anchor (the fill is one
+     space for a one-cell gap, otherwise dashes with `layout.dash-start` /
+     `layout.dash-end` caps), then an arg-ful tab emits its field value
+     while an arg-less tab emits nothing.
    - Root: emit the graph prefix then a 2-cell pad and the `root` value
      verbatim (no template) so root commits don't perturb column widths.
    - Passthrough: `emit_line` from `render.rs` handles the graph-only

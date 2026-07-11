@@ -86,7 +86,7 @@ bijjou_log_oneline = '''
 
 Color is preserved if enabled from jj and bijjou. By default jj will not emit color if it's being piped to a non-tty process, so you might have to add a config option or use the `--color=always` cli flag.
 
-The `elastic_tab()` function aligns the content in a column, and adds a horizontal guide line. You can see this in effect in the change ids: note how they are all aligned.
+The `elastic_tab()` function is a tab stop: it left-pads the current row so the content that follows lines up in a column across rows, adding a horizontal guide line in the gap. You can see this in effect in the change ids: note how they are all aligned. `%{elastic_tab(field)}` is shorthand for a tab immediately followed by `%{field}` — it pads, then emits the field. Columns are keyed by tab position, so each `elastic_tab` in a template is its own column.
 
 The one output replacement bijjou does handle is the graph edges, which are replaced with something more aesthetic: Large Type Pieces from the [Symbols for Legacy Computing Supplement block](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing_Supplement) introduced in Unicode 16.0 ([unicode pdf](https://www.unicode.org/charts/PDF/Unicode-16.0/U160-1CC00.pdf)). If you don't like those, you can configure the various graph edge characters to whatever you'd like. I can't stop you if you make them all the cowboy emoji, for example.
 
