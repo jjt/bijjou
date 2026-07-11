@@ -11,7 +11,7 @@ use std::sync::OnceLock;
 
 use crate::ansi::{skip_csi, FG_RESET};
 use crate::config::{cfg, Activate, Config, Pager, BIJJOU_TEMPLATE_NAME_FIELD};
-use crate::dsl::{collect_widths, parse_nul_oneline, render_row, LeftSide, Node, Template};
+use crate::dsl::{collect_anchors, parse_nul_oneline, render_row, LeftSide, Node, Template};
 use crate::output::write_output;
 use crate::render::{
     contains_bytes, emit_dim_graph, emit_line, find_boundary, strip_trailing_nl, Parsed,
@@ -44,13 +44,12 @@ pub enum CompiledTemplate {
     Parsed(Template),
 }
 
-// Per-template alignment state. `widths` is the row-wide max visible width
-// per elastic_tab field; `anchors` is the row-wide max natural column
-// before each elastic_tab. Both grow monotonically as rows are scanned.
+// Per-template alignment state. `anchors[i]` is the row-wide max natural
+// column before the i-th elastic_tab in the template (tabs keyed by
+// left-to-right order). Grows monotonically as rows are scanned.
 #[derive(Default)]
 pub struct TemplateMetrics {
-    pub widths: HashMap<String, usize>,
-    pub anchors: HashMap<String, usize>,
+    pub anchors: Vec<usize>,
 }
 
 pub fn compile_templates(
@@ -114,10 +113,10 @@ pub fn classify_row(body: &[u8]) -> RowKind {
 }
 
 // Pass-1 accumulation shared by the buffered and streaming paths: fold every
-// commit row's elastic-tab widths/anchors into `metrics` and widen
-// `max_graph_col`. Widths and anchors only grow (collect_widths takes maxima),
-// so calling this across successive streaming batches widens monotonically and
-// never invalidates rows already emitted above.
+// commit row's elastic-tab anchors into `metrics` and widen `max_graph_col`.
+// Anchors only grow (collect_anchors takes maxima), so calling this across
+// successive streaming batches widens monotonically and never invalidates
+// rows already emitted above.
 pub fn accumulate_metrics(
     rows: &[RowKind],
     templates: &HashMap<String, CompiledTemplate>,
@@ -135,7 +134,7 @@ pub fn accumulate_metrics(
             if let Some(name) = template_name.as_deref() {
                 if let Some(CompiledTemplate::Parsed(template)) = templates.get(name) {
                     let entry = metrics.entry(name.to_string()).or_default();
-                    collect_widths(template, fields, &mut entry.widths, &mut entry.anchors);
+                    collect_anchors(template, fields, &mut entry.anchors);
                 }
             }
             if *graph_col > *max_graph_col {
@@ -195,7 +194,6 @@ pub fn emit_classified(
                         fields,
                         leading_pad,
                         leading_left,
-                        &m.widths,
                         &m.anchors,
                         out,
                     );
@@ -243,13 +241,12 @@ fn emit_missing_template(name: &str, leading_pad: usize, leading_left: LeftSide,
         &fields,
         leading_pad,
         leading_left,
-        &m.widths,
         &m.anchors,
         out,
     );
 }
 
-// A shared, allocation-free empty metrics table for the no-recorded-widths
+// A shared, allocation-free empty metrics table for the no-recorded-anchors
 // path (a template whose only row is the one being rendered now, or the
 // synthetic missing-template notice).
 fn empty_metrics() -> &'static TemplateMetrics {

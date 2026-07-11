@@ -145,7 +145,7 @@ fn process_batch(
         .map(|l| classify_row(strip_trailing_nl(l).0))
         .collect();
 
-    // Monotonic widen: widths and anchors only grow across batches so
+    // Monotonic widen: anchors only grow across batches so
     // already-emitted rows above remain valid (column targets never shrink).
     accumulate_metrics(&rows, templates, metrics, max_graph_col);
 

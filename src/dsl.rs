@@ -131,19 +131,21 @@ pub fn visible_width(bytes: &[u8]) -> usize {
     w
 }
 
-// Pass-1: record per elastic-tab field both the max visible width and the
-// max natural column (the row-relative column the field would land at if
-// nothing padded). Pass-2 uses widths to right-pad each value and anchors
-// to left-pad rows whose natural column trails the max — so the field's
-// left edge lines up even when upstream content is variable-width and not
-// itself wrapped in elastic_tab.
-pub fn collect_widths(
+// Pass 1: record, per elastic-tab position, the max natural column across
+// rows — the row-relative column the tab would land at if nothing padded.
+// Tabs are keyed by their left-to-right order in the template (0-indexed),
+// NOT by any arg string, so distinct tabs never collide. Pass 2 left-pads
+// each row up to its tab's recorded column so the following content's left
+// edge lines up. An arg-ful tab advances the column by its field's width
+// (it emits that field); an arg-less tab advances by zero (the following
+// %{field} node accounts for the width instead).
+pub fn collect_anchors(
     template: &Template,
     fields: &HashMap<String, Vec<u8>>,
-    widths: &mut HashMap<String, usize>,
-    anchors: &mut HashMap<String, usize>,
+    anchors: &mut Vec<usize>,
 ) {
     let mut col: usize = 0;
+    let mut tab_i: usize = 0;
     for node in &template.nodes {
         match node {
             Node::Literal(bytes) => {
@@ -154,16 +156,15 @@ pub fn collect_widths(
                 col += vw;
             }
             Node::ElasticTab(name) => {
-                let entry = anchors.entry(name.clone()).or_insert(0);
-                if col > *entry {
-                    *entry = col;
+                if tab_i >= anchors.len() {
+                    anchors.resize(tab_i + 1, 0);
+                }
+                if col > anchors[tab_i] {
+                    anchors[tab_i] = col;
                 }
                 let vw = fields.get(name).map(|v| visible_width(v)).unwrap_or(0);
-                let w = widths.entry(name.clone()).or_insert(0);
-                if vw > *w {
-                    *w = vw;
-                }
                 col += vw;
+                tab_i += 1;
             }
         }
     }
@@ -208,8 +209,7 @@ pub fn render_row(
     fields: &HashMap<String, Vec<u8>>,
     leading_pad: usize,
     leading_left: LeftSide,
-    widths: &HashMap<String, usize>,
-    anchors: &HashMap<String, usize>,
+    anchors: &[usize],
     out: &mut Vec<u8>,
 ) {
     let mut segs: Vec<Seg> = Vec::new();
@@ -219,9 +219,10 @@ pub fn render_row(
     // Track the per-row "natural" visible column (relative to the start
     // of the template — leading_pad is uniform across rows, so it stays
     // out of this counter). Drives elastic_tab left-pad: if the row's
-    // current natural column is behind the field's recorded anchor, we
-    // emit the difference so the field's left edge lands consistently.
+    // current natural column is behind the tab's recorded anchor, we emit
+    // the difference so the following content's left edge lands consistently.
     let mut col: usize = 0;
+    let mut tab_i: usize = 0;
     for node in &template.nodes {
         match node {
             Node::Literal(b) => {
@@ -238,26 +239,25 @@ pub fn render_row(
                 }
             }
             Node::ElasticTab(name) => {
-                let anchor_target = anchors.get(name).copied().unwrap_or(col);
+                let anchor_target = anchors.get(tab_i).copied().unwrap_or(col);
                 let left_pad = anchor_target.saturating_sub(col);
                 if left_pad > 0 {
                     segs.push(Seg::Anchor(left_pad));
                     col += left_pad;
                 }
-                let value = fields.get(name).map(|v| v.as_slice()).unwrap_or(&[]);
-                let vw = visible_width(value);
-                let target = widths.get(name).copied().unwrap_or(vw);
-                let pad = target.saturating_sub(vw);
-                if value.is_empty() {
-                    segs.push(Seg::EmptyTag);
-                } else {
-                    segs.push(Seg::Content(value.to_vec()));
+                // Arg-ful tab emits its field inline; arg-less tab emits
+                // nothing (the following %{field} node emits the value).
+                if !name.is_empty() {
+                    let value = fields.get(name).map(|v| v.as_slice()).unwrap_or(&[]);
+                    let vw = visible_width(value);
+                    if value.is_empty() {
+                        segs.push(Seg::EmptyTag);
+                    } else {
+                        segs.push(Seg::Content(value.to_vec()));
+                    }
+                    col += vw;
                 }
-                col += vw;
-                if pad > 0 {
-                    segs.push(Seg::Ws(pad));
-                    col += pad;
-                }
+                tab_i += 1;
             }
         }
     }
@@ -529,12 +529,14 @@ mod tests {
     }
 
     #[test]
-    fn elastic_tab_pad_combines_with_literal_space() {
-        // Rule 3: pad (3 cells) + literal " " (1 cell) = 4 ws cells, all
-        // dashed together. r1 (narrow change_id) gets dashes; r2 (widest)
-        // has no pad, so only the literal space contributes a single cell
-        // and stays as a space.
-        let t = Template::parse("%{elastic_tab(change_id)} %{description}").unwrap();
+    fn trailing_tab_aligns_following_field() {
+        // To align non-elastic content after an elastic column, put a tab
+        // before it. The short row gets dash fill up to the aligned column;
+        // the widest row has no pad.
+        let t = Template::parse(
+            "%{elastic_tab(change_id)} %{elastic_tab()}%{description}",
+        )
+        .unwrap();
         let r1: HashMap<String, Vec<u8>> = [
             ("change_id".to_string(), b"abc".to_vec()),
             ("description".to_string(), b"short".to_vec()),
@@ -547,22 +549,59 @@ mod tests {
         ]
         .into_iter()
         .collect();
-        let mut widths = HashMap::new();
-        let mut anchors = HashMap::new();
-        collect_widths(&t, &r1, &mut widths, &mut anchors);
-        collect_widths(&t, &r2, &mut widths, &mut anchors);
-        assert_eq!(widths.get("change_id").copied(), Some(6));
+        let mut anchors: Vec<usize> = Vec::new();
+        collect_anchors(&t, &r1, &mut anchors);
+        collect_anchors(&t, &r2, &mut anchors);
+        // tab0 (change_id) at col 0; tab1 (before description) at
+        // max(change_id width) + 1 literal space = 6 + 1 = 7.
+        assert_eq!(anchors, vec![0, 7]);
 
         let mut out = Vec::new();
-        render_row(&t, &r1, 0, LeftSide::Content, &widths, &anchors, &mut out);
+        render_row(&t, &r1, 0, LeftSide::Content, &anchors, &mut out);
         let s = String::from_utf8_lossy(&out);
         assert!(s.starts_with("abc"));
         assert!(s.ends_with("short"));
-        assert!(s.contains("╶") || s.contains("─"), "expected dash pad: {}", s);
+        assert!(s.contains('╶') || s.contains('─'), "expected dash pad: {}", s);
 
         let mut out2 = Vec::new();
-        render_row(&t, &r2, 0, LeftSide::Content, &widths, &anchors, &mut out2);
+        render_row(&t, &r2, 0, LeftSide::Content, &anchors, &mut out2);
         assert_eq!(out2, b"abcdef longer");
+    }
+
+    #[test]
+    fn argless_tab_equals_argful() {
+        // `%{elastic_tab()}%{X}` must render byte-identically to
+        // `%{elastic_tab(X)}` for every row.
+        let ta = Template::parse("%{elastic_tab(change_id)} %{description}").unwrap();
+        let tb = Template::parse("%{elastic_tab()}%{change_id} %{description}").unwrap();
+        let rows: Vec<HashMap<String, Vec<u8>>> = vec![
+            [
+                ("change_id".to_string(), b"abc".to_vec()),
+                ("description".to_string(), b"short".to_vec()),
+            ]
+            .into_iter()
+            .collect(),
+            [
+                ("change_id".to_string(), b"abcdef".to_vec()),
+                ("description".to_string(), b"longer".to_vec()),
+            ]
+            .into_iter()
+            .collect(),
+        ];
+
+        let mut anchors_a: Vec<usize> = Vec::new();
+        let mut anchors_b: Vec<usize> = Vec::new();
+        for r in &rows {
+            collect_anchors(&ta, r, &mut anchors_a);
+            collect_anchors(&tb, r, &mut anchors_b);
+        }
+        for r in &rows {
+            let mut oa = Vec::new();
+            let mut ob = Vec::new();
+            render_row(&ta, r, 0, LeftSide::Content, &anchors_a, &mut oa);
+            render_row(&tb, r, 0, LeftSide::Content, &anchors_b, &mut ob);
+            assert_eq!(oa, ob, "argless and argful must match");
+        }
     }
 
     #[test]
@@ -584,8 +623,7 @@ mod tests {
             &fields,
             0,
             LeftSide::Content,
-            &HashMap::new(),
-            &HashMap::new(),
+            &[],
             &mut out,
         );
         assert_eq!(out, b"abc hi");
@@ -605,8 +643,7 @@ mod tests {
             &fields,
             0,
             LeftSide::Content,
-            &HashMap::new(),
-            &HashMap::new(),
+            &[],
             &mut out,
         );
         assert_eq!(out, b" hi");
@@ -631,8 +668,7 @@ mod tests {
             &fields,
             0,
             LeftSide::Content,
-            &HashMap::new(),
-            &HashMap::new(),
+            &[],
             &mut out,
         );
         let s = String::from_utf8_lossy(&out);
@@ -654,8 +690,7 @@ mod tests {
             &fields,
             2,
             LeftSide::GraphNode,
-            &HashMap::new(),
-            &HashMap::new(),
+            &[],
             &mut out,
         );
         // 2 leading_pad + 1 literal = 3 ws cells → dashes; abuts "abc".
