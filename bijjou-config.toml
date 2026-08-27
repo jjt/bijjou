@@ -99,18 +99,24 @@
 #
 # `dash-start` — opening cap glyph that replaces the first cell of a
 # multi-cell dash run (the cell immediately to the right of a graph
-# node). Set to "" to disable caps entirely.
+# node). Set to "" to drop the cap; the cell becomes a plain `dash`.
 #
-# `dash-end` — closing cap glyph that replaces the final cell of a
-# multi-cell dash run (the cell immediately to the left of the content
-# the run terminates against). Together with `dash-start` this produces
-# half-line caps on both ends of a run (e.g. `╶─╴`).
+# `dash-end` — glyph for the closing cell of a dash run, the cell
+# immediately to the left of the content the run terminates against.
+# That cell is never a dash: when `dash-end` is "" (the default) it is a
+# plain space, so the change id always has a space to its left:
 #
-# Defaults: dash = "─", dash-start = "╶", dash-end = "╴"
+#   ○╶───── qquxkvlu bade4917 …     dash-end = ""   (default)
+#   ○╶────╴qquxkvlu bade4917 …      dash-end = "╴"
+#
+# A one-cell run is nothing but its closing cell, so it follows the same
+# rule (`●╶𜸩 vqyvkx` vs `●╶𜸩╴vqyvkx`).
+#
+# Defaults: dash = "─", dash-start = "╶", dash-end = ""
 #
 # dash       = "─"
 # dash-start = "╶"
-# dash-end   = "╴"
+# dash-end   = ""
 
 [colors]
 # Either an integer 0-255 (256-color palette) or a "#rrggbb" hex string.

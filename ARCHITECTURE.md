@@ -133,11 +133,16 @@ and the graph→content / inter-field runs (`dsl.rs::emit_pad`).
   sits directly to the left of another node, no dash is emitted at all
   (the space is preserved). If it sits directly to the left of content,
   it's the lone closing cell instead.
-- The cell immediately left of the content the run terminates against
-  uses `layout.dash-end` (default `╴`).
+- The closing cell — the one immediately left of the content the run
+  terminates against — is never a dash. It holds `layout.dash-end`, which
+  defaults to `""`, i.e. a plain space, so content always has a space to
+  its left (`○╶───── qquxkvlu`, `●╶𜸩 vqyvkx`). Set it to `╴` for the
+  half-line cap that mirrors `dash-start`.
+- A one-cell run is nothing but its closing cell.
 - All other cells in the run use `layout.dash` (default `─`).
 
-Set `layout.dash-start = ""` to disable caps entirely.
+Set `layout.dash-start = ""` to drop the opening cap (that cell becomes a
+plain dash).
 
 ## Config surface
 

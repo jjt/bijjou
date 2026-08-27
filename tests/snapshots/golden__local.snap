@@ -3,18 +3,18 @@ source: tests/golden.rs
 description: tests/fixtures/local.txt rendered under bijjou-config.toml (matches out.local.txt).
 expression: "render_fixture(\"local.txt\")"
 ---
-\e[1m\e[38;5;2m@\e[0m\e[38;5;8m╶───╴\e[39m\e[1m\e[38;5;5msz\e[0m\e[38;5;8mswvzqs\e[39m \e[1m\e[38;5;4m38\e[0m\e[38;5;8me2b20a\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0759\e[39m \e[38;5;5mHYWC-baz\e[39m hydra working copy baz
-\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶─╴\e[39m\e[1m\e[38;5;5mq\e[0m\e[38;5;8mquxkvlu\e[39m \e[1m\e[38;5;4mb\e[0m\e[38;5;8made4917\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYWC-bar\e[39m hydra working copy bar
+\e[1m\e[38;5;2m@\e[0m\e[38;5;8m╶─── \e[39m\e[1m\e[38;5;5msz\e[0m\e[38;5;8mswvzqs\e[39m \e[1m\e[38;5;4m38\e[0m\e[38;5;8me2b20a\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0759\e[39m \e[38;5;5mHYWC-baz\e[39m hydra working copy baz
+\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶─ \e[39m\e[1m\e[38;5;5mq\e[0m\e[38;5;8mquxkvlu\e[39m \e[1m\e[38;5;4mb\e[0m\e[38;5;8made4917\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYWC-bar\e[39m hydra working copy bar
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
-\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶─╴\e[39m\e[1m\e[38;5;5mpx\e[0m\e[38;5;8mlwqmlx\e[39m \e[1m\e[38;5;4mdec\e[0m\e[38;5;8m10e00\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYWC-foo\e[39m hydra working copy foo
+\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶─ \e[39m\e[1m\e[38;5;5mpx\e[0m\e[38;5;8mlwqmlx\e[39m \e[1m\e[38;5;4mdec\e[0m\e[38;5;8m10e00\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYWC-foo\e[39m hydra working copy foo
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
-○\e[38;5;8m╶───╴\e[39m\e[1m\e[38;5;5mr\e[0m\e[38;5;8mppzwpzx\e[39m \e[1m\e[38;5;4mc90\e[0m\e[38;5;8mec200\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYH\e[39m hydra head
+○\e[38;5;8m╶─── \e[39m\e[1m\e[38;5;5mr\e[0m\e[38;5;8mppzwpzx\e[39m \e[1m\e[38;5;4mc90\e[0m\e[38;5;8mec200\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYH\e[39m hydra head
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜸠\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜸤\e[39m
 \e[38;5;8m𜸩\e[39m \e[38;5;8m𜸩\e[39m ○ \e[1m\e[38;5;5mv\e[0m\e[38;5;8mxqsrzyn\e[39m \e[1m\e[38;5;4m0\e[0m\e[38;5;8m2d310e8\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYS-foo\e[39m hydra stack foo
-\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m╴\e[39m\e[1m\e[38;5;5mm\e[0m\e[38;5;8mzpomyto\e[39m \e[1m\e[38;5;4m30\e[0m\e[38;5;8me8e07f\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYS-baz\e[39m hydra stack baz
+\e[38;5;8m𜸩\e[39m ○\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m \e[1m\e[38;5;5mm\e[0m\e[38;5;8mzpomyto\e[39m \e[1m\e[38;5;4m30\e[0m\e[38;5;8me8e07f\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYS-baz\e[39m hydra stack baz
 \e[38;5;8m𜸩\e[39m \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
-○\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m──╴\e[39m\e[1m\e[38;5;5mwr\e[0m\e[38;5;8mvuovwm\e[39m \e[1m\e[38;5;4m9d\e[0m\e[38;5;8m7ea2ce\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYS-bar\e[39m hydra stack bar
+○\e[38;5;8m╶\e[39m\e[38;5;8m𜸩\e[39m\e[38;5;8m── \e[39m\e[1m\e[38;5;5mwr\e[0m\e[38;5;8mvuovwm\e[39m \e[1m\e[38;5;4m9d\e[0m\e[38;5;8m7ea2ce\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0600\e[39m \e[38;5;5mHYS-bar\e[39m hydra stack bar
 \e[38;5;8m𜸨\e[39m\e[38;5;8m𜸟\e[39m\e[38;5;8m𜹃\e[39m
-\e[1m\e[38;5;14m◆\e[0m\e[38;5;8m╶───╴\e[39m\e[1m\e[38;5;5mws\e[0m\e[38;5;8mxxyyns\e[39m \e[1m\e[38;5;4mc2\e[0m\e[38;5;8mac124c\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0555\e[39m \e[38;5;5mHYB main\e[39m elastic tabs can come anywhere now
+\e[1m\e[38;5;14m◆\e[0m\e[38;5;8m╶─── \e[39m\e[1m\e[38;5;5mws\e[0m\e[38;5;8mxxyyns\e[39m \e[1m\e[38;5;4mc2\e[0m\e[38;5;8mac124c\e[39m \e[38;5;3mjason\e[39m \e[38;5;6m260530·0555\e[39m \e[38;5;5mHYB main\e[39m elastic tabs can come anywhere now
 \e[38;5;8m𜸩\e[39m
 \e[38;5;8m𜹀\e[39m

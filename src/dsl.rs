@@ -391,46 +391,41 @@ pub fn emit_node_pad(cells: usize, out: &mut Vec<u8>) {
 }
 
 // Decides which glyphs fill the run based on what sits to the left:
-//   - GraphNode: run starts with `dash_start` (cell right of the node).
-//     Single cells stay as a literal space — a lone `dash_start` next to
-//     a node reads as visual noise.
-//   - GraphEdge: the left end is suppressed — dashes never overwrite or
-//     abut directly onto a graph edge glyph. Single cells emit `dash_end`
-//     so the run still terminates against the content on the right.
-//   - Content: behaves like GraphNode — opening with `dash_start`, single
-//     cells stay as a literal space.
-// The right end of every multi-cell run is `dash_end` (cell left of the
-// content the run terminates against).
+//   - GraphNode / Content: the run opens with `dash_start` (the cell right
+//     of the node, or of the preceding content).
+//   - GraphEdge: the opening cap is suppressed — dashes never overwrite or
+//     abut directly onto a graph edge glyph.
+// The closing cell — the one abutting the content the run terminates
+// against — is never a dash: it holds `layout.dash-end`, or a plain space
+// when that is unset (the default), so content always has a space to its
+// left. A one-cell run is only a closing cell.
 fn emit_pad(cells: usize, left: LeftSide, out: &mut Vec<u8>) {
     if cells == 0 {
         return;
     }
     let c = cfg();
-    let caps_enabled = !c.dash_start.is_empty();
     if cells == 1 {
-        if !caps_enabled {
+        if c.dash_end.is_empty() {
             out.push(b' ');
-            return;
-        }
-        match left {
-            LeftSide::GraphNode => out.push(b' '),
-            LeftSide::GraphEdge => {
-                out.extend_from_slice(&c.dim_on);
-                out.extend_from_slice(c.dash_end.as_bytes());
-                out.extend_from_slice(FG_RESET);
-            }
-            LeftSide::Content => out.push(b' '),
+        } else {
+            out.extend_from_slice(&c.dim_on);
+            out.extend_from_slice(c.dash_end.as_bytes());
+            out.extend_from_slice(FG_RESET);
         }
         return;
     }
+    let closing: &str = if c.dash_end.is_empty() {
+        " "
+    } else {
+        c.dash_end.as_str()
+    };
+    let opening_cap = !matches!(left, LeftSide::GraphEdge) && !c.dash_start.is_empty();
     out.extend_from_slice(&c.dim_on);
-    let suppress_left_cap = matches!(left, LeftSide::GraphEdge);
-    let opening_cap = caps_enabled && !suppress_left_cap;
     for idx in 0..cells {
         if opening_cap && idx == 0 {
             out.extend_from_slice(c.dash_start.as_bytes());
-        } else if caps_enabled && idx + 1 == cells {
-            out.extend_from_slice(c.dash_end.as_bytes());
+        } else if idx + 1 == cells {
+            out.extend_from_slice(closing.as_bytes());
         } else {
             out.extend_from_slice(c.dash.as_bytes());
         }
@@ -697,5 +692,26 @@ mod tests {
         let s = String::from_utf8_lossy(&out);
         assert!(s.ends_with("abc"));
         assert!(s.contains("╶") || s.contains("─"), "expected dash pad: {}", s);
+    }
+
+    #[test]
+    fn dash_run_closing_cell_is_a_space() {
+        // Default `dash-end` is "": the content keeps a space to its left,
+        // and the run's width is unchanged.
+        let mut out = Vec::new();
+        emit_pad(4, LeftSide::GraphNode, &mut out);
+        assert_eq!(visible_width(&out), 4);
+        let s = String::from_utf8_lossy(&out);
+        assert!(s.contains("── "), "expected space-terminated run: {:?}", s);
+    }
+
+    #[test]
+    fn one_cell_run_is_a_space() {
+        // A one-cell run is only its closing cell, whatever sits to the left.
+        for left in [LeftSide::GraphNode, LeftSide::GraphEdge, LeftSide::Content] {
+            let mut out = Vec::new();
+            emit_pad(1, left, &mut out);
+            assert_eq!(out, b" ", "left={:?}", left);
+        }
     }
 }

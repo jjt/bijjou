@@ -48,35 +48,35 @@ bijjou_log_oneline = '''
 ```shell
 ❯ jj log -T bijjou_log_oneline | bijjou
 
-○╶───╴yqpmvt f9f354 ME 260528·2342 bench: compare nom-7 baseline against in-tree parser
-@╶───╴qtorvo 3fccae ME 260528·2342 bench: allocation profile for arena vs Box<[u8]>
-○╶───╴tlskkw eafc71 ME 260528·1241 HYWC-bench-criterion hydra working copy bench-criterion
-𜸩 ○╶─╴zypurq 3b9037 ME 260528·1241 HYWC-cli-subcommands wip(cli): sketch `migrate` subcommand (untested)
+○╶─── yqpmvt f9f354 ME 260528·2342 bench: compare nom-7 baseline against in-tree parser
+@╶─── qtorvo 3fccae ME 260528·2342 bench: allocation profile for arena vs Box<[u8]>
+○╶─── tlskkw eafc71 ME 260528·1241 HYWC-bench-criterion hydra working copy bench-criterion
+𜸩 ○╶─ zypurq 3b9037 ME 260528·1241 HYWC-cli-subcommands wip(cli): sketch `migrate` subcommand (untested)
 𜸨𜸟𜹃
-𜸩 ○╶─╴uyuoqm a20d01 ME 260528·1241 HYWC-serde-error-handling hydra working copy serde-error-handling
+𜸩 ○╶─ uyuoqm a20d01 ME 260528·1241 HYWC-serde-error-handling hydra working copy serde-error-handling
 𜸨𜸟𜹃
-𜸩 ○╶─╴pmnrzk b022c8 ME 260528·1241 HYWC-tokio-runtime-upgrade hydra working copy tokio-runtime-upgrade
+𜸩 ○╶─ pmnrzk b022c8 ME 260528·1241 HYWC-tokio-runtime-upgrade hydra working copy tokio-runtime-upgrade
 𜸨𜸟𜹃
-○╶───╴utzkux c92053 ME 260528·1241 HYH hydra head
+○╶─── utzkux c92053 ME 260528·1241 HYH hydra head
 𜸨𜸟𜸠𜸟𜸤
 𜸩 𜸩 ○ sxwxzy 53f826 ME 260528·1238 HYS-tokio-runtime-upgrade hydra stack tokio-runtime-upgrade
 𜸩 𜸩 ○ tqutxy 041357 ME 260528·1238 feat(runtime): instrument task spawns with tracing spans
 𜸩 𜸩 ○ zlykwv 93134c ME 260528·1238 feat(runtime): wire SIGINT/SIGTERM handlers to Shutdown
 𜸩 𜸩 ○ mxytsu 66ab8c ME 260528·1238 feat(runtime): add graceful shutdown via broadcast channel
 𜸩 𜸩 ○ tvkplq 34e4ad ME 260528·1238 feat(runtime): bootstrap multi-thread tokio runtime
-𜸩 ○╶𜸩╴wuspwk 0e2748 ME 260528·1240 HYS-cli-subcommands hydra stack cli-subcommands
-𜸩 ○╶𜸩╴uqltss d70c91 ME 260528·1240 docs(cli): flesh out per-subcommand help text and examples
-𜸩 ○╶𜸩╴mvnyrx be7296 ME 260528·1240 feat(cli): add `config` get/set subcommands
-𜸩 ○╶𜸩╴mnmwkm 4017de ME 260528·1240 feat(cli): add `status` subcommand for task introspection
-𜸩 ○╶𜸩╴vtkppq 2c5c59 ME 260528·1240 feat(cli): add `run` subcommand with --watch flag
-𜸩 ○╶𜸩╴qpkwzw d62b35 ME 260528·1240 feat(cli): add `init` subcommand to bootstrap config
-𜸩 ○╶𜸩╴wrnlyq 60cbd0 ME 260528·1240 feat(cli): scaffold clap parser with global flags
+𜸩 ○╶𜸩 wuspwk 0e2748 ME 260528·1240 HYS-cli-subcommands hydra stack cli-subcommands
+𜸩 ○╶𜸩 uqltss d70c91 ME 260528·1240 docs(cli): flesh out per-subcommand help text and examples
+𜸩 ○╶𜸩 mvnyrx be7296 ME 260528·1240 feat(cli): add `config` get/set subcommands
+𜸩 ○╶𜸩 mnmwkm 4017de ME 260528·1240 feat(cli): add `status` subcommand for task introspection
+𜸩 ○╶𜸩 vtkppq 2c5c59 ME 260528·1240 feat(cli): add `run` subcommand with --watch flag
+𜸩 ○╶𜸩 qpkwzw d62b35 ME 260528·1240 feat(cli): add `init` subcommand to bootstrap config
+𜸩 ○╶𜸩 wrnlyq 60cbd0 ME 260528·1240 feat(cli): scaffold clap parser with global flags
 𜸩 𜸨𜸟𜹃
-○╶𜸩──╴wymszz 8dc6d7 ME 260528·1241 HYS-bench-criterion hydra stack bench-criterion
-○╶𜸩──╴kxqtsw 24f9b7 ME 260528·1241 bench: streaming parser throughput across 1KB..1MB inputs
-○╶𜸩──╴vpsrpp 2a9fb8 ME 260528·1241 bench: add criterion harness scaffolding in benches/parser.rs
+○╶𜸩── wymszz 8dc6d7 ME 260528·1241 HYS-bench-criterion hydra stack bench-criterion
+○╶𜸩── kxqtsw 24f9b7 ME 260528·1241 bench: streaming parser throughput across 1KB..1MB inputs
+○╶𜸩── vpsrpp 2a9fb8 ME 260528·1241 bench: add criterion harness scaffolding in benches/parser.rs
 𜸨𜸟𜹃
-◆╶───╴otmzun adb150 ME 260410·1451 HYB main Update A
+◆╶─── otmzun adb150 ME 260410·1451 HYB main Update A
 𜸩
 𜹀
 
@@ -95,12 +95,12 @@ jj draws the graph in fixed two-cell columns: the glyph in the first cell, an in
 ```shell
 ❯ jj log -T bijjou_log_oneline | bijjou --graph__collapse=true
 
-○╶─╴rppzwpzx c90ec200 jason 260530·0600 HYH hydra head
+○╶─ rppzwpzx c90ec200 jason 260530·0600 HYH hydra head
 𜸨𜸠𜸤
 𜸩𜸩○ vxqsrzyn 02d310e8 jason 260530·0600 HYS-foo hydra stack foo
-𜸩○𜸩╴mzpomyto 30e8e07f jason 260530·0600 HYS-baz hydra stack baz
+𜸩○𜸩 mzpomyto 30e8e07f jason 260530·0600 HYS-baz hydra stack baz
 𜸩𜸨𜹃
-○𜸩─╴wrvuovwm 9d7ea2ce jason 260530·0600 HYS-bar hydra stack bar
+○𜸩─ wrvuovwm 9d7ea2ce jason 260530·0600 HYS-bar hydra stack bar
 𜸨𜹃
 ```
 

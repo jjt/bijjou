@@ -312,7 +312,9 @@ KEYS
   [layout]
     dash                                    string
     dash-start                              string
-    dash-end                                string
+    dash-end                                string (default empty: the
+                                            closing cell is a space, so
+                                            content keeps a space at its left)
 
   [templates]
     <name>                                  DSL string (see bijjou-config.toml).

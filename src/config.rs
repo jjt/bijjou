@@ -4,7 +4,11 @@ use std::sync::OnceLock;
 
 pub const DEFAULT_DASH: &str = "─";
 pub const DEFAULT_DASH_START: &str = "╶";
-pub const DEFAULT_DASH_END: &str = "╴";
+// Closing cell of a dash run — the cell abutting the content. Empty by
+// default so the content always has a plain space to its left. Set it to a
+// glyph (`╴` U+2574, the half-line matching `dash-start`) to cap the run
+// against the content instead.
+pub const DEFAULT_DASH_END: &str = "";
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_GRAPH_HORIZONTAL: &str = "𜸟";
