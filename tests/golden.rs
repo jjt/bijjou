@@ -73,16 +73,20 @@ fn visualize(bytes: &[u8]) -> String {
 
 // Pipe a fixture through bijjou under bijjou-config.toml and snapshot the
 // result. ui.color is forced to "always" so the SGR sequences are stable
-// regardless of whether the test runner is a TTY.
-fn render_fixture(fixture: &str) -> String {
+// regardless of whether the test runner is a TTY. `env` adds further
+// BIJJOU__ overrides.
+fn render_fixture_with(fixture: &str, env: &[(&str, &str)]) -> String {
     let root = root_dir();
     let path = root.join("tests/fixtures").join(fixture);
     let input = std::fs::read(&path).unwrap_or_else(|_| panic!("{}", path.display()));
 
-    let output = Command::cargo_bin("bijjou")
-        .expect("binary built")
-        .env("BIJJOU_CONFIG", root.join("bijjou-config.toml"))
-        .env("BIJJOU__UI__COLOR", "always")
+    let mut cmd = Command::cargo_bin("bijjou").expect("binary built");
+    cmd.env("BIJJOU_CONFIG", root.join("bijjou-config.toml"))
+        .env("BIJJOU__UI__COLOR", "always");
+    for (k, v) in env {
+        cmd.env(k, v);
+    }
+    let output = cmd
         .write_stdin(input)
         .assert()
         .success()
@@ -91,6 +95,10 @@ fn render_fixture(fixture: &str) -> String {
         .clone();
 
     visualize(&output)
+}
+
+fn render_fixture(fixture: &str) -> String {
+    render_fixture_with(fixture, &[])
 }
 
 // local.txt rendered under bijjou-config.toml (matches out.local.txt).
@@ -109,5 +117,16 @@ fn local() {
 fn custom_nodes() {
     insta::with_settings!({description => "tests/fixtures/custom_nodes.txt: custom log_node glyphs (■, PUA) render via structural node detection."}, {
         insta::assert_snapshot!("custom_nodes", render_fixture("custom_nodes.txt"));
+    });
+}
+
+// `graph.collapse = true`: jj's inter-column pad cells are dropped, so every
+// graph column sits one cell from the last and the graph→content gap shrinks
+// with it. Guards render.rs::is_pad_cell plus the collapsed graph_col /
+// last_is_edge pair that feeds the dash run.
+#[test]
+fn local_collapsed() {
+    insta::with_settings!({description => "tests/fixtures/local.txt rendered with graph.collapse = true."}, {
+        insta::assert_snapshot!("local_collapsed", render_fixture_with("local.txt", &[("BIJJOU__GRAPH__COLLAPSE", "true")]));
     });
 }

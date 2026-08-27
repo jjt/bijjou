@@ -90,6 +90,22 @@ The `elastic_tab()` function is a tab stop: it left-pads the current row so the 
 
 The one output replacement bijjou does handle is the graph edges, which are replaced with something more aesthetic: Large Type Pieces from the [Symbols for Legacy Computing Supplement block](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing_Supplement) introduced in Unicode 16.0 ([unicode pdf](https://www.unicode.org/charts/PDF/Unicode-16.0/U160-1CC00.pdf)). If you don't like those, you can configure the various graph edge characters to whatever you'd like. I can't stop you if you make them all the cowboy emoji, for example.
 
+jj draws the graph in fixed two-cell columns: the glyph in the first cell, an inter-column gap in the second (a space, or a horizontal where a connector runs through). Set `graph.collapse = true` to drop those gap cells — the graph becomes half as wide, and the dash run to the content shrinks with it:
+
+```shell
+❯ jj log -T bijjou_log_oneline | bijjou --graph__collapse=true
+
+○╶─╴rppzwpzx c90ec200 jason 260530·0600 HYH hydra head
+𜸨𜸠𜸤
+𜸩𜸩○ vxqsrzyn 02d310e8 jason 260530·0600 HYS-foo hydra stack foo
+𜸩○𜸩╴mzpomyto 30e8e07f jason 260530·0600 HYS-baz hydra stack baz
+𜸩𜸨𜹃
+○𜸩─╴wrvuovwm 9d7ea2ce jason 260530·0600 HYS-bar hydra stack bar
+𜸨𜹃
+```
+
+Only gap cells go. A glyph that happens to be a horizontal because a connector spans several columns (`├───╯`) keeps its cell, and an inactive column keeps one of its two spaces, so nothing slides off the column it belongs to.
+
 Bijjou takes streaming input and by default streams output in batches, either a fixed size (default 128), or in `half-pager` mode. This designed for use with pagers (shocking, I know). It sets the batch size based on screen height (`height/2 - 1`) to reduce or avoid tears between page down/up events while paging. The `-1` is there to acommodate for the status bar of pagers like `less` and `more`. _PS: I recommend [moor](https://github.com/walles/moor) as a pager. It's great._
 
 Output streaming can also be disabled via config.
@@ -143,6 +159,7 @@ and explanatory comment. Quick reference:
 | `[layout]`            | `dash`, `dash-start`, `dash-end`                                                                    |
 | `[templates]`         | `<name>` (DSL body; a row's `bijjou_template_name` selects one)                                     |
 | `[stream]`            | `enabled`, `batch-size` (int or `"half-pager"`)                                                     |
+| `[graph]`             | `collapse` (bool; drop the graph's inter-column pad cells)                                           |
 | `[graph.edges.chars]` | `horizontal`, `vertical`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `tee-right`, `tee-left`, `tee-down`, `tee-up`, `cross`, `elision` |
 | `[colors]`            | `dash-filler`, `graph-edge` (int 0–255 or `"#rrggbb"`)                              |
 

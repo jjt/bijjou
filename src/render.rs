@@ -21,13 +21,17 @@ pub fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
 // byte-for-byte. Lines with no graph prefix pass through verbatim.
 pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, out: &mut Vec<u8>) {
     let (body, trailing_nl) = strip_trailing_nl(line);
+    let collapse = cfg().graph_collapse;
     match parsed {
         Some(p) => {
-            emit_dim_graph(&body[..p.graph_end], out);
+            emit_dim_graph(&body[..p.graph_end], collapse, out);
             out.extend_from_slice(&body[p.graph_end..]);
         }
+        // No boundary: this is either a pure connector row (`├─╯`, `│`, `~`)
+        // or prose that merely contains a box-drawing char. Only the former
+        // may collapse — dropping every second cell of prose shreds it.
         None if has_graph_char(body) => {
-            emit_dim_graph(body, out);
+            emit_dim_graph(body, collapse && is_graph_only(body), out);
         }
         None => out.extend_from_slice(body),
     }
@@ -41,14 +45,40 @@ const ELISION_CP: u32 = 0x7E; // ~
 pub struct Parsed {
     pub graph_end: usize,
     pub content_start: usize,
+    // Cells the graph prefix occupies as jj drew it, plus the count that
+    // survives `graph.collapse` (pad cells dropped) and the kind of the last
+    // glyph in each case. `classify_row` picks one pair per the config so the
+    // graph→content gap matches what `emit_dim_graph` actually emitted.
     pub graph_col: usize,
+    pub graph_col_collapsed: usize,
     pub last_is_edge: bool,
+    pub last_is_edge_collapsed: bool,
 }
 
 // Graph edges are box-drawing glyphs plus the elision `~`. This set is fixed
 // and jj-stable, so unlike nodes it can be recognized by codepoint.
 fn is_edge_char(cp: u32) -> bool {
     matches!(cp, 0x2500..=0x257F | ELISION_CP)
+}
+
+// jj draws the graph in fixed two-cell columns: the glyph in the even cell,
+// the inter-column gap in the odd one. That gap holds a space, or a
+// horizontal when a connector runs through it. `graph.collapse` drops exactly
+// those cells, so column N lands at cell N instead of cell 2N.
+//
+// Parity is what makes this safe. A bare "drop every horizontal and space"
+// rule also deletes glyph cells: `├───╯` spans three columns and two of its
+// glyphs are horizontals, and an inactive column is two spaces of which one
+// is a glyph cell — losing either slides the rest of the row out of its
+// column and off the verticals above and below it. The character check on top
+// of parity is defensive: an odd cell holding anything else (corner, tee,
+// node) is kept, costing one cell of width rather than losing a glyph.
+fn is_horizontal_char(cp: u32) -> bool {
+    matches!(cp, 0x2500 | 0x2504 | 0x2508) // ─ ┄ ┈
+}
+
+fn is_pad_cell(cell: usize, cp: u32) -> bool {
+    cell % 2 == 1 && (cp == b' ' as u32 || is_horizontal_char(cp))
 }
 
 // A graph "node" is the commit marker jj draws at the rightmost graph column
@@ -101,8 +131,10 @@ fn map_graph_char(cp: u32) -> Option<&'static str> {
 pub fn find_boundary(line: &[u8]) -> Option<Parsed> {
     let mut i = 0;
     let mut vis_col: usize = 0;
+    let mut kept_col: usize = 0;
     let mut had_graph = false;
     let mut last_is_edge = false;
+    let mut last_is_edge_collapsed = false;
 
     while i < line.len() {
         if let Some(after) = skip_csi(line, i) {
@@ -113,6 +145,7 @@ pub fn find_boundary(line: &[u8]) -> Option<Parsed> {
         if line[i] == b' ' {
             let sep_start_byte = i;
             let sep_start_col = vis_col;
+            let sep_start_kept = kept_col;
             let mut k = i;
             let mut space_count = 0;
             let mut last_space_end = i;
@@ -134,6 +167,11 @@ pub fn find_boundary(line: &[u8]) -> Option<Parsed> {
             let (cp, len) = decode_utf8(line, k);
             if is_edge_char(cp) || is_node_at(line, k, cp, len) {
                 i = k;
+                // Odd cells in the run are column pads and vanish under
+                // collapse; even ones are an inactive column's own cell.
+                kept_col += (vis_col..vis_col + space_count)
+                    .filter(|&cell| !is_pad_cell(cell, b' ' as u32))
+                    .count();
                 vis_col += space_count;
             } else {
                 if !had_graph {
@@ -143,7 +181,9 @@ pub fn find_boundary(line: &[u8]) -> Option<Parsed> {
                     graph_end: sep_start_byte,
                     content_start: last_space_end,
                     graph_col: sep_start_col,
+                    graph_col_collapsed: sep_start_kept,
                     last_is_edge,
+                    last_is_edge_collapsed,
                 });
             }
         } else {
@@ -153,6 +193,10 @@ pub fn find_boundary(line: &[u8]) -> Option<Parsed> {
                 had_graph = true;
                 last_is_edge = edge;
                 i += len;
+                if !is_pad_cell(vis_col, cp) {
+                    kept_col += 1;
+                    last_is_edge_collapsed = edge;
+                }
                 vis_col += 1;
             } else {
                 return None;
@@ -176,6 +220,26 @@ pub fn has_graph_char(body: &[u8]) -> bool {
         i += len;
     }
     false
+}
+
+// True when every visible cell is a graph edge or a space: the connector rows
+// jj draws between commits (`├─╯`, `│`, `~`). Nodes never appear here — a row
+// with a node carries content, so it has a boundary. Text containing a stray
+// box-drawing char fails this, which is what keeps collapse off prose.
+pub fn is_graph_only(body: &[u8]) -> bool {
+    let mut i = 0;
+    while i < body.len() {
+        if let Some(after) = skip_csi(body, i) {
+            i = after;
+            continue;
+        }
+        let (cp, len) = decode_utf8(body, i);
+        if cp != b' ' as u32 && !is_edge_char(cp) {
+            return false;
+        }
+        i += len;
+    }
+    true
 }
 
 // Node bytes pass through unchanged: jj's template (or upstream emitter) is
@@ -286,9 +350,13 @@ impl GraphRun {
     }
 }
 
-pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
+// `collapse` drops jj's inter-column pad cells (see `is_pad_cell`), pulling
+// every graph column one cell left of the last. Dropped cells still forward
+// their ANSI so colour state survives; only the glyph goes.
+pub fn emit_dim_graph(bytes: &[u8], collapse: bool, out: &mut Vec<u8>) {
     let c = cfg();
     let mut i = 0;
+    let mut cell: usize = 0;
     let mut run = GraphRun::new();
 
     while i < bytes.len() {
@@ -309,23 +377,35 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
             emit_filtered_ansi(ansi, out, is_fg_color_sgr);
             out.push(b'\n');
             run.reset_line();
+            cell = 0;
             i += 1;
             continue;
         }
 
         if bytes[i] == b' ' {
-            if run.start.is_none() {
-                run.start = Some(out.len());
+            if collapse && is_pad_cell(cell, b' ' as u32) {
+                emit_filtered_ansi(ansi, out, is_fg_color_sgr);
+            } else {
+                if run.start.is_none() {
+                    run.start = Some(out.len());
+                }
+                emit_filtered_ansi(ansi, out, is_fg_color_sgr);
+                out.push(b' ');
+                run.spaces += 1;
             }
-            emit_filtered_ansi(ansi, out, is_fg_color_sgr);
-            out.push(b' ');
-            run.spaces += 1;
+            cell += 1;
             i += 1;
             continue;
         }
 
         let (cp, len) = decode_utf8(bytes, i);
         let raw = &bytes[i..i + len];
+        if collapse && is_pad_cell(cell, cp) {
+            emit_filtered_ansi(ansi, out, is_fg_color_sgr);
+            cell += 1;
+            i += len;
+            continue;
+        }
         // emit_dim_graph only ever receives a graph prefix, so every glyph
         // here is graph: anything that isn't an edge is the node.
         let cp_is_edge = is_edge_char(cp);
@@ -340,6 +420,7 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
             run.left_was_node = true;
         }
         i += len;
+        cell += 1;
     }
 
     run.flush(out, RightSide::NonGraph, c);
@@ -348,7 +429,10 @@ pub fn emit_dim_graph(bytes: &[u8], out: &mut Vec<u8>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::{DEFAULT_EDGE_DIM_ON, DEFAULT_GRAPH_VERTICAL};
+    use crate::config::{
+        DEFAULT_EDGE_DIM_ON, DEFAULT_GRAPH_BOTTOM_RIGHT, DEFAULT_GRAPH_HORIZONTAL,
+        DEFAULT_GRAPH_TEE_RIGHT, DEFAULT_GRAPH_VERTICAL,
+    };
 
     #[test]
     fn is_edge_char_includes_box_drawing_and_elision() {
@@ -470,8 +554,100 @@ mod tests {
 
     fn run_emit(graph: &[u8]) -> Vec<u8> {
         let mut out = Vec::new();
-        emit_dim_graph(graph, &mut out);
+        emit_dim_graph(graph, false, &mut out);
         out
+    }
+
+    fn run_emit_collapsed(graph: &[u8]) -> Vec<u8> {
+        let mut out = Vec::new();
+        emit_dim_graph(graph, true, &mut out);
+        out
+    }
+
+    fn dim(glyph: &str) -> Vec<u8> {
+        let mut v = DEFAULT_EDGE_DIM_ON.to_vec();
+        v.extend_from_slice(glyph.as_bytes());
+        v.extend_from_slice(FG_RESET);
+        v
+    }
+
+    #[test]
+    fn collapse_drops_column_pads_keeps_glyphs() {
+        // `├─╯` is two columns: `├` + pad `─`, then `╯`.
+        let mut expected = dim(DEFAULT_GRAPH_TEE_RIGHT);
+        expected.extend_from_slice(&dim(DEFAULT_GRAPH_BOTTOM_RIGHT));
+        assert_eq!(run_emit_collapsed("├─╯".as_bytes()), expected);
+    }
+
+    #[test]
+    fn collapse_keeps_horizontals_sitting_in_glyph_cells() {
+        // `├───╯` spans three columns; the middle column's own glyph is a
+        // horizontal (cell 2) and must survive, or `╯` slides off its column.
+        let mut expected = dim(DEFAULT_GRAPH_TEE_RIGHT);
+        expected.extend_from_slice(&dim(DEFAULT_GRAPH_HORIZONTAL));
+        expected.extend_from_slice(&dim(DEFAULT_GRAPH_BOTTOM_RIGHT));
+        assert_eq!(run_emit_collapsed("├───╯".as_bytes()), expected);
+    }
+
+    #[test]
+    fn collapse_keeps_one_cell_per_inactive_column() {
+        // `│   ○`: vertical, an inactive column (two spaces), then the node.
+        // One space survives so the node stays in column 2.
+        let mut expected = dim(DEFAULT_GRAPH_VERTICAL);
+        expected.extend_from_slice(b" ");
+        expected.extend_from_slice("○".as_bytes());
+        assert_eq!(run_emit_collapsed("│   ○".as_bytes()), expected);
+    }
+
+    #[test]
+    fn collapse_keeps_unexpected_glyph_in_a_pad_cell() {
+        // Defensive: a non-horizontal glyph in an odd cell is not a pad. It
+        // is kept (one cell wider) rather than deleted.
+        let mut expected = dim(DEFAULT_GRAPH_VERTICAL);
+        expected.extend_from_slice(&dim(DEFAULT_GRAPH_VERTICAL));
+        assert_eq!(run_emit_collapsed("││".as_bytes()), expected);
+    }
+
+    #[test]
+    fn collapse_forwards_ansi_of_dropped_cells() {
+        // The pad's own SGR must survive even though its glyph does not:
+        // dropping a reset would leak colour into the rest of the line.
+        let out = run_emit_collapsed("│\x1b[1m \x1b[22m○".as_bytes());
+        let mut expected = dim(DEFAULT_GRAPH_VERTICAL);
+        expected.extend_from_slice(b"\x1b[1m\x1b[22m");
+        expected.extend_from_slice("○".as_bytes());
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn collapsed_graph_col_counts_kept_cells() {
+        // `│ │ ○  abc`: 5 cells drawn, 3 after collapse.
+        let line = "│ │ ○  abc".as_bytes();
+        let p = find_boundary(line).expect("expected boundary");
+        assert_eq!(p.graph_col, 5);
+        assert_eq!(p.graph_col_collapsed, 3);
+        assert!(!p.last_is_edge);
+        assert!(!p.last_is_edge_collapsed);
+    }
+
+    #[test]
+    fn collapsed_last_glyph_kind_ignores_dropped_pad() {
+        // `○─ abc`: the trailing `─` is a pad cell, so the collapsed prefix
+        // ends on the node and its gap gets a node-side dash cap.
+        let line = "○─ abc".as_bytes();
+        let p = find_boundary(line).expect("expected boundary");
+        assert!(p.last_is_edge);
+        assert!(!p.last_is_edge_collapsed);
+        assert_eq!(p.graph_col_collapsed, 1);
+    }
+
+    #[test]
+    fn is_graph_only_separates_connector_rows_from_prose() {
+        assert!(is_graph_only("├─╯".as_bytes()));
+        assert!(is_graph_only("│ │".as_bytes()));
+        assert!(is_graph_only("~".as_bytes()));
+        // A description that happens to contain a box-drawing char.
+        assert!(!is_graph_only("fix: draw ─ separators".as_bytes()));
     }
 
     #[test]

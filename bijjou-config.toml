@@ -50,6 +50,31 @@
 #
 # color = "auto"
 
+[graph]
+# Collapse the graph's inter-column space.
+#
+# jj draws the graph in fixed two-cell columns: the glyph (`│`, `├`, a node,
+# …) in the first cell, an inter-column gap in the second — a space, or a
+# horizontal when a connector runs through it. With `collapse = true` those
+# gap cells are dropped, so column N sits at cell N instead of cell 2N and
+# the whole graph is half as wide. The graph→content gap (and therefore the
+# dash run) shrinks with it.
+#
+#   collapse = false          collapse = true
+#   ○╶───╴rppzwpzx           ○╶─╴rppzwpzx
+#   𜸨𜸟𜸠𜸟𜸤                    𜸨𜸠𜸤
+#   𜸩 𜸩 ○ vxqsrzyn           𜸩𜸩○ vxqsrzyn
+#   𜸩 ○╶𜸩╴mzpomyto           𜸩○𜸩╴mzpomyto
+#
+# Only gap cells go. A glyph that happens to be a horizontal because a
+# connector spans several columns (`├───╯`) keeps its own cell, and an
+# inactive column keeps one of its two spaces — otherwise the glyphs to the
+# right would slide off the columns above and below them.
+#
+# Default: false
+#
+# collapse = false
+
 [graph.edges.chars]
 # Single-cell replacements for jj's box-drawing graph chars. Defaults are
 # Unicode 16 Large Type Pieces (U+1CE1A..U+1CE50): 𜸟 𜸩 𜸚 𜸤 𜸾 𜹃 𜸨 𜸶 𜸠 𜹀 𜸺.

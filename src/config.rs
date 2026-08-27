@@ -103,6 +103,7 @@ pub struct Config {
     pub graph_tee_up: String,
     pub graph_cross: String,
     pub graph_elision: String,
+    pub graph_collapse: bool,
     pub dim_on: Vec<u8>,
     pub edge_dim_on: Vec<u8>,
     pub activate: Activate,
@@ -132,6 +133,7 @@ impl Default for Config {
             graph_tee_up: DEFAULT_GRAPH_TEE_UP.to_string(),
             graph_cross: DEFAULT_GRAPH_CROSS.to_string(),
             graph_elision: DEFAULT_GRAPH_ELISION.to_string(),
+            graph_collapse: false,
             dim_on: DEFAULT_DIM_ON.to_vec(),
             edge_dim_on: DEFAULT_EDGE_DIM_ON.to_vec(),
             activate: Activate::default(),
@@ -302,6 +304,7 @@ impl Config {
             "graph.edges.chars.tee-up" => self.graph_tee_up = value.to_string(),
             "graph.edges.chars.cross" => self.graph_cross = value.to_string(),
             "graph.edges.chars.elision" => self.graph_elision = value.to_string(),
+            "graph.collapse" => self.graph_collapse = parse_bool_str(value).map_err(mkerr)?,
             "layout.dash" => self.dash = value.to_string(),
             "layout.dash-start" => self.dash_start = value.to_string(),
             "layout.dash-end" => self.dash_end = value.to_string(),
@@ -817,5 +820,28 @@ graph-edge = 200
         let mut cfg = Config::default();
         cfg.apply_cli(args(&["--layout__dash-end=>"])).unwrap();
         assert_eq!(cfg.dash_end, ">");
+    }
+
+    #[test]
+    fn graph_collapse_defaults_off() {
+        assert!(!Config::from_toml("").unwrap().graph_collapse);
+    }
+
+    #[test]
+    fn graph_collapse_toml_and_cli() {
+        let cfg = Config::from_toml("[graph]\ncollapse = true\n").unwrap();
+        assert!(cfg.graph_collapse);
+
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--graph__collapse=true"])).unwrap();
+        assert!(cfg.graph_collapse);
+    }
+
+    #[test]
+    fn graph_collapse_invalid_value_errors() {
+        let mut cfg = Config::default();
+        assert!(cfg
+            .apply_cli(args(&["--graph__collapse=sometimes"]))
+            .is_err());
     }
 }

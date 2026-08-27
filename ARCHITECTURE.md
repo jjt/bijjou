@@ -47,7 +47,7 @@ into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
 | `main.rs`    | Arg parse, config load chain, dispatch (stream vs buffered). Owns the shared row core: `RowKind`, `classify_row`, `emit_classified`, template compilation, and per-template `TemplateMetrics` (position-keyed anchors). |
 | `config.rs`  | `Config` struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
 | `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
-| `render.rs`  | Parse line → `Parsed{graph_col, graph_end, content_start, last_is_edge}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job. |
+| `render.rs`  | Parse line → `Parsed{graph_col, graph_col_collapsed, graph_end, content_start, last_is_edge, last_is_edge_collapsed}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges, and drop inter-column pad cells under `graph.collapse`. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job. |
 | `dsl.rs`     | Templating DSL + NUL/RS-framed record parser (`parse_nul_oneline`). `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render (`collect_anchors` → `render_row`): pass 1 records each elastic-tab's max natural column (anchor), keyed by tab position; pass 2 left-pads to the anchor so the following content's left edge lines up. An arg-ful tab then emits its field inline; an arg-less tab emits nothing (`%{elastic_tab()}%{X}` == `%{elastic_tab(X)}`). Whitespace follows a 4-rule model (see below). |
 | `stream.rs`  | Batched reader (`read_batch`), two-pass per batch with monotonic widening (anchors and `graph_col` targets never shrink as new batches arrive), `OutputSink` (stdout or pager spawned via `std::process::Command`/`posix_spawn`). |
 | `output.rs`  | Buffered path's terminal write / pager exec (`fork` + `execvp`, replacing bijjou's process)  |
@@ -62,6 +62,15 @@ into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
    handled without enumerating them; content is never misread because its
    first glyph always sits past the gap. `last_is_edge` records whether
    the prefix ended on an edge or a node.
+   Under `graph.collapse` the pad cell of every graph column (`is_pad_cell`:
+   odd cell index holding a space or a horizontal) is dropped, so column N
+   lands at cell N. `Parsed` carries both column counts and both
+   `last_is_edge` flags; `classify_row` picks the pair matching the config so
+   the graph→content gap matches the prefix actually emitted. Parity is what
+   keeps this safe: horizontals that *are* a column's glyph (`├───╯`) and one
+   cell of every inactive column survive. Passthrough rows with no boundary
+   only collapse when `is_graph_only` holds — prose containing a stray
+   box-drawing char must not lose every second character.
 2. `classify_row` → after the graph prefix, look for a NUL/RS-framed
    payload (`key\0val\0…\x1e`, emitted by the custom jj log template).
    Lines that parse become `RowKind::Commit` (carrying `graph_col`,
@@ -143,7 +152,8 @@ Single global `OnceLock<Config>` via `cfg()`. Three merge layers:
 Keys: top-level (`activate`, `pager`), `[ui].color`,
 `[layout]` (`dash`, `dash-start`, `dash-end`), `[templates].<name>`,
 `[stream]` (`enabled`, `batch-size` = int | `"half-pager"`),
-`[graph.edges.chars]`, `[colors]` (`dash-filler`, `graph-edge`), plus the
+`[graph]` (`collapse`), `[graph.edges.chars]`, `[colors]`
+(`dash-filler`, `graph-edge`), plus the
 hidden `debug.force-screen-height`. Full ref: `bijjou-config.toml`.
 
 ## Output

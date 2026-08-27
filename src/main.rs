@@ -103,10 +103,19 @@ pub fn classify_row(body: &[u8]) -> RowKind {
     let template_name = fields
         .remove(BIJJOU_TEMPLATE_NAME_FIELD)
         .and_then(|v| String::from_utf8(v).ok());
+    // Under `graph.collapse` the prefix `emit_dim_graph` writes is narrower
+    // than the one jj drew, so the row's column count (and the kind of its
+    // last glyph) must be the collapsed pair or the graph→content gap
+    // over/under-shoots.
+    let (graph_col, last_is_edge) = if cfg().graph_collapse {
+        (p.graph_col_collapsed, p.last_is_edge_collapsed)
+    } else {
+        (p.graph_col, p.last_is_edge)
+    };
     RowKind::Commit {
         graph_end: p.graph_end,
-        graph_col: p.graph_col,
-        last_is_edge: p.last_is_edge,
+        graph_col,
+        last_is_edge,
         template_name,
         fields,
     }
@@ -161,7 +170,7 @@ pub fn emit_classified(
             template_name,
             fields,
         } => {
-            emit_dim_graph(&body[..*graph_end], out);
+            emit_dim_graph(&body[..*graph_end], cfg().graph_collapse, out);
             // Pass the graph→content gap through to `render_row` as a
             // leading ws segment so it participates in rules 1-3
             // (collapse on empty fields, dash-fill across adjacent
@@ -204,7 +213,7 @@ pub fn emit_classified(
             }
         }
         RowKind::Root { graph_end, value } => {
-            emit_dim_graph(&body[..*graph_end], out);
+            emit_dim_graph(&body[..*graph_end], cfg().graph_collapse, out);
             crate::dsl::emit_node_pad(2, out);
             out.extend_from_slice(value);
         }
@@ -313,6 +322,11 @@ KEYS
   [stream]
     enabled                                 bool (default true)
     batch-size                              int >= 1 (default 128)
+
+  [graph]
+    collapse                                bool (default false); drop jj's
+                                            inter-column pad cells so the
+                                            graph is half as wide
 
   [graph.edges.chars]                       string (each)
     horizontal  vertical
