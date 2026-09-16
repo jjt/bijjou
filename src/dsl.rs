@@ -204,9 +204,13 @@ enum Seg {
 // `leading_pad` is prepended as a Ws segment so the graph→content gap
 // emitted by `emit_classified` participates in steps 2-3 alongside the
 // template's own whitespace.
+// `over` substitutes one field's bytes for this row (hydra's recoloured
+// `bookmarks`). It only swaps colour codes, so the visible width — and with
+// it the anchors collected in pass 1 — is unchanged.
 pub fn render_row(
     template: &Template,
     fields: &HashMap<String, Vec<u8>>,
+    over: Option<(&str, &[u8])>,
     leading_pad: usize,
     leading_left: LeftSide,
     anchors: &[usize],
@@ -230,7 +234,7 @@ pub fn render_row(
                 push_literal_segs(b, &mut segs);
             }
             Node::Field(name) => {
-                let value = fields.get(name).map(|v| v.as_slice()).unwrap_or(&[]);
+                let value = field_value(fields, over, name);
                 col += visible_width(value);
                 if value.is_empty() {
                     segs.push(Seg::EmptyTag);
@@ -248,7 +252,7 @@ pub fn render_row(
                 // Arg-ful tab emits its field inline; arg-less tab emits
                 // nothing (the following %{field} node emits the value).
                 if !name.is_empty() {
-                    let value = fields.get(name).map(|v| v.as_slice()).unwrap_or(&[]);
+                    let value = field_value(fields, over, name);
                     let vw = visible_width(value);
                     if value.is_empty() {
                         segs.push(Seg::EmptyTag);
@@ -263,6 +267,17 @@ pub fn render_row(
     }
     apply_rule_2(&mut segs);
     emit_segs(&segs, leading_left, out);
+}
+
+fn field_value<'a>(
+    fields: &'a HashMap<String, Vec<u8>>,
+    over: Option<(&str, &'a [u8])>,
+    name: &str,
+) -> &'a [u8] {
+    match over {
+        Some((key, value)) if key == name => value,
+        _ => fields.get(name).map(|v| v.as_slice()).unwrap_or(&[]),
+    }
 }
 
 // Split a Literal node into alternating Ws / Content segments based on
@@ -552,14 +567,14 @@ mod tests {
         assert_eq!(anchors, vec![0, 7]);
 
         let mut out = Vec::new();
-        render_row(&t, &r1, 0, LeftSide::Content, &anchors, &mut out);
+        render_row(&t, &r1, None, 0, LeftSide::Content, &anchors, &mut out);
         let s = String::from_utf8_lossy(&out);
         assert!(s.starts_with("abc"));
         assert!(s.ends_with("short"));
         assert!(s.contains('╶') || s.contains('─'), "expected dash pad: {}", s);
 
         let mut out2 = Vec::new();
-        render_row(&t, &r2, 0, LeftSide::Content, &anchors, &mut out2);
+        render_row(&t, &r2, None, 0, LeftSide::Content, &anchors, &mut out2);
         assert_eq!(out2, b"abcdef longer");
     }
 
@@ -593,8 +608,8 @@ mod tests {
         for r in &rows {
             let mut oa = Vec::new();
             let mut ob = Vec::new();
-            render_row(&ta, r, 0, LeftSide::Content, &anchors_a, &mut oa);
-            render_row(&tb, r, 0, LeftSide::Content, &anchors_b, &mut ob);
+            render_row(&ta, r, None, 0, LeftSide::Content, &anchors_a, &mut oa);
+            render_row(&tb, r, None, 0, LeftSide::Content, &anchors_b, &mut ob);
             assert_eq!(oa, ob, "argless and argful must match");
         }
     }
@@ -616,6 +631,7 @@ mod tests {
         render_row(
             &t,
             &fields,
+            None,
             0,
             LeftSide::Content,
             &[],
@@ -636,6 +652,7 @@ mod tests {
         render_row(
             &t,
             &fields,
+            None,
             0,
             LeftSide::Content,
             &[],
@@ -661,6 +678,7 @@ mod tests {
         render_row(
             &t,
             &fields,
+            None,
             0,
             LeftSide::Content,
             &[],
@@ -683,6 +701,7 @@ mod tests {
         render_row(
             &t,
             &fields,
+            None,
             2,
             LeftSide::GraphNode,
             &[],

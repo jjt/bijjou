@@ -173,8 +173,8 @@ pub fn emit_classified(
             fields,
         } => {
             let prefix = &body[..*graph_end];
-            let node_color = hy.node_color(fields, prefix, out);
-            emit_dim_graph(prefix, cfg().graph_collapse, node_color, out);
+            let markup = hy.markup(fields, prefix, out);
+            emit_dim_graph(prefix, cfg().graph_collapse, markup.node, out);
             // Pass the graph→content gap through to `render_row` as a
             // leading ws segment so it participates in rules 1-3
             // (collapse on empty fields, dash-fill across adjacent
@@ -205,6 +205,7 @@ pub fn emit_classified(
                     render_row(
                         template,
                         fields,
+                        markup.bookmarks.map(|v| (hydra::BOOKMARKS_FIELD, v)),
                         leading_pad,
                         leading_left,
                         &m.anchors,
@@ -252,6 +253,7 @@ fn emit_missing_template(name: &str, leading_pad: usize, leading_left: LeftSide,
     render_row(
         &synth,
         &fields,
+        None,
         leading_pad,
         leading_left,
         &m.anchors,
@@ -357,6 +359,9 @@ KEYS
                                             list of `int 0-255 | \"#rrggbb\"`
                                             is indexed by the order the log
                                             first names each stack
+    color-bookmarks                         bool (default true); print the
+                                            HYS-* and HYWC-* bookmark names
+                                            in their stack's colour too
 
   [hydra.prefixes]                          string (each); how this repo
                                             names its hydra bookmarks

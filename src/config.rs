@@ -187,6 +187,7 @@ pub struct Config {
     pub hydra_enable: bool,
     pub hydra_top_stack_padding: bool,
     pub hydra_colors: HydraColors,
+    pub hydra_color_bookmarks: bool,
     pub hydra_prefixes: HydraPrefixes,
 }
 
@@ -228,6 +229,7 @@ impl Default for Config {
             hydra_enable: true,
             hydra_top_stack_padding: true,
             hydra_colors: HydraColors::Hash,
+            hydra_color_bookmarks: true,
             hydra_prefixes: HydraPrefixes::default(),
         }
     }
@@ -442,6 +444,9 @@ impl Config {
                 self.hydra_top_stack_padding = parse_bool_str(value).map_err(mkerr)?;
             }
             "hydra.colors" => self.hydra_colors = parse_hydra_colors(value).map_err(mkerr)?,
+            "hydra.color-bookmarks" => {
+                self.hydra_color_bookmarks = parse_bool_str(value).map_err(mkerr)?;
+            }
             "hydra.prefixes.prefix" => self.hydra_prefixes.prefix = value.to_string(),
             "hydra.prefixes.base" => self.hydra_prefixes.base = value.to_string(),
             "hydra.prefixes.head" => self.hydra_prefixes.head = value.to_string(),
@@ -979,7 +984,19 @@ graph-edge = 200
         assert!(cfg.hydra_enable);
         assert!(cfg.hydra_top_stack_padding);
         assert_eq!(cfg.hydra_colors, HydraColors::Hash);
+        assert!(cfg.hydra_color_bookmarks);
         assert_eq!(cfg.hydra_prefixes, HydraPrefixes::default());
+    }
+
+    #[test]
+    fn hydra_color_bookmarks_parses_from_toml_and_cli() {
+        let cfg = Config::from_toml("[hydra]\ncolor-bookmarks = false\n").unwrap();
+        assert!(!cfg.hydra_color_bookmarks);
+
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--hydra__color-bookmarks=false"]))
+            .unwrap();
+        assert!(!cfg.hydra_color_bookmarks);
     }
 
     #[test]

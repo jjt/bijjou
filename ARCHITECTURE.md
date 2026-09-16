@@ -47,10 +47,10 @@ into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
 | `main.rs`    | Arg parse, config load chain, dispatch (stream vs buffered). Owns the shared row core: `RowKind`, `classify_row`, `emit_classified`, template compilation, and per-template `TemplateMetrics` (position-keyed anchors). |
 | `config.rs`  | `Config` struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
 | `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
-| `render.rs`  | Parse line → `Parsed{graph_col, graph_col_collapsed, graph_end, content_start, last_is_edge, last_is_edge_collapsed}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges, and drop inter-column pad cells under `graph.collapse`. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job, unless `emit_dim_graph` is handed a hydra stack colour. `graph_nodes_to_verticals` rewrites a prefix's node back into a vertical, for the hydra padding row. |
+| `render.rs`  | Parse line → `Parsed{graph_col, graph_col_collapsed, graph_end, content_start, last_is_edge, last_is_edge_collapsed}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges, and drop inter-column pad cells under `graph.collapse`. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job, unless `emit_dim_graph` is handed a hydra stack colour. `graph_nodes_to_verticals` rewrites a prefix's node back into a vertical, for the hydra padding row. `node_cell` reports the cell a prefix's node sits in, which is how hydra bounds a stack to its own column. |
 | `dsl.rs`     | Templating DSL + NUL/RS-framed record parser (`parse_nul_oneline`). `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render (`collect_anchors` → `render_row`): pass 1 records each elastic-tab's max natural column (anchor), keyed by tab position; pass 2 left-pads to the anchor so the following content's left edge lines up. An arg-ful tab then emits its field inline; an arg-less tab emits nothing (`%{elastic_tab()}%{X}` == `%{elastic_tab(X)}`). Whitespace follows a 4-rule model (see below). |
 | `stream.rs`  | Batched reader (`read_batch`), two-pass per batch with monotonic widening (anchors and `graph_col` targets never shrink as new batches arrive), `OutputSink` (stdout or pager spawned via `std::process::Command`/`posix_spawn`). |
-| `hydra.rs`   | Hydra awareness. `Topology::from_prefixes` expands `hydra.prefixes` into the bookmark names in force (`HYS-`, `HYWC-`, and the `HYB` / `HYH` / `HYCR` anchors) once, at `Walk::start`. `Walk` is the per-row state: it classifies each commit row by its `bookmarks` field (stack marker / working copy / anchor / neither), carries a stack's colour down from its marker to its content commits, colours a `HYWC-*` row with its stack's colour without carrying it, and draws the top-stack separator row. No subprocess, so nothing to wait on. |
+| `hydra.rs`   | Hydra awareness. `Topology::from_prefixes` expands `hydra.prefixes` into the bookmark names in force (`HYS-`, `HYWC-`, and the `HYB` / `HYH` / `HYCR` anchors) once, at `Walk::start`. `Walk` is the per-row state: it classifies each commit row by its `bookmarks` field (stack marker / working copy / anchor / neither), carries a stack's colour down from its marker to the content commits under it in the same graph column (`render::node_cell`), so a commit drawn in another column is nobody's stack, colours a `HYWC-*` row with its stack's colour without carrying it, and draws the top-stack separator row. `Walk::markup` returns both the row's node SGR and, under `hydra.color-bookmarks`, a rewritten `bookmarks` field whose `HYS-*` / `HYWC-*` names carry their stack's colour instead of jj's (`render_row`'s field override). No subprocess, so nothing to wait on. |
 | `output.rs`  | Buffered path's terminal write / pager exec (`fork` + `execvp`, replacing bijjou's process)  |
 
 ## Render flow per line
@@ -120,10 +120,28 @@ several times per log — more than the whole render costs.
   in, which is how a colour reaches them. Remote refs (`name@remote`) and
   jj's out-of-sync `*` flag are stripped first, since `commit.bookmarks()`
   carries both.
+- The column bounds a stack at the bottom. A marker records the cell its node
+  sits in (`render::node_cell` over the row's own graph prefix, counting jj's
+  two cells per column), and a bookmarkless row only keeps the stack's colour
+  while its node stays in that cell. A commit drawn in another column — an
+  extra head off the base, below the log's bottom stack and above `HYB` — is
+  nobody's stack, so it keeps jj's colours, and the stack does not resume
+  under it.
 - The row's node colour is the stack's: hashed from its name
   (`hydra.colors = true`), or the palette entry for its index — the order the
   log first named that stack, held for the rest of the run. Working-copy rows
-  come above the stacks, so they are what registers the order.
+  come above the stacks, so they are what registers the order. The hash walks
+  `HUE_SPACE` — the hue circle less `RESERVED_HUES`, 10° either side of
+  `#a6e3a1` (115°) and `#f5c2e7` (316°) — and `hue_of` maps its index back
+  onto real degrees by skipping the bands, so the hues stay evenly spread. A
+  configured palette is passed through as written.
+- Under `hydra.color-bookmarks` (default on) the same colour is put on the
+  names themselves: the `bookmarks` field is split on whitespace, each
+  `HYS-*` / `HYWC-*` token has jj's foreground SGRs dropped and the stack's
+  put in front, and the rewritten field reaches `render_row` as a per-row
+  field override. Recolouring changes no visible width, so the anchors
+  collected in pass 1 stay valid. Every other bookmark on the row passes
+  through byte-for-byte.
 - Opening the *second* stack draws the separator row jj skipped under the
   first: `graph_nodes_to_verticals` on that row's own graph prefix, back
   through `emit_dim_graph`, so every column lands where it does above and
@@ -198,8 +216,8 @@ Keys: top-level (`activate`, `pager`), `[ui].color`,
 `[stream]` (`enabled`, `batch-size` = int | `"half-pager"`),
 `[graph]` (`collapse`), `[graph.edges.chars]`, `[colors]`
 (`dash-filler`, `graph-edge`), `[hydra]` (`enable`,
-`top-stack-padding`, `colors` = `true` | `false` | comma/TOML list of
-`int 0-255 | "#rrggbb"`), `[hydra.prefixes]` (`prefix`, `base`, `head`,
+`top-stack-padding`, `color-bookmarks`, `colors` = `true` | `false` |
+comma/TOML list of `int 0-255 | "#rrggbb"`), `[hydra.prefixes]` (`prefix`, `base`, `head`,
 `conflict-resolution`, `stack-head`, `stack-working-copy`), plus the hidden
 `debug.force-screen-height`. Full ref: `bijjou-config.toml`.
 

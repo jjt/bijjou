@@ -118,17 +118,24 @@ With `hydra.enable = true` (the default) bijjou marks those columns up. It
 recognizes them by bookmark name, from the naming in `[hydra.prefixes]`: a row
 carrying `HYS-<name>` opens that stack, an anchor (`HYB` / `HYH` / `HYCR`) or a
 `HYWC-*` working copy closes it, and the rows between keep the stack they sit
-in.
+in — for as long as they sit in its graph column. A commit drawn in another
+column, like an extra head off the base below the bottom stack, is nobody's
+stack and keeps jj's own colours.
 
 - `hydra.top-stack-padding` draws the separator row jj skips under the log's
   top stack. jj closes a graph column only when the branch to its *left* ends,
   so every stack gets a `├─╯` row under it except the topmost, which runs
   straight into its neighbour.
 - `hydra.colors` colours each stack's graph nodes: `true` hashes the stack
-  name into a colour, `false` leaves jj's nodes alone, and a list is a palette
-  indexed by the order the log first names each stack (wrapping). A stack's
-  `HYWC-<name>` working copy takes its stack's colour too, so the two read as
-  one thing.
+  name into a hue, `false` leaves jj's nodes alone, and a list is a palette
+  indexed by the order the log first names each stack (wrapping). The hash
+  skips two reserved bands — 10° either side of `#a6e3a1` (115°) and
+  `#f5c2e7` (316°) — so a hashed stack never reads as one of those; a palette
+  you wrote is used as given. A stack's `HYWC-<name>` working copy takes its
+  stack's colour too, so the two read as one thing.
+- `hydra.color-bookmarks` puts that colour on the bookmark names themselves,
+  so `HYS-<name>` and `HYWC-<name>` read in their column's colour instead of
+  jj's. Other bookmarks on the row, and the anchors, keep jj's colours.
 
 ```shell
 ❯ jj log -T log_oneline | bijjou --graph__collapse=true
@@ -200,7 +207,7 @@ and explanatory comment. Quick reference:
 | `[graph]`             | `collapse` (bool; drop the graph's inter-column pad cells)                                           |
 | `[graph.edges.chars]` | `horizontal`, `vertical`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `tee-right`, `tee-left`, `tee-down`, `tee-up`, `cross`, `elision` |
 | `[colors]`            | `dash-filler`, `graph-edge` (int 0–255 or `"#rrggbb"`)                              |
-| `[hydra]`             | `enable`, `top-stack-padding` (bool), `colors` (`true`\|`false`\|list of colors)     |
+| `[hydra]`             | `enable`, `top-stack-padding`, `color-bookmarks` (bool), `colors` (`true`\|`false`\|list of colors)     |
 | `[hydra.prefixes]`    | `prefix`, `base`, `head`, `conflict-resolution`, `stack-head`, `stack-working-copy` |
 
 Run `bijjou --help` for the same reference inline.

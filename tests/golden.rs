@@ -136,14 +136,17 @@ fn local_collapsed() {
 }
 
 // A hydra log: `hydra.top-stack-padding` draws the separator row jj skips
-// under the log's top stack (delta here), and `hydra.colors` colours each
+// under the log's top stack (delta here), `hydra.colors` colours each
 // stack's nodes — the hashed default, so this also pins the name → colour
-// mapping, and each `HYWC-*` row up top matching its own stack. The bookmark
-// naming comes from `hydra.prefixes`, so no `hydra` call and no live hydra
-// are involved.
+// mapping, and each `HYWC-*` row up top matching its own stack — and
+// `hydra.color-bookmarks` puts that same colour on the `HYS-*` / `HYWC-*`
+// names themselves. The bookmark naming comes from `hydra.prefixes`, so no
+// `hydra` call and no live hydra are involved. The row above `HYB` is an
+// extra head off the base, in no stack and in its own graph column, so it
+// keeps jj's colours.
 #[test]
 fn hydra() {
-    insta::with_settings!({description => "tests/fixtures/hydra.txt: top-stack padding row plus hashed per-stack node colors."}, {
+    insta::with_settings!({description => "tests/fixtures/hydra.txt: top-stack padding row plus hashed per-stack node and bookmark colors."}, {
         insta::assert_snapshot!("hydra", render_fixture_with("hydra.txt", &HYDRA_ENV));
     });
 }
@@ -182,6 +185,25 @@ fn hydra_prefixes_rename() {
         render_fixture_with("hydra.txt", &env),
         render_fixture_with("hydra.txt", &[("BIJJOU__GRAPH__COLLAPSE", "true")]),
     );
+}
+
+// `hydra.color-bookmarks = false`: the stacks keep their node colours, but
+// every bookmark name is left in jj's own colour (magenta here).
+#[test]
+fn hydra_plain_bookmarks() {
+    let env = hydra_env(&[("BIJJOU__HYDRA__COLOR_BOOKMARKS", "false")]);
+    let off = render_fixture_with("hydra.txt", &env);
+    let on = render_fixture_with("hydra.txt", &HYDRA_ENV);
+    // delta's hashed colour, which its node carries in both renderings.
+    let delta = "\\e[38;2;156;224;92m";
+    assert!(off.contains(&format!("{}", delta)), "{}", off);
+    assert!(off.contains("\\e[38;5;5mHYS-delta"), "{}", off);
+    assert!(!off.contains(&format!("{}HYS-delta", delta)), "{}", off);
+    assert!(on.contains(&format!("{}HYS-delta", delta)), "{}", on);
+    assert!(on.contains(&format!("{}HYWC-delta", delta)), "{}", on);
+    // The anchors are nobody's stack, so they keep jj's colour either way.
+    assert!(off.contains("\\e[38;5;5mHYH"), "{}", off);
+    assert!(on.contains("\\e[38;5;5mHYH"), "{}", on);
 }
 
 // Hydra markup on, plus `graph.collapse`, which is how the hydra logs this is

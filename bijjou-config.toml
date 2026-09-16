@@ -137,8 +137,13 @@
 # A repo with no hydra carries none of those bookmarks, so it gets no markup
 # — the output is byte-for-byte what it is with `enable = false`.
 #
-# Classification is per row, off the `bookmarks` field alone: no subprocess,
-# no repo lookup, nothing to wait on.
+# A stack also ends where its graph column does: the rows under a marker are
+# its content only while their node stays in the marker's column, so an extra
+# head off the base — drawn below the bottom stack, above `HYB` — is nobody's
+# stack and keeps jj's own colours.
+#
+# Classification is per row, off the `bookmarks` field and the graph prefix jj
+# already drew: no subprocess, no repo lookup, nothing to wait on.
 #
 # Markup assumes jj's default top-down log order. `jj log --reversed` puts a
 # stack's commits above its marker, which the walk cannot follow.
@@ -165,7 +170,11 @@
 
 # Colour each stack's graph nodes, so a column is readable at a glance.
 #   true   — hash the stack's name into a colour (stable across runs, and a
-#            stack keeps its colour as the log reorders).
+#            stack keeps its colour as the log reorders). The hash picks a
+#            hue at fixed saturation and lightness, out of the circle less
+#            two reserved bands: 10° either side of `#a6e3a1` (115°) and of
+#            `#f5c2e7` (316°), so a stack never reads as those. An explicit
+#            palette is yours, so it is used as given.
 #   false  — leave every node exactly as jj drew it.
 #   list   — an explicit palette, indexed by the order the log first names
 #            each stack: the first stack named takes the first entry, the
@@ -183,6 +192,17 @@
 # Default: true
 #
 # colors = true
+
+# Print the hydra bookmark names in their stack's colour as well: `HYS-foo`
+# on the marker row and `HYWC-foo` on the working copy both read in the same
+# colour as the column they belong to. jj's own colour is replaced for those
+# names only; every other bookmark on the row, and the anchors
+# (`HYB` / `HYH` / `HYCR`), keep the colours jj gave them. With
+# `colors = false` there is no stack colour to use, so this does nothing.
+#
+# Default: true
+#
+# color-bookmarks = true
 
 [hydra.prefixes]
 # How this repo names its hydra bookmarks — the same naming

@@ -270,6 +270,29 @@ pub fn graph_nodes_to_verticals(prefix: &[u8]) -> Vec<u8> {
     out
 }
 
+// The cell the row's graph node sits in, counted as `find_boundary` counts
+// cells: jj's own two per column, pad cells included, ANSI not counted. A
+// commit row carries exactly one node, so the first non-edge glyph is it.
+// `None` is a prefix with no node at all — a connector row, or a row jj drew
+// with no graph.
+pub fn node_cell(prefix: &[u8]) -> Option<usize> {
+    let mut i = 0;
+    let mut cell = 0;
+    while i < prefix.len() {
+        if let Some(after) = skip_csi(prefix, i) {
+            i = after;
+            continue;
+        }
+        let (cp, len) = decode_utf8(prefix, i);
+        if cp != b' ' as u32 && !is_edge_char(cp) {
+            return Some(cell);
+        }
+        i += len;
+        cell += 1;
+    }
+    None
+}
+
 // Node bytes pass through unchanged: jj's template (or upstream emitter) is
 // responsible for picking the right glyph and label color. Bijjou forwards
 // the bytes plus their surrounding ANSI verbatim — unless a hydra stack
@@ -489,6 +512,22 @@ mod tests {
         for &cp in &[0x41u32, 0x61, 0x20] {
             assert!(!is_edge_char(cp), "cp={:#x} should not be edge", cp);
         }
+    }
+
+    #[test]
+    fn node_cell_counts_jjs_own_cells() {
+        // A stack's node in the leftmost column, and a neighbour's branch
+        // running past it in the next one.
+        assert_eq!(node_cell("● │ ".as_bytes()), Some(0));
+        assert_eq!(node_cell("│ ● ".as_bytes()), Some(2));
+        // ANSI is not a cell, and a merge tip's node abuts its edges.
+        assert_eq!(node_cell("\x1b[38;5;8m│\x1b[39m ● ".as_bytes()), Some(2));
+        assert_eq!(node_cell("│ ●─╮".as_bytes()), Some(2));
+        // Custom `log_node` glyphs are nodes like any other.
+        assert_eq!(node_cell("│ □ ".as_bytes()), Some(2));
+        // A connector row has no node at all.
+        assert_eq!(node_cell("├─╯".as_bytes()), None);
+        assert_eq!(node_cell(b""), None);
     }
 
     #[test]
