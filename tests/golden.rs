@@ -82,7 +82,11 @@ fn render_fixture_with(fixture: &str, env: &[(&str, &str)]) -> String {
 
     let mut cmd = Command::cargo_bin("bijjou").expect("binary built");
     cmd.env("BIJJOU_CONFIG", root.join("bijjou-config.toml"))
-        .env("BIJJOU__UI__COLOR", "always");
+        .env("BIJJOU__UI__COLOR", "always")
+        // Hydra markup is opt-in per test: without this the result would
+        // depend on whether the checkout bijjou is built in happens to be a
+        // hydra, and on whether `hydra` is on PATH at all.
+        .env("BIJJOU__HYDRA__ENABLE", "false");
     for (k, v) in env {
         cmd.env(k, v);
     }
@@ -129,4 +133,66 @@ fn local_collapsed() {
     insta::with_settings!({description => "tests/fixtures/local.txt rendered with graph.collapse = true."}, {
         insta::assert_snapshot!("local_collapsed", render_fixture_with("local.txt", &[("BIJJOU__GRAPH__COLLAPSE", "true")]));
     });
+}
+
+// A hydra log: `hydra.top-stack-padding` draws the separator row jj skips
+// under the log's top stack (delta here), and `hydra.colors` colours each
+// stack's nodes — the hashed default, so this also pins the name → colour
+// mapping. The bookmark naming comes from `hydra.prefixes`, so no `hydra`
+// call and no live hydra are involved.
+#[test]
+fn hydra() {
+    insta::with_settings!({description => "tests/fixtures/hydra.txt: top-stack padding row plus hashed per-stack node colors."}, {
+        insta::assert_snapshot!("hydra", render_fixture_with("hydra.txt", &HYDRA_ENV));
+    });
+}
+
+// `hydra.colors = [...]`: the palette is indexed by the stack's position in
+// the graph, top first (delta → 1, gamma → 2, beta → 3, alpha → 4).
+#[test]
+fn hydra_palette() {
+    let env = hydra_env(&[("BIJJOU__HYDRA__COLORS", "1,2,3,4")]);
+    insta::with_settings!({description => "tests/fixtures/hydra.txt: hydra.colors as an explicit palette indexed top-down."}, {
+        insta::assert_snapshot!("hydra_palette", render_fixture_with("hydra.txt", &env));
+    });
+}
+
+// Both hydra knobs off: byte-for-byte the pre-hydra rendering, so a repo with
+// no hydra (or `hydra.enable = false`) is unaffected.
+#[test]
+fn hydra_disabled() {
+    let env = hydra_env(&[
+        ("BIJJOU__HYDRA__TOP_STACK_PADDING", "false"),
+        ("BIJJOU__HYDRA__COLORS", "false"),
+    ]);
+    assert_eq!(
+        render_fixture_with("hydra.txt", &env),
+        render_fixture_with("hydra.txt", &[("BIJJOU__GRAPH__COLLAPSE", "true")]),
+    );
+}
+
+// `hydra.prefixes`: rename the prefix and the fixture's `HY*` bookmarks stop
+// being hydra bookmarks, so the markup drops out entirely.
+#[test]
+fn hydra_prefixes_rename() {
+    let env = hydra_env(&[("BIJJOU__HYDRA__PREFIXES__PREFIX", "ZZ")]);
+    assert_eq!(
+        render_fixture_with("hydra.txt", &env),
+        render_fixture_with("hydra.txt", &[("BIJJOU__GRAPH__COLLAPSE", "true")]),
+    );
+}
+
+// Hydra markup on, plus `graph.collapse`, which is how the hydra logs this is
+// modelled on are actually read.
+const HYDRA_ENV: [(&str, &str); 2] = [
+    ("BIJJOU__HYDRA__ENABLE", "true"),
+    ("BIJJOU__GRAPH__COLLAPSE", "true"),
+];
+
+fn hydra_env<'a>(extra: &[(&'a str, &'a str)]) -> Vec<(&'a str, &'a str)> {
+    HYDRA_ENV
+        .iter()
+        .copied()
+        .chain(extra.iter().copied())
+        .collect()
 }

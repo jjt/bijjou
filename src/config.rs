@@ -27,6 +27,73 @@ pub const DEFAULT_STREAM_BATCH_SIZE: usize = 128;
 pub const DEFAULT_LOG_ONELINE_NAME: &str = "log_oneline";
 pub const DEFAULT_LOG_ONELINE_BODY: &str = " %{elastic_tab(change_id)} %{elastic_tab(commit_id)} %{elastic_tab(author)} %{elastic_tab(timestamp)} %{working_copies} %{bookmarks} %{tags} %{description}";
 pub const BIJJOU_TEMPLATE_NAME_FIELD: &str = "bijjou_template_name";
+pub const DEFAULT_HYDRA_PREFIX: &str = "HY";
+pub const DEFAULT_HYDRA_BASE: &str = "B";
+pub const DEFAULT_HYDRA_HEAD: &str = "H";
+pub const DEFAULT_HYDRA_CONFLICT_RESOLUTION: &str = "CR";
+pub const DEFAULT_HYDRA_STACK_HEAD: &str = "S";
+pub const DEFAULT_HYDRA_STACK_WORKING_COPY: &str = "WC";
+
+// `hydra.colors`: leave the nodes alone, hash each stack's name into a
+// colour, or index an explicit palette by the stack's position in the graph
+// (top of the log first, wrapping when there are more stacks than colours).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum HydraColors {
+    Off,
+    Hash,
+    Palette(Vec<Vec<u8>>),
+}
+
+// `hydra.prefixes`: the bookmark naming this repo's hydra uses, so a row is
+// classified from its `bookmarks` field alone. `hydra status --toml` reports
+// the same naming, but it shells out to jj several times per log, which costs
+// more than every other thing bijjou does put together.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HydraPrefixes {
+    // Shared leader of every hydra bookmark: `HY`.
+    pub prefix: String,
+    // Anchor suffixes: `HYB`, `HYH`, `HYCR`.
+    pub base: String,
+    pub head: String,
+    pub conflict_resolution: String,
+    // Per-stack suffixes, each followed by `-<stack name>`: `HYS-foo`,
+    // `HYWC-foo`.
+    pub stack_head: String,
+    pub stack_working_copy: String,
+}
+
+impl Default for HydraPrefixes {
+    fn default() -> Self {
+        Self {
+            prefix: DEFAULT_HYDRA_PREFIX.to_string(),
+            base: DEFAULT_HYDRA_BASE.to_string(),
+            head: DEFAULT_HYDRA_HEAD.to_string(),
+            conflict_resolution: DEFAULT_HYDRA_CONFLICT_RESOLUTION.to_string(),
+            stack_head: DEFAULT_HYDRA_STACK_HEAD.to_string(),
+            stack_working_copy: DEFAULT_HYDRA_STACK_WORKING_COPY.to_string(),
+        }
+    }
+}
+
+impl HydraPrefixes {
+    // `HYS-` — the marker bookmark that opens a stack.
+    pub fn stack_marker(&self) -> String {
+        format!("{}{}-", self.prefix, self.stack_head)
+    }
+
+    // `HYWC-` — a stack's working copy, which sits outside the stack.
+    pub fn working_copy(&self) -> String {
+        format!("{}{}-", self.prefix, self.stack_working_copy)
+    }
+
+    // `HYB` / `HYH` / `HYCR` — whole bookmark names, matched exactly.
+    pub fn anchors(&self) -> Vec<String> {
+        [&self.base, &self.head, &self.conflict_resolution]
+            .iter()
+            .map(|suffix| format!("{}{}", self.prefix, suffix))
+            .collect()
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BatchSize {
@@ -117,6 +184,10 @@ pub struct Config {
     pub stream_batch_size: BatchSize,
     pub debug_force_screen_height: Option<usize>,
     pub templates: HashMap<String, String>,
+    pub hydra_enable: bool,
+    pub hydra_top_stack_padding: bool,
+    pub hydra_colors: HydraColors,
+    pub hydra_prefixes: HydraPrefixes,
 }
 
 impl Default for Config {
@@ -154,6 +225,10 @@ impl Default for Config {
                 );
                 m
             },
+            hydra_enable: true,
+            hydra_top_stack_padding: true,
+            hydra_colors: HydraColors::Hash,
+            hydra_prefixes: HydraPrefixes::default(),
         }
     }
 }
@@ -175,11 +250,28 @@ fn flatten_toml(
             toml::Value::Integer(i) => out.push((key, i.to_string())),
             toml::Value::Boolean(b) => out.push((key, b.to_string())),
             toml::Value::Float(f) => out.push((key, f.to_string())),
-            toml::Value::Array(_) => return Err(format!("{}: arrays not supported", key)),
+            // A list of scalars flattens to the comma-joined form the env and
+            // CLI layers have to spell it in anyway, so one syntax covers
+            // every layer.
+            toml::Value::Array(items) => out.push((key.clone(), join_scalars(&key, items)?)),
             toml::Value::Datetime(_) => return Err(format!("{}: datetimes not supported", key)),
         }
     }
     Ok(())
+}
+
+fn join_scalars(key: &str, items: &[toml::Value]) -> Result<String, String> {
+    let mut parts: Vec<String> = Vec::with_capacity(items.len());
+    for item in items {
+        match item {
+            toml::Value::String(s) => parts.push(s.clone()),
+            toml::Value::Integer(i) => parts.push(i.to_string()),
+            toml::Value::Boolean(b) => parts.push(b.to_string()),
+            toml::Value::Float(f) => parts.push(f.to_string()),
+            _ => return Err(format!("{}: array items must be scalars", key)),
+        }
+    }
+    Ok(parts.join(","))
 }
 
 fn parse_bool_str(s: &str) -> Result<bool, String> {
@@ -225,6 +317,23 @@ fn parse_color_str(s: &str) -> Result<Vec<u8>, String> {
         Ok(n) => Err(format!("expected 0-255, got {}", n)),
         Err(_) => Err(format!("expected integer or \"#rrggbb\", got {:?}", s)),
     }
+}
+
+fn parse_hydra_colors(s: &str) -> Result<HydraColors, String> {
+    match s {
+        "true" => return Ok(HydraColors::Hash),
+        "false" => return Ok(HydraColors::Off),
+        _ => {}
+    }
+    let mut palette = Vec::new();
+    for part in s.split(',') {
+        let part = part.trim();
+        if part.is_empty() {
+            return Err(format!("empty color in palette {:?}", s));
+        }
+        palette.push(parse_color_str(part)?);
+    }
+    Ok(HydraColors::Palette(palette))
 }
 
 impl Config {
@@ -328,6 +437,21 @@ impl Config {
             }
             "colors.dash-filler" => self.dim_on = parse_color_str(value).map_err(mkerr)?,
             "colors.graph-edge" => self.edge_dim_on = parse_color_str(value).map_err(mkerr)?,
+            "hydra.enable" => self.hydra_enable = parse_bool_str(value).map_err(mkerr)?,
+            "hydra.top-stack-padding" => {
+                self.hydra_top_stack_padding = parse_bool_str(value).map_err(mkerr)?;
+            }
+            "hydra.colors" => self.hydra_colors = parse_hydra_colors(value).map_err(mkerr)?,
+            "hydra.prefixes.prefix" => self.hydra_prefixes.prefix = value.to_string(),
+            "hydra.prefixes.base" => self.hydra_prefixes.base = value.to_string(),
+            "hydra.prefixes.head" => self.hydra_prefixes.head = value.to_string(),
+            "hydra.prefixes.conflict-resolution" => {
+                self.hydra_prefixes.conflict_resolution = value.to_string();
+            }
+            "hydra.prefixes.stack-head" => self.hydra_prefixes.stack_head = value.to_string(),
+            "hydra.prefixes.stack-working-copy" => {
+                self.hydra_prefixes.stack_working_copy = value.to_string();
+            }
             "debug.force-screen-height" => {
                 let n: i64 = value
                     .parse()
@@ -847,5 +971,88 @@ graph-edge = 200
         assert!(cfg
             .apply_cli(args(&["--graph__collapse=sometimes"]))
             .is_err());
+    }
+
+    #[test]
+    fn hydra_defaults_are_on_with_hashed_colors() {
+        let cfg = Config::from_toml("").unwrap();
+        assert!(cfg.hydra_enable);
+        assert!(cfg.hydra_top_stack_padding);
+        assert_eq!(cfg.hydra_colors, HydraColors::Hash);
+        assert_eq!(cfg.hydra_prefixes, HydraPrefixes::default());
+    }
+
+    #[test]
+    fn hydra_prefixes_come_from_toml_and_cli() {
+        let cfg = Config::from_toml(
+            "[hydra.prefixes]\nprefix = \"ZZ\"\nconflict-resolution = \"RES\"\n",
+        )
+        .unwrap();
+        assert_eq!(cfg.hydra_prefixes.prefix, "ZZ");
+        assert_eq!(cfg.hydra_prefixes.conflict_resolution, "RES");
+        assert_eq!(cfg.hydra_prefixes.stack_head, DEFAULT_HYDRA_STACK_HEAD);
+        assert_eq!(cfg.hydra_prefixes.anchors(), vec!["ZZB", "ZZH", "ZZRES"]);
+
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--hydra__prefixes__stack-working-copy=W"]))
+            .unwrap();
+        assert_eq!(cfg.hydra_prefixes.working_copy(), "HYW-");
+    }
+
+    #[test]
+    fn hydra_colors_bool_forms() {
+        let cfg = Config::from_toml("[hydra]\ncolors = false\n").unwrap();
+        assert_eq!(cfg.hydra_colors, HydraColors::Off);
+
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--hydra__colors=true"])).unwrap();
+        assert_eq!(cfg.hydra_colors, HydraColors::Hash);
+    }
+
+    #[test]
+    fn hydra_colors_toml_list_flattens_to_a_palette() {
+        let cfg = Config::from_toml("[hydra]\ncolors = [1, \"#aabbcc\"]\n").unwrap();
+        assert_eq!(
+            cfg.hydra_colors,
+            HydraColors::Palette(vec![
+                b"\x1b[38;5;1m".to_vec(),
+                b"\x1b[38;2;170;187;204m".to_vec(),
+            ])
+        );
+    }
+
+    #[test]
+    fn hydra_colors_cli_list_is_comma_separated() {
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--hydra__colors=1,#aabbcc"])).unwrap();
+        assert_eq!(
+            cfg.hydra_colors,
+            HydraColors::Palette(vec![
+                b"\x1b[38;5;1m".to_vec(),
+                b"\x1b[38;2;170;187;204m".to_vec(),
+            ])
+        );
+    }
+
+    #[test]
+    fn hydra_colors_rejects_bad_entries() {
+        let mut cfg = Config::default();
+        assert!(cfg.apply_cli(args(&["--hydra__colors=1,999"])).is_err());
+        assert!(cfg.apply_cli(args(&["--hydra__colors=1,,2"])).is_err());
+        assert!(cfg.apply_cli(args(&["--hydra__colors=sometimes"])).is_err());
+    }
+
+    #[test]
+    fn hydra_toggles_reject_non_bools() {
+        let mut cfg = Config::default();
+        assert!(cfg.apply_cli(args(&["--hydra__enable=sometimes"])).is_err());
+        assert!(cfg
+            .apply_cli(args(&["--hydra__top-stack-padding=sometimes"]))
+            .is_err());
+    }
+
+    #[test]
+    fn toml_array_of_non_scalars_errors() {
+        assert!(Config::from_toml("[hydra]\ncolors = [[1]]\n").is_err());
     }
 }

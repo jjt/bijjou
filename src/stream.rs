@@ -5,7 +5,7 @@ use crate::ansi::strip_sgr;
 use crate::config::{cfg, color_enabled, Activate, BatchSize, BIJJOU_TEMPLATE_NAME_FIELD};
 use crate::output::OutputSink;
 use crate::{
-    accumulate_metrics, classify_row, compile_templates, emit_classified, CompiledTemplate,
+    accumulate_metrics, classify_row, compile_templates, emit_classified, hydra, CompiledTemplate,
     RowKind, TemplateMetrics,
 };
 use crate::render::{contains_bytes, strip_trailing_nl};
@@ -14,6 +14,8 @@ pub fn run() -> io::Result<()> {
     let c = cfg();
     let (first_size, rest_size) = resolve_batch_sizes(&c.stream_batch_size);
     let mut sink = OutputSink::open();
+    // Bookmark naming comes from `hydra.prefixes`; no lookup to overlap.
+    let mut hy = hydra::Walk::start();
     let mut reader = BufReader::new(io::stdin().lock());
     let templates = compile_templates(&c.templates)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
@@ -41,13 +43,27 @@ pub fn run() -> io::Result<()> {
         }
     }
 
-    process_batch(&first, &templates, &mut metrics, &mut max_graph_col, &mut sink)?;
+    process_batch(
+        &first,
+        &templates,
+        &mut metrics,
+        &mut max_graph_col,
+        &mut hy,
+        &mut sink,
+    )?;
     loop {
         let batch = read_batch(&mut reader, rest_size)?;
         if batch.is_empty() {
             break;
         }
-        process_batch(&batch, &templates, &mut metrics, &mut max_graph_col, &mut sink)?;
+        process_batch(
+            &batch,
+            &templates,
+            &mut metrics,
+            &mut max_graph_col,
+            &mut hy,
+            &mut sink,
+        )?;
     }
     sink.close()
 }
@@ -138,6 +154,7 @@ fn process_batch(
     templates: &HashMap<String, CompiledTemplate>,
     metrics: &mut HashMap<String, TemplateMetrics>,
     max_graph_col: &mut usize,
+    hy: &mut hydra::Walk,
     sink: &mut OutputSink,
 ) -> io::Result<()> {
     let rows: Vec<RowKind> = batch
@@ -151,7 +168,7 @@ fn process_batch(
 
     let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 16).sum());
     for (line, row) in batch.iter().zip(rows.iter()) {
-        emit_classified(line, row, templates, metrics, *max_graph_col, &mut out);
+        emit_classified(line, row, templates, metrics, *max_graph_col, hy, &mut out);
     }
     if color_enabled() {
         sink_write(sink, &out)

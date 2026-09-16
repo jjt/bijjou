@@ -47,9 +47,10 @@ into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
 | `main.rs`    | Arg parse, config load chain, dispatch (stream vs buffered). Owns the shared row core: `RowKind`, `classify_row`, `emit_classified`, template compilation, and per-template `TemplateMetrics` (position-keyed anchors). |
 | `config.rs`  | `Config` struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
 | `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
-| `render.rs`  | Parse line → `Parsed{graph_col, graph_col_collapsed, graph_end, content_start, last_is_edge, last_is_edge_collapsed}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges, and drop inter-column pad cells under `graph.collapse`. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job. |
+| `render.rs`  | Parse line → `Parsed{graph_col, graph_col_collapsed, graph_end, content_start, last_is_edge, last_is_edge_collapsed}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges, and drop inter-column pad cells under `graph.collapse`. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job, unless `emit_dim_graph` is handed a hydra stack colour. `graph_nodes_to_verticals` rewrites a prefix's node back into a vertical, for the hydra padding row. |
 | `dsl.rs`     | Templating DSL + NUL/RS-framed record parser (`parse_nul_oneline`). `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render (`collect_anchors` → `render_row`): pass 1 records each elastic-tab's max natural column (anchor), keyed by tab position; pass 2 left-pads to the anchor so the following content's left edge lines up. An arg-ful tab then emits its field inline; an arg-less tab emits nothing (`%{elastic_tab()}%{X}` == `%{elastic_tab(X)}`). Whitespace follows a 4-rule model (see below). |
 | `stream.rs`  | Batched reader (`read_batch`), two-pass per batch with monotonic widening (anchors and `graph_col` targets never shrink as new batches arrive), `OutputSink` (stdout or pager spawned via `std::process::Command`/`posix_spawn`). |
+| `hydra.rs`   | Hydra awareness. `Topology::from_prefixes` expands `hydra.prefixes` into the bookmark names in force (`HYS-`, `HYWC-`, and the `HYB` / `HYH` / `HYCR` anchors) once, at `Walk::start`. `Walk` is the per-row state: it classifies each commit row by its `bookmarks` field (stack marker / anchor or `HYWC-*` / neither), carries a stack's colour down from its marker to its content commits, and draws the top-stack separator row. No subprocess, so nothing to wait on. |
 | `output.rs`  | Buffered path's terminal write / pager exec (`fork` + `execvp`, replacing bijjou's process)  |
 
 ## Render flow per line
@@ -81,7 +82,9 @@ into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
    records each elastic-tab's max natural column (anchor), keyed by tab
    position; also track the overall max `graph_col` across commit rows.
 4. Pass 2 — `emit_classified`:
-   - Commit: `emit_dim_graph` for the graph prefix, right-pad to the
+   - Commit: `hydra::Walk::node_color` for the row's stack colour (and the
+     top-stack separator row, if this row opens the second stack),
+     `emit_dim_graph` for the graph prefix, right-pad to the
      max graph column (handed to the DSL as a leading pad), then dispatch
      on the row's template (Parsed / Empty / missing / no-name; see
      **Templates**). For a Parsed body, `render_row` walks the template:
@@ -94,6 +97,38 @@ into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
      verbatim (no template) so root commits don't perturb column widths.
    - Passthrough: `emit_line` from `render.rs` handles the graph-only
      and unframed cases (just the edge-dim rewrite + verbatim tail).
+
+## Hydra markup
+
+A hydra merges linear stacks as siblings off one base, so `jj log` gives each
+stack a graph column. The bookmark naming is configurable per repo, so
+`hydra.rs` reads it from `hydra.prefixes` and expands it once into
+`Topology{stack_prefix, wc_prefix, anchors}`. A repo with no hydra carries no
+bookmark that matches, which is the same thing as no markup. Asking
+`hydra status --toml` instead would be authoritative but shells out to jj
+several times per log — more than the whole render costs.
+
+`Walk::node_color` runs once per commit row, in log order, from
+`emit_classified`:
+
+- A row carrying `HYS-<name>` opens that stack. A row carrying an anchor
+  (`HYB` / `HYH` / `HYCR`) or a `HYWC-*` bookmark leaves hydra territory.
+  Anything else — a stack's content commits, which name no bookmark — keeps
+  whichever state the walk is in, which is how a colour reaches them. Remote
+  refs (`name@remote`) and jj's out-of-sync `*` flag are stripped first, since
+  `commit.bookmarks()` carries both.
+- The row's node colour is the stack's: hashed from its name
+  (`hydra.colors = true`), or the palette entry for its index — its position
+  in the log, top first, held for the rest of the run.
+- Opening the *second* stack draws the separator row jj skipped under the
+  first: `graph_nodes_to_verticals` on that row's own graph prefix, back
+  through `emit_dim_graph`, so every column lands where it does above and
+  below (under `graph.collapse` too).
+
+The walk is single-pass and stateful, so it works identically on the buffered
+and streaming paths, and it assumes jj's default top-down order — under
+`jj log --reversed` a stack's commits precede its marker and the walk cannot
+follow.
 
 ## DSL whitespace model
 
@@ -158,8 +193,11 @@ Keys: top-level (`activate`, `pager`), `[ui].color`,
 `[layout]` (`dash`, `dash-start`, `dash-end`), `[templates].<name>`,
 `[stream]` (`enabled`, `batch-size` = int | `"half-pager"`),
 `[graph]` (`collapse`), `[graph.edges.chars]`, `[colors]`
-(`dash-filler`, `graph-edge`), plus the
-hidden `debug.force-screen-height`. Full ref: `bijjou-config.toml`.
+(`dash-filler`, `graph-edge`), `[hydra]` (`enable`,
+`top-stack-padding`, `colors` = `true` | `false` | comma/TOML list of
+`int 0-255 | "#rrggbb"`), `[hydra.prefixes]` (`prefix`, `base`, `head`,
+`conflict-resolution`, `stack-head`, `stack-working-copy`), plus the hidden
+`debug.force-screen-height`. Full ref: `bijjou-config.toml`.
 
 ## Output
 
@@ -172,7 +210,9 @@ hidden `debug.force-screen-height`. Full ref: `bijjou-config.toml`.
 ## Tests
 
 - `tests/golden.rs` + `insta` snapshots under `tests/snapshots/`, rendered
-  under `bijjou-config.toml` with `ui.color` forced on. Run
+  under `bijjou-config.toml` with `ui.color` forced on and `hydra.enable`
+  forced off (the hydra cases opt back in; the fixture's own `HY*` bookmarks
+  carry the topology, so no test depends on a live hydra). Run
   `mise run test-insta`. Review with `cargo insta review`.
 - Unit tests inline in `render.rs`, `dsl.rs`, `ansi.rs`, `stream.rs`,
-  `config.rs`.
+  `config.rs`, `hydra.rs`.

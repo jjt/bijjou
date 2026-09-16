@@ -1,6 +1,7 @@
 mod ansi;
 mod config;
 mod dsl;
+mod hydra;
 mod output;
 mod render;
 mod stream;
@@ -159,6 +160,7 @@ pub fn emit_classified(
     templates: &HashMap<String, CompiledTemplate>,
     metrics: &HashMap<String, TemplateMetrics>,
     max_graph_col: usize,
+    hy: &mut hydra::Walk,
     out: &mut Vec<u8>,
 ) {
     let (body, trailing_nl) = strip_trailing_nl(line);
@@ -170,7 +172,9 @@ pub fn emit_classified(
             template_name,
             fields,
         } => {
-            emit_dim_graph(&body[..*graph_end], cfg().graph_collapse, out);
+            let prefix = &body[..*graph_end];
+            let node_color = hy.node_color(fields, prefix, out);
+            emit_dim_graph(prefix, cfg().graph_collapse, node_color, out);
             // Pass the graph→content gap through to `render_row` as a
             // leading ws segment so it participates in rules 1-3
             // (collapse on empty fields, dash-fill across adjacent
@@ -213,7 +217,7 @@ pub fn emit_classified(
             }
         }
         RowKind::Root { graph_end, value } => {
-            emit_dim_graph(&body[..*graph_end], cfg().graph_collapse, out);
+            emit_dim_graph(&body[..*graph_end], cfg().graph_collapse, None, out);
             crate::dsl::emit_node_pad(2, out);
             out.extend_from_slice(value);
         }
@@ -339,6 +343,28 @@ KEYS
   [colors]                                  int 0-255 | \"#rrggbb\"
     dash-filler  graph-edge
 
+  [hydra]
+    enable                                  bool (default true); mark up the
+                                            rows whose bookmarks match
+                                            [hydra.prefixes]
+    top-stack-padding                       bool (default true); draw the
+                                            separator row jj skips under the
+                                            log's top stack
+    colors                                  true|false|list (default true);
+                                            colour each stack's graph nodes.
+                                            true hashes the stack name; a
+                                            list of `int 0-255 | \"#rrggbb\"`
+                                            is indexed by the stack's
+                                            position in the graph, top first
+
+  [hydra.prefixes]                          string (each); how this repo
+                                            names its hydra bookmarks
+    prefix                                  default \"HY\"
+    base  head  conflict-resolution         defaults \"B\", \"H\", \"CR\";
+                                            whole names, e.g. `HYCR`
+    stack-head  stack-working-copy          defaults \"S\", \"WC\"; followed
+                                            by `-<stack>`, e.g. `HYWC-foo`
+
 See bijjou-config.toml for defaults and discussion.
 ";
 
@@ -409,6 +435,8 @@ fn run() -> io::Result<()> {
         return stream::run();
     }
 
+    // Bookmark naming comes from `hydra.prefixes`; no lookup to overlap.
+    let mut hy = hydra::Walk::start();
     let mut input = Vec::new();
     io::stdin().read_to_end(&mut input)?;
 
@@ -435,7 +463,15 @@ fn run() -> io::Result<()> {
 
     let mut out: Vec<u8> = Vec::with_capacity(input.len() + lines.len() * 16);
     for (line, row) in lines.iter().zip(rows.iter()) {
-        emit_classified(line, row, &templates, &metrics, max_graph_col, &mut out);
+        emit_classified(
+            line,
+            row,
+            &templates,
+            &metrics,
+            max_graph_col,
+            &mut hy,
+            &mut out,
+        );
     }
     write_output(&out)
 }

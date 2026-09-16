@@ -24,14 +24,14 @@ pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, out: &mut Vec<u8>) {
     let collapse = cfg().graph_collapse;
     match parsed {
         Some(p) => {
-            emit_dim_graph(&body[..p.graph_end], collapse, out);
+            emit_dim_graph(&body[..p.graph_end], collapse, None, out);
             out.extend_from_slice(&body[p.graph_end..]);
         }
         // No boundary: this is either a pure connector row (`├─╯`, `│`, `~`)
         // or prose that merely contains a box-drawing char. Only the former
         // may collapse — dropping every second cell of prose shreds it.
         None if has_graph_char(body) => {
-            emit_dim_graph(body, collapse && is_graph_only(body), out);
+            emit_dim_graph(body, collapse && is_graph_only(body), None, out);
         }
         None => out.extend_from_slice(body),
     }
@@ -242,12 +242,48 @@ pub fn is_graph_only(body: &[u8]) -> bool {
     true
 }
 
+// jj's own vertical. `emit_dim_graph` maps it to
+// `graph.edges.chars.vertical` like any other edge, so a row synthesized
+// from it dims and collapses exactly like the rows around it.
+const JJ_VERTICAL: &[u8] = "│".as_bytes();
+
+// A graph prefix with its node turned back into a vertical: the connector row
+// jj would have drawn had the branch closed there. ANSI is dropped — the
+// result goes straight back through `emit_dim_graph`, which colours edges
+// itself.
+pub fn graph_nodes_to_verticals(prefix: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(prefix.len());
+    let mut i = 0;
+    while i < prefix.len() {
+        if let Some(after) = skip_csi(prefix, i) {
+            i = after;
+            continue;
+        }
+        let (cp, len) = decode_utf8(prefix, i);
+        if cp == b' ' as u32 || is_edge_char(cp) {
+            out.extend_from_slice(&prefix[i..i + len]);
+        } else {
+            out.extend_from_slice(JJ_VERTICAL);
+        }
+        i += len;
+    }
+    out
+}
+
 // Node bytes pass through unchanged: jj's template (or upstream emitter) is
 // responsible for picking the right glyph and label color. Bijjou forwards
-// the bytes plus their surrounding ANSI verbatim.
-fn emit_node(raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
-    out.extend_from_slice(ansi);
+// the bytes plus their surrounding ANSI verbatim — unless a hydra stack
+// colour is in force, which takes over the glyph's foreground.
+fn emit_node(raw: &[u8], ansi: &[u8], color: Option<&[u8]>, out: &mut Vec<u8>) {
+    let Some(sgr) = color else {
+        out.extend_from_slice(ansi);
+        out.extend_from_slice(raw);
+        return;
+    };
+    emit_filtered_ansi(ansi, out, is_fg_color_sgr);
+    out.extend_from_slice(sgr);
     out.extend_from_slice(raw);
+    out.extend_from_slice(FG_RESET);
 }
 
 fn emit_edge(cp: u32, raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
@@ -353,7 +389,7 @@ impl GraphRun {
 // `collapse` drops jj's inter-column pad cells (see `is_pad_cell`), pulling
 // every graph column one cell left of the last. Dropped cells still forward
 // their ANSI so colour state survives; only the glyph goes.
-pub fn emit_dim_graph(bytes: &[u8], collapse: bool, out: &mut Vec<u8>) {
+pub fn emit_dim_graph(bytes: &[u8], collapse: bool, node_color: Option<&[u8]>, out: &mut Vec<u8>) {
     let c = cfg();
     let mut i = 0;
     let mut cell: usize = 0;
@@ -415,7 +451,7 @@ pub fn emit_dim_graph(bytes: &[u8], collapse: bool, out: &mut Vec<u8>) {
             emit_edge(cp, raw, ansi, out);
             run.left_was_node = false;
         } else {
-            emit_node(raw, ansi, out);
+            emit_node(raw, ansi, node_color, out);
             run.seen_node = true;
             run.left_was_node = true;
         }
@@ -554,13 +590,13 @@ mod tests {
 
     fn run_emit(graph: &[u8]) -> Vec<u8> {
         let mut out = Vec::new();
-        emit_dim_graph(graph, false, &mut out);
+        emit_dim_graph(graph, false, None, &mut out);
         out
     }
 
     fn run_emit_collapsed(graph: &[u8]) -> Vec<u8> {
         let mut out = Vec::new();
-        emit_dim_graph(graph, true, &mut out);
+        emit_dim_graph(graph, true, None, &mut out);
         out
     }
 

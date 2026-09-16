@@ -128,6 +128,82 @@
 # dash-filler  = 8
 # graph-edge   = 8
 
+[hydra]
+# A jj hydra merges several linear stacks as siblings off one base, so
+# `jj log` gives each stack its own graph column. With `enable = true` bijjou
+# marks those columns up, recognizing them by the bookmark names under
+# `[hydra.prefixes]` below: a row carrying `HYS-<name>` opens that stack, the
+# anchors (`HYB` / `HYH` / `HYCR`) and the `HYWC-*` working copies close it.
+# A repo with no hydra carries none of those bookmarks, so it gets no markup
+# — the output is byte-for-byte what it is with `enable = false`.
+#
+# Classification is per row, off the `bookmarks` field alone: no subprocess,
+# no repo lookup, nothing to wait on.
+#
+# Markup assumes jj's default top-down log order. `jj log --reversed` puts a
+# stack's commits above its marker, which the walk cannot follow.
+#
+# Default: true
+#
+# enable = true
+
+# jj closes a graph column only when the branch to its *left* ends, so every
+# stack gets a `├─╯` row under it except the topmost, which runs straight
+# into its neighbour. `top-stack-padding = true` draws the separator jj
+# skipped: the next stack's own columns, all verticals.
+#
+#   top-stack-padding = false     top-stack-padding = true
+#   𜸩𜸩𜸩● knktkz                   𜸩𜸩𜸩● knktkz
+#   𜸩𜸩●𜸩 zolnlk HYS-list-prs      𜸩𜸩𜸩𜸩
+#   𜸩𜸩●𜸩 kknmqn                   𜸩𜸩●𜸩 zolnlk HYS-list-prs
+#   𜸩𜸩𜸨𜹃                          𜸩𜸩●𜸩 kknmqn
+#                                 𜸩𜸩𜸨𜹃
+#
+# Default: true
+#
+# top-stack-padding = true
+
+# Colour each stack's graph nodes, so a column is readable at a glance.
+#   true   — hash the stack's name into a colour (stable across runs, and a
+#            stack keeps its colour as the log reorders).
+#   false  — leave every node exactly as jj drew it.
+#   list   — an explicit palette, indexed by the stack's position in the
+#            graph: the topmost stack takes the first entry, the next one
+#            down the second, wrapping when there are more stacks than
+#            colours. Entries are `int 0-255 | "#rrggbb"`, same as
+#            `[colors]`. Over env or CLI, spell the list comma-separated:
+#            `--hydra__colors=1,2,"#aabbcc"`.
+#
+# Only a stack's own nodes are coloured. The anchors (`HYB` / `HYH` /
+# `HYCR`), the `HYWC-*` working copies and anything outside the hydra keep
+# jj's colours.
+#
+# Default: true
+#
+# colors = true
+
+[hydra.prefixes]
+# How this repo names its hydra bookmarks — the same naming
+# `hydra status --toml` reports under `bookmarks.*`, spelled here so bijjou
+# never has to ask. Change these only if the repo changed its own naming; a
+# mismatch means no markup, never wrong markup.
+#
+# `prefix` leads every hydra bookmark. `base`, `head` and
+# `conflict-resolution` complete a whole bookmark name (`HYB`, `HYH`,
+# `HYCR`). `stack-head` and `stack-working-copy` are followed by
+# `-<stack name>` (`HYS-foo`, `HYWC-foo`).
+#
+# Defaults: prefix = "HY", base = "B", head = "H",
+#           conflict-resolution = "CR", stack-head = "S",
+#           stack-working-copy = "WC"
+#
+# prefix              = "HY"
+# base                = "B"
+# head                = "H"
+# conflict-resolution = "CR"
+# stack-head          = "S"
+# stack-working-copy  = "WC"
+
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of
 # `batch-size` lines. The graph-column width is tracked across the whole

@@ -110,6 +110,42 @@ Bijjou takes streaming input and by default streams output in batches, either a 
 
 Output streaming can also be disabled via config.
 
+## Hydra topologies
+
+A jj *hydra* merges several linear *stacks*
+as siblings off one base, so `jj log` gives each stack its own graph column.
+With `hydra.enable = true` (the default) bijjou marks those columns up. It
+recognizes them by bookmark name, from the naming in `[hydra.prefixes]`: a row
+carrying `HYS-<name>` opens that stack, an anchor (`HYB` / `HYH` / `HYCR`) or a
+`HYWC-*` working copy closes it, and the rows between keep the stack they sit
+in.
+
+- `hydra.top-stack-padding` draws the separator row jj skips under the log's
+  top stack. jj closes a graph column only when the branch to its *left* ends,
+  so every stack gets a `├─╯` row under it except the topmost, which runs
+  straight into its neighbour.
+- `hydra.colors` colours each stack's graph nodes: `true` hashes the stack
+  name into a colour, `false` leaves jj's nodes alone, and a list is a palette
+  indexed by the stack's position in the graph (topmost first, wrapping).
+
+```shell
+❯ jj log -T log_oneline | bijjou --graph__collapse=true
+
+𜸩𜸩𜸩● knktkz 478c07 ME 260915·1336 [LOY-734] docs(home): …
+𜸩𜸩𜸩𜸩                                        ← top-stack-padding
+𜸩𜸩●𜸩 zolnlk 1a5407 ME 260915·1336 HYS-list-prs hydra stack …
+𜸩𜸩●𜸩 kknmqn ef4d55 ME 260915·1336 agent/jjt/loy-832-lis…
+𜸩𜸩𜸨𜹃
+```
+
+A repo with no hydra carries no such bookmark, so it gets no markup — output
+is byte-for-byte what `hydra.enable = false` gives. Classification is per row
+off the `bookmarks` field, so there is no subprocess and nothing to wait on;
+if the repo renamed its hydra bookmarks, spell the new naming in
+`[hydra.prefixes]`. Markup needs jj's default top-down log order — `jj log
+--reversed` puts a stack's commits above its marker, which the walk cannot
+follow.
+
 ## Install
 
 From source:
@@ -162,6 +198,8 @@ and explanatory comment. Quick reference:
 | `[graph]`             | `collapse` (bool; drop the graph's inter-column pad cells)                                           |
 | `[graph.edges.chars]` | `horizontal`, `vertical`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `tee-right`, `tee-left`, `tee-down`, `tee-up`, `cross`, `elision` |
 | `[colors]`            | `dash-filler`, `graph-edge` (int 0–255 or `"#rrggbb"`)                              |
+| `[hydra]`             | `enable`, `top-stack-padding` (bool), `colors` (`true`\|`false`\|list of colors)     |
+| `[hydra.prefixes]`    | `prefix`, `base`, `head`, `conflict-resolution`, `stack-head`, `stack-working-copy` |
 
 Run `bijjou --help` for the same reference inline.
 
