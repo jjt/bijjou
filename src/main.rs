@@ -351,11 +351,12 @@ KEYS
                                             separator row jj skips under the
                                             log's top stack
     colors                                  true|false|list (default true);
-                                            colour each stack's graph nodes.
+                                            colour each stack's graph nodes,
+                                            and its HYWC-* working copy row.
                                             true hashes the stack name; a
                                             list of `int 0-255 | \"#rrggbb\"`
-                                            is indexed by the stack's
-                                            position in the graph, top first
+                                            is indexed by the order the log
+                                            first names each stack
 
   [hydra.prefixes]                          string (each); how this repo
                                             names its hydra bookmarks

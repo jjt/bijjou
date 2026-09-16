@@ -138,8 +138,9 @@ fn local_collapsed() {
 // A hydra log: `hydra.top-stack-padding` draws the separator row jj skips
 // under the log's top stack (delta here), and `hydra.colors` colours each
 // stack's nodes — the hashed default, so this also pins the name → colour
-// mapping. The bookmark naming comes from `hydra.prefixes`, so no `hydra`
-// call and no live hydra are involved.
+// mapping, and each `HYWC-*` row up top matching its own stack. The bookmark
+// naming comes from `hydra.prefixes`, so no `hydra` call and no live hydra
+// are involved.
 #[test]
 fn hydra() {
     insta::with_settings!({description => "tests/fixtures/hydra.txt: top-stack padding row plus hashed per-stack node colors."}, {
@@ -147,12 +148,13 @@ fn hydra() {
     });
 }
 
-// `hydra.colors = [...]`: the palette is indexed by the stack's position in
-// the graph, top first (delta → 1, gamma → 2, beta → 3, alpha → 4).
+// `hydra.colors = [...]`: the palette is indexed by the order the log first
+// names each stack — the working-copy rows up top here (delta → 1, gamma → 2,
+// beta → 3, alpha → 4), and each stack matches its own working copy.
 #[test]
 fn hydra_palette() {
     let env = hydra_env(&[("BIJJOU__HYDRA__COLORS", "1,2,3,4")]);
-    insta::with_settings!({description => "tests/fixtures/hydra.txt: hydra.colors as an explicit palette indexed top-down."}, {
+    insta::with_settings!({description => "tests/fixtures/hydra.txt: hydra.colors as an explicit palette indexed by first sighting."}, {
         insta::assert_snapshot!("hydra_palette", render_fixture_with("hydra.txt", &env));
     });
 }

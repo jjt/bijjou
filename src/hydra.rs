@@ -46,11 +46,14 @@ impl Topology {
 pub struct Walk {
     // `None` with `hydra.enable = false`: every row passes through untouched.
     topo: Option<Topology>,
-    // Stack names in the order the log met them, top first — a stack's slot
-    // in `hydra.colors` when that is a palette.
+    // Stack names in the order the log first named them, top first — a
+    // stack's slot in `hydra.colors` when that is a palette.
     seen: Vec<String>,
     // SGR for the stack the walk is inside; empty outside any stack.
     color: Vec<u8>,
+    // SGR for a single `HYWC-*` row, which belongs to a stack without being
+    // in it: the colour applies to that row and is not carried down.
+    wc_color: Vec<u8>,
     stacks_seen: usize,
     // Reused scratch for the de-ANSI'd bookmarks field.
     scratch: Vec<u8>,
@@ -64,6 +67,7 @@ impl Walk {
                 .then(|| Topology::from_prefixes(&cfg().hydra_prefixes)),
             seen: Vec::new(),
             color: Vec::new(),
+            wc_color: Vec::new(),
             stacks_seen: 0,
             scratch: Vec::new(),
         }
@@ -95,8 +99,11 @@ impl Walk {
         let mark = mark?;
 
         match mark {
-            Mark::Outside => self.color.clear(),
-            Mark::Inside => {}
+            Mark::Outside => {
+                self.color.clear();
+                None
+            }
+            Mark::Inside => (!self.color.is_empty()).then_some(self.color.as_slice()),
             Mark::Stack(name) => {
                 if self.stacks_seen == 1 && cfg().hydra_top_stack_padding {
                     emit_padding(prefix, out);
@@ -104,9 +111,18 @@ impl Walk {
                 self.stacks_seen += 1;
                 let index = self.index_of(&name);
                 self.color = stack_color(&name, index);
+                (!self.color.is_empty()).then_some(self.color.as_slice())
+            }
+            // A working copy sits above the head, outside every stack, so it
+            // ends whichever stack the walk was in — but it is that stack's
+            // row, so it takes the stack's colour.
+            Mark::WorkingCopy(name) => {
+                self.color.clear();
+                let index = self.index_of(&name);
+                self.wc_color = stack_color(&name, index);
+                (!self.wc_color.is_empty()).then_some(self.wc_color.as_slice())
             }
         }
-        (!self.color.is_empty()).then_some(self.color.as_slice())
     }
 
     // Position in the graph, top first: the log itself is the order, so a
@@ -120,16 +136,18 @@ impl Walk {
     }
 }
 
-// Where a row sits relative to the stacks: opening one, outside every one, or
-// carrying on in whichever the walk is already in (a stack's own content
-// commits name no bookmark at all).
+// Where a row sits relative to the stacks: opening one, carrying a stack's
+// working copy, outside every one, or carrying on in whichever the walk is
+// already in (a stack's own content commits name no bookmark at all).
 enum Mark {
     Stack(String),
+    WorkingCopy(String),
     Outside,
     Inside,
 }
 
 fn mark_of(topo: &Topology, bookmarks: &[u8]) -> Mark {
+    let mut wc: Option<String> = None;
     let mut outside = false;
     for token in bookmarks.split(u8::is_ascii_whitespace) {
         // jj flags a bookmark out of sync with its remote with a trailing `*`
@@ -143,16 +161,20 @@ fn mark_of(topo: &Topology, bookmarks: &[u8]) -> Mark {
                 return Mark::Stack(String::from_utf8_lossy(name).into_owned());
             }
         }
-        if token.starts_with(topo.wc_prefix.as_bytes())
-            || topo.anchors.iter().any(|a| a.as_bytes() == token)
-        {
+        if let Some(name) = token.strip_prefix(topo.wc_prefix.as_bytes()) {
+            if !name.is_empty() {
+                wc = Some(String::from_utf8_lossy(name).into_owned());
+                continue;
+            }
+        }
+        if topo.anchors.iter().any(|a| a.as_bytes() == token) {
             outside = true;
         }
     }
-    if outside {
-        Mark::Outside
-    } else {
-        Mark::Inside
+    match (wc, outside) {
+        (Some(name), _) => Mark::WorkingCopy(name),
+        (None, true) => Mark::Outside,
+        (None, false) => Mark::Inside,
     }
 }
 
@@ -258,11 +280,16 @@ mod tests {
     }
 
     #[test]
-    fn anchors_and_working_copies_are_outside_every_stack() {
+    fn anchors_are_outside_every_stack() {
         assert!(matches!(mark("HYB main"), Mark::Outside));
         assert!(matches!(mark("HYH"), Mark::Outside));
         assert!(matches!(mark("HYCR"), Mark::Outside));
-        assert!(matches!(mark("HYWC-delta"), Mark::Outside));
+    }
+
+    #[test]
+    fn working_copies_name_their_stack() {
+        assert!(matches!(mark("HYWC-delta"), Mark::WorkingCopy(n) if n == "delta"));
+        assert!(matches!(mark("HYWC-delta*"), Mark::WorkingCopy(n) if n == "delta"));
     }
 
     #[test]
@@ -279,15 +306,43 @@ mod tests {
         assert!(matches!(mark("HYWC-delta@origin"), Mark::Inside));
     }
 
-    #[test]
-    fn palette_index_follows_log_order_then_first_sight() {
-        let mut walk = Walk {
+    fn walk() -> Walk {
+        Walk {
             topo: Some(topo()),
             seen: Vec::new(),
             color: Vec::new(),
+            wc_color: Vec::new(),
             stacks_seen: 0,
             scratch: Vec::new(),
-        };
+        }
+    }
+
+    // One commit row with `bookmarks` set, under the default config (hashed
+    // colours) and an empty graph prefix, so no padding row is in play.
+    fn row(walk: &mut Walk, bookmarks: &str) -> Option<Vec<u8>> {
+        let mut fields = HashMap::new();
+        fields.insert(BOOKMARKS_FIELD.to_string(), bookmarks.as_bytes().to_vec());
+        let mut out = Vec::new();
+        walk.node_color(&fields, b"", &mut out).map(<[u8]>::to_vec)
+    }
+
+    #[test]
+    fn a_working_copy_takes_its_stack_colour_without_carrying_it() {
+        let mut walk = walk();
+        let wc = row(&mut walk, "HYWC-delta").expect("working copy is coloured");
+        // The head sits between the working copies and the stacks: uncoloured,
+        // and it carries nothing down from the working copy above it.
+        assert_eq!(row(&mut walk, "HYH"), None);
+        assert_eq!(row(&mut walk, ""), None);
+        // The stack itself, and its content commits, match its working copy.
+        let marker = row(&mut walk, "HYS-delta").expect("stack marker is coloured");
+        assert_eq!(marker, wc);
+        assert_eq!(row(&mut walk, ""), Some(marker));
+    }
+
+    #[test]
+    fn palette_index_follows_log_order_then_first_sight() {
+        let mut walk = walk();
         assert_eq!(walk.index_of("delta"), 0);
         assert_eq!(walk.index_of("gamma"), 1);
         // Later sightings append, stably.

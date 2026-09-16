@@ -167,16 +167,18 @@
 #   true   — hash the stack's name into a colour (stable across runs, and a
 #            stack keeps its colour as the log reorders).
 #   false  — leave every node exactly as jj drew it.
-#   list   — an explicit palette, indexed by the stack's position in the
-#            graph: the topmost stack takes the first entry, the next one
-#            down the second, wrapping when there are more stacks than
-#            colours. Entries are `int 0-255 | "#rrggbb"`, same as
-#            `[colors]`. Over env or CLI, spell the list comma-separated:
+#   list   — an explicit palette, indexed by the order the log first names
+#            each stack: the first stack named takes the first entry, the
+#            next one the second, wrapping when there are more stacks than
+#            colours. Working-copy rows sit above the stacks, so they are
+#            what sets that order. Entries are `int 0-255 | "#rrggbb"`, same
+#            as `[colors]`. Over env or CLI, spell the list comma-separated:
 #            `--hydra__colors=1,2,"#aabbcc"`.
 #
-# Only a stack's own nodes are coloured. The anchors (`HYB` / `HYH` /
-# `HYCR`), the `HYWC-*` working copies and anything outside the hydra keep
-# jj's colours.
+# A stack's `HYWC-<name>` working copy takes the same colour as the stack,
+# so the two read as one thing even though the working copy sits outside the
+# stack. The anchors (`HYB` / `HYH` / `HYCR`) and anything outside the hydra
+# keep jj's colours.
 #
 # Default: true
 #

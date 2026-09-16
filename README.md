@@ -126,7 +126,9 @@ in.
   straight into its neighbour.
 - `hydra.colors` colours each stack's graph nodes: `true` hashes the stack
   name into a colour, `false` leaves jj's nodes alone, and a list is a palette
-  indexed by the stack's position in the graph (topmost first, wrapping).
+  indexed by the order the log first names each stack (wrapping). A stack's
+  `HYWC-<name>` working copy takes its stack's colour too, so the two read as
+  one thing.
 
 ```shell
 ❯ jj log -T log_oneline | bijjou --graph__collapse=true
