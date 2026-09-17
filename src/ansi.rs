@@ -67,24 +67,24 @@ pub fn strip_sgr(bytes: &[u8]) -> Vec<u8> {
     out
 }
 
+// The parameter bytes of an SGR sequence (`CSI ... m`); `None` for every
+// other CSI sequence, whose params are nobody's to read.
+pub fn sgr_params(seq: &[u8]) -> Option<&str> {
+    match seq {
+        [0x1b, b'[', params @ .., b'm'] => Some(std::str::from_utf8(params).unwrap_or("")),
+        _ => None,
+    }
+}
+
 // Emit ANSI sequences from `bytes`, optionally filtering params.
 // `filter` returns true for params we should DROP.
 pub fn emit_filtered_ansi(bytes: &[u8], out: &mut Vec<u8>, filter: impl Fn(&str) -> bool) {
     let mut i = 0;
     while i < bytes.len() {
         if let Some(end) = skip_csi(bytes, i) {
-            if bytes[i] == 0x1b
-                && i + 1 < bytes.len()
-                && bytes[i + 1] == b'['
-                && end > 0
-                && bytes[end - 1] == b'm'
-            {
-                let params = std::str::from_utf8(&bytes[i + 2..end - 1]).unwrap_or("");
-                if !filter(params) {
-                    out.extend_from_slice(&bytes[i..end]);
-                }
-            } else {
-                out.extend_from_slice(&bytes[i..end]);
+            match sgr_params(&bytes[i..end]) {
+                Some(params) if filter(params) => {}
+                _ => out.extend_from_slice(&bytes[i..end]),
             }
             i = end;
         } else {

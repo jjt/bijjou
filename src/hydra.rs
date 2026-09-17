@@ -23,14 +23,17 @@
 // bottom stack and `HYB` — is nobody's stack and keeps jj's own colours.
 
 use std::collections::HashMap;
+use std::sync::LazyLock;
 
-use crate::ansi::{emit_filtered_ansi, is_fg_color_sgr, skip_csi, FG_RESET};
-use crate::config::{cfg, HydraColors, HydraPrefixes};
+use crate::ansi::{is_fg_color_sgr, sgr_params, skip_csi, FG_RESET};
+use crate::config::{cfg, HydraColors, HydraPrefixReplace, HydraPrefixes};
 use crate::render::{emit_dim_graph, graph_nodes_to_verticals, node_cell};
 
 pub const BOOKMARKS_FIELD: &str = "bookmarks";
 
-// The bookmark names a hydra uses here, expanded from `hydra.prefixes` once.
+// The bookmark names a hydra uses here, expanded from `hydra.prefixes` once,
+// each paired with what it reads as under `hydra.prefixes-replace`.
+#[derive(Clone)]
 struct Topology {
     // `HYS-` — the marker bookmark that opens a stack.
     stack_prefix: String,
@@ -38,16 +41,91 @@ struct Topology {
     wc_prefix: String,
     // `HYB` / `HYH` / `HYCR`.
     anchors: Vec<String>,
+    // What each of those leaders renders as, `None` where the matching
+    // `hydra.prefixes-replace` key is unset — that name passes through as jj
+    // printed it. `anchor_replace` is index-aligned with `anchors`.
+    stack_replace: Option<Vec<u8>>,
+    wc_replace: Option<Vec<u8>>,
+    anchor_replace: Vec<Option<Vec<u8>>>,
 }
 
 impl Topology {
-    fn from_prefixes(p: &HydraPrefixes) -> Topology {
+    fn from_prefixes(p: &HydraPrefixes, r: &HydraPrefixReplace) -> Topology {
         Topology {
             stack_prefix: p.stack_marker(),
             wc_prefix: p.working_copy(),
             anchors: p.anchors(),
+            stack_replace: p.stack_marker_replace(r).map(String::into_bytes),
+            wc_replace: p.working_copy_replace(r).map(String::into_bytes),
+            anchor_replace: p
+                .anchors_replace(r)
+                .into_iter()
+                .map(|v| v.map(String::into_bytes))
+                .collect(),
         }
     }
+
+    // Nothing to stand in for any name: the rewrite only has colours to do.
+    fn replaces(&self) -> bool {
+        self.stack_replace.is_some()
+            || self.wc_replace.is_some()
+            || self.anchor_replace.iter().any(Option::is_some)
+    }
+
+    // What one bookmark token renders as: the stand-in bytes plus how many
+    // bytes of the name they replace. `None` leaves the token alone — no key
+    // for its leader, or no hydra bookmark at all.
+    fn replacement_of(&self, token: &[u8]) -> Option<(&[u8], usize)> {
+        // jj's out-of-sync `*` is not part of the name, and a remote ref is
+        // not a local hydra bookmark — the same rules `mark_of` applies.
+        let name = token.strip_suffix(b"*").unwrap_or(token);
+        if name.contains(&b'@') {
+            return None;
+        }
+        for (prefix, replace) in [
+            (&self.stack_prefix, &self.stack_replace),
+            (&self.wc_prefix, &self.wc_replace),
+        ] {
+            if let Some(rest) = name.strip_prefix(prefix.as_bytes()) {
+                if !rest.is_empty() {
+                    return replace.as_deref().map(|r| (r, prefix.len()));
+                }
+            }
+        }
+        self.anchors
+            .iter()
+            .zip(&self.anchor_replace)
+            .find(|(anchor, _)| anchor.as_bytes() == name)
+            .and_then(|(anchor, replace)| replace.as_deref().map(|r| (r, anchor.len())))
+    }
+}
+
+// The topology in force for this run, built once: `hydra.prefixes` and
+// `hydra.prefixes-replace` are config, so every pass reads the same names.
+// `None` is `hydra.enable = false` — nothing is classified or renamed.
+static TOPOLOGY: LazyLock<Option<Topology>> = LazyLock::new(|| {
+    let c = cfg();
+    c.hydra_enable
+        .then(|| Topology::from_prefixes(&c.hydra_prefixes, &c.hydra_prefixes_replace))
+});
+
+// Pass 1 needs the row's `bookmarks` field at its rendered width, and
+// `hydra.prefixes-replace` changes that width, so the same substitution runs
+// there — without the colours, which cost no width. Returns false when the
+// row has no name to stand in for, leaving the caller with jj's field.
+pub fn replace_names(
+    fields: &HashMap<String, Vec<u8>>,
+    scratch: &mut Vec<u8>,
+    out: &mut Vec<u8>,
+) -> bool {
+    let Some(topo) = TOPOLOGY.as_ref().filter(|topo| topo.replaces()) else {
+        return false;
+    };
+    let raw = fields
+        .get(BOOKMARKS_FIELD)
+        .map(Vec::as_slice)
+        .unwrap_or_default();
+    rewrite_bookmarks(topo, None, scratch, raw, out)
 }
 
 // What one row's hydra classification changes about its rendering.
@@ -77,16 +155,14 @@ pub struct Walk {
     stacks_seen: usize,
     // Reused scratch for the de-ANSI'd bookmarks field.
     scratch: Vec<u8>,
-    // Reused buffer for the recoloured `bookmarks` field.
+    // Reused buffer for the rewritten `bookmarks` field.
     bookmarks: Vec<u8>,
 }
 
 impl Walk {
     pub fn start() -> Walk {
         Walk {
-            topo: cfg()
-                .hydra_enable
-                .then(|| Topology::from_prefixes(&cfg().hydra_prefixes)),
+            topo: TOPOLOGY.as_ref().cloned(),
             seen: Vec::new(),
             color: Vec::new(),
             column: None,
@@ -160,9 +236,14 @@ impl Walk {
         }
 
         let mut buf = std::mem::take(&mut self.bookmarks);
-        let recoloured = match self.topo.as_ref() {
+        let rewritten = match self.topo.as_ref() {
             Some(topo) if cfg().hydra_color_bookmarks => {
-                color_bookmarks(topo, &mut self.seen, &mut self.scratch, raw, &mut buf)
+                rewrite_bookmarks(topo, Some(&mut self.seen), &mut self.scratch, raw, &mut buf)
+            }
+            // Colours off, names still replaced: `hydra.prefixes-replace` is
+            // independent of `hydra.color-bookmarks`.
+            Some(topo) if topo.replaces() => {
+                rewrite_bookmarks(topo, None, &mut self.scratch, raw, &mut buf)
             }
             _ => false,
         };
@@ -171,7 +252,7 @@ impl Walk {
         let node = if from_wc { &self.wc_color } else { &self.color };
         Markup {
             node: (!node.is_empty()).then_some(node.as_slice()),
-            bookmarks: recoloured.then_some(self.bookmarks.as_slice()),
+            bookmarks: rewritten.then_some(self.bookmarks.as_slice()),
         }
     }
 
@@ -235,16 +316,18 @@ fn mark_of(topo: &Topology, bookmarks: &[u8]) -> Mark {
     }
 }
 
-// Rewrite the row's `bookmarks` field into `out` so every hydra bookmark on
-// it carries its stack's colour instead of jj's. Bookmarks are whitespace
+// Rewrite the row's `bookmarks` field into `out`: every hydra bookmark on it
+// carries its stack's colour instead of jj's, and reads under the stand-in
+// `hydra.prefixes-replace` gives its leader. Bookmarks are whitespace
 // separated and each comes wrapped in jj's own SGR, so a name we take over
 // has its foreground codes dropped and the stack's put in front; every other
-// bookmark on the row is copied byte-for-byte. Returns false when the row
-// names no hydra bookmark (or the colours are off), which leaves the caller
-// with jj's field untouched.
-fn color_bookmarks(
+// bookmark on the row is copied byte-for-byte. `seen` carries the palette
+// order and is `None` when only the names are being replaced — pass 1, or
+// `hydra.color-bookmarks = false`. Returns false when the row has no name to
+// take over, which leaves the caller with jj's field untouched.
+fn rewrite_bookmarks(
     topo: &Topology,
-    seen: &mut Vec<String>,
+    mut seen: Option<&mut Vec<String>>,
     scratch: &mut Vec<u8>,
     raw: &[u8],
     out: &mut Vec<u8>,
@@ -267,21 +350,62 @@ fn color_bookmarks(
         }
         scratch.clear();
         strip_ansi_into(token, scratch);
-        let color = stack_of(topo, scratch).map(|name| {
-            let index = index_of(seen, &name);
-            stack_color(&name, index)
+        let color = seen.as_deref_mut().and_then(|seen| {
+            stack_of(topo, scratch).map(|name| {
+                let index = index_of(seen, &name);
+                stack_color(&name, index)
+            })
         });
+        let replace = topo.replacement_of(scratch);
         match color {
             Some(sgr) if !sgr.is_empty() => {
                 out.extend_from_slice(&sgr);
-                emit_filtered_ansi(token, out, is_fg_color_sgr);
+                emit_token(token, true, replace, out);
                 out.extend_from_slice(FG_RESET);
+                hit = true;
+            }
+            // Nothing to recolour, but the name still reads as its stand-in,
+            // in whichever colour jj gave it.
+            _ if replace.is_some() => {
+                emit_token(token, false, replace, out);
                 hit = true;
             }
             _ => out.extend_from_slice(token),
         }
     }
     hit
+}
+
+// Copy one bookmark token into `out`. `drop_fg` drops jj's foreground SGRs,
+// leaving the caller's colour in force. `replace` is the stand-in for the
+// token's leader plus the byte count it stands in for, counted over the
+// name's own bytes — the CSI sequences jj wrapped it in are copied either
+// way, so the colour around the name survives the substitution.
+fn emit_token(token: &[u8], drop_fg: bool, replace: Option<(&[u8], usize)>, out: &mut Vec<u8>) {
+    let (stand_in, mut drop_left) = replace.unwrap_or((&[], 0));
+    let mut pending = replace.is_some();
+    let mut i = 0;
+    while i < token.len() {
+        if let Some(end) = skip_csi(token, i) {
+            let fg = sgr_params(&token[i..end]).is_some_and(is_fg_color_sgr);
+            if !(drop_fg && fg) {
+                out.extend_from_slice(&token[i..end]);
+            }
+            i = end;
+            continue;
+        }
+        if pending {
+            out.extend_from_slice(stand_in);
+            pending = false;
+        }
+        if drop_left > 0 {
+            drop_left -= 1;
+            i += 1;
+            continue;
+        }
+        out.push(token[i]);
+        i += 1;
+    }
 }
 
 // The stack a single bookmark name belongs to: both `HYS-<name>` and
@@ -396,7 +520,12 @@ mod tests {
     use super::*;
 
     fn topo() -> Topology {
-        Topology::from_prefixes(&HydraPrefixes::default())
+        Topology::from_prefixes(&HydraPrefixes::default(), &HydraPrefixReplace::default())
+    }
+
+    // The same naming with `hydra.prefixes-replace` in force.
+    fn topo_with(r: HydraPrefixReplace) -> Topology {
+        Topology::from_prefixes(&HydraPrefixes::default(), &r)
     }
 
     #[test]
@@ -409,14 +538,113 @@ mod tests {
 
     #[test]
     fn renamed_prefixes_expand_to_the_repo_names() {
-        let t = Topology::from_prefixes(&HydraPrefixes {
-            prefix: "ZZ".to_string(),
-            stack_head: "ST".to_string(),
-            ..HydraPrefixes::default()
-        });
+        let t = Topology::from_prefixes(
+            &HydraPrefixes {
+                prefix: "ZZ".to_string(),
+                stack_head: "ST".to_string(),
+                ..HydraPrefixes::default()
+            },
+            &HydraPrefixReplace::default(),
+        );
         assert_eq!(t.stack_prefix, "ZZST-");
         assert_eq!(t.wc_prefix, "ZZWC-");
         assert_eq!(t.anchors, vec!["ZZB", "ZZH", "ZZCR"]);
+    }
+
+    // The row's `bookmarks` field as it renders, names replaced and nothing
+    // recoloured; `None` is "no name to take over", which leaves the caller
+    // with jj's own field.
+    fn rewritten(topo: &Topology, bookmarks: &str) -> Option<String> {
+        let mut scratch = Vec::new();
+        let mut out = Vec::new();
+        let hit = rewrite_bookmarks(topo, None, &mut scratch, bookmarks.as_bytes(), &mut out);
+        hit.then(|| String::from_utf8(out).unwrap())
+    }
+
+    #[test]
+    fn a_per_bookmark_key_stands_in_for_the_whole_leader() {
+        let t = topo_with(HydraPrefixReplace {
+            base: Some("◆".to_string()),
+            stack_head: Some("Ψ".to_string()),
+            stack_working_copy: Some("ψ".to_string()),
+            ..HydraPrefixReplace::default()
+        });
+        // The dash belongs to the leader, so it goes with it.
+        assert_eq!(rewritten(&t, "HYS-foo").as_deref(), Some("Ψfoo"));
+        assert_eq!(rewritten(&t, "HYWC-foo").as_deref(), Some("ψfoo"));
+        // An anchor is a whole name, so the stand-in is the whole name.
+        assert_eq!(rewritten(&t, "HYB main").as_deref(), Some("◆ main"));
+        // jj's out-of-sync flag is not part of the name and rides along.
+        assert_eq!(rewritten(&t, "HYS-foo*").as_deref(), Some("Ψfoo*"));
+        // A key left unset leaves the bookmarks it names alone.
+        assert_eq!(rewritten(&t, "HYH"), None);
+        assert_eq!(rewritten(&t, "HYCR"), None);
+    }
+
+    #[test]
+    fn prefix_alone_stands_in_for_the_shared_leader() {
+        let t = topo_with(HydraPrefixReplace {
+            prefix: Some("⋔".to_string()),
+            ..HydraPrefixReplace::default()
+        });
+        assert_eq!(rewritten(&t, "HYS-foo").as_deref(), Some("⋔S-foo"));
+        assert_eq!(rewritten(&t, "HYWC-foo").as_deref(), Some("⋔WC-foo"));
+        assert_eq!(rewritten(&t, "HYB").as_deref(), Some("⋔B"));
+        assert_eq!(rewritten(&t, "HYH").as_deref(), Some("⋔H"));
+        assert_eq!(rewritten(&t, "HYCR").as_deref(), Some("⋔CR"));
+    }
+
+    #[test]
+    fn a_per_bookmark_key_wins_over_prefix() {
+        let t = topo_with(HydraPrefixReplace {
+            prefix: Some("⋔".to_string()),
+            stack_head: Some("Ψ".to_string()),
+            ..HydraPrefixReplace::default()
+        });
+        assert_eq!(rewritten(&t, "HYS-foo").as_deref(), Some("Ψfoo"));
+        assert_eq!(rewritten(&t, "HYWC-foo").as_deref(), Some("⋔WC-foo"));
+    }
+
+    #[test]
+    fn only_this_repos_hydra_bookmarks_are_replaced() {
+        let t = topo_with(HydraPrefixReplace {
+            prefix: Some("⋔".to_string()),
+            ..HydraPrefixReplace::default()
+        });
+        assert_eq!(rewritten(&t, "main jjt/foo"), None);
+        // A marker that only exists on a remote is not a local bookmark.
+        assert_eq!(rewritten(&t, "HYS-foo@origin"), None);
+        // A bare leader names no stack.
+        assert_eq!(rewritten(&t, "HYS-"), None);
+        // Neighbours on the row pass through beside the replaced name.
+        assert_eq!(
+            rewritten(&t, "main HYS-foo v1").as_deref(),
+            Some("main ⋔S-foo v1")
+        );
+    }
+
+    #[test]
+    fn a_replaced_name_still_takes_its_stack_colour() {
+        let t = topo_with(HydraPrefixReplace {
+            stack_head: Some("Ψ".to_string()),
+            ..HydraPrefixReplace::default()
+        });
+        let mut seen = Vec::new();
+        let mut scratch = Vec::new();
+        let mut out = Vec::new();
+        let hit = rewrite_bookmarks(
+            &t,
+            Some(&mut seen),
+            &mut scratch,
+            b"\x1b[38;5;5mHYS-foo\x1b[39m",
+            &mut out,
+        );
+        assert!(hit);
+        // jj's foreground drops out, the stack's colour leads the stand-in.
+        let mut want = stack_color("foo", 0);
+        want.extend_from_slice("Ψfoo".as_bytes());
+        want.extend_from_slice(FG_RESET);
+        assert_eq!(out, want);
     }
 
     fn mark(bookmarks: &str) -> Mark {

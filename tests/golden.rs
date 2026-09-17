@@ -76,12 +76,18 @@ fn visualize(bytes: &[u8]) -> String {
 // regardless of whether the test runner is a TTY. `env` adds further
 // BIJJOU__ overrides.
 fn render_fixture_with(fixture: &str, env: &[(&str, &str)]) -> String {
+    render_fixture_under(fixture, &root_dir().join("bijjou-config.toml"), env)
+}
+
+// The same, under a config file of the test's own — a template the stock
+// config does not carry, say.
+fn render_fixture_under(fixture: &str, config: &std::path::Path, env: &[(&str, &str)]) -> String {
     let root = root_dir();
     let path = root.join("tests/fixtures").join(fixture);
     let input = std::fs::read(&path).unwrap_or_else(|_| panic!("{}", path.display()));
 
     let mut cmd = Command::cargo_bin("bijjou").expect("binary built");
-    cmd.env("BIJJOU_CONFIG", root.join("bijjou-config.toml"))
+    cmd.env("BIJJOU_CONFIG", config)
         .env("BIJJOU__UI__COLOR", "always")
         // Hydra markup is opt-in per test: without this the result would
         // depend on whether the checkout bijjou is built in happens to be a
@@ -204,6 +210,77 @@ fn hydra_plain_bookmarks() {
     // The anchors are nobody's stack, so they keep jj's colour either way.
     assert!(off.contains("\\e[38;5;5mHYH"), "{}", off);
     assert!(on.contains("\\e[38;5;5mHYH"), "{}", on);
+}
+
+// `hydra.prefixes-replace`: `stack-head` and `stack-working-copy` stand in
+// for the whole leader, dash included, so `HYS-delta` reads `Ψdelta` and
+// `HYWC-delta` reads `ψdelta`; `head` replaces the whole `HYH` name. `base`
+// and `conflict-resolution` are unset, so `HYB main` is left as jj printed
+// it. The stack colours are unchanged — the names are renamed, not
+// reclassified.
+#[test]
+fn hydra_prefixes_replace() {
+    let env = hydra_env(&[
+        ("BIJJOU__HYDRA__PREFIXES_REPLACE__STACK_HEAD", "Ψ"),
+        ("BIJJOU__HYDRA__PREFIXES_REPLACE__STACK_WORKING_COPY", "ψ"),
+        ("BIJJOU__HYDRA__PREFIXES_REPLACE__HEAD", "◆"),
+    ]);
+    insta::with_settings!({description => "tests/fixtures/hydra.txt: hydra.prefixes-replace stand-ins for the stack, working-copy and head leaders."}, {
+        insta::assert_snapshot!("hydra_prefixes_replace", render_fixture_with("hydra.txt", &env));
+    });
+}
+
+// A stand-in is not the width of the name it replaces, so pass 1 has to
+// measure the elastic-tab anchors on the replaced field. With a tab behind
+// `%{bookmarks}` and a stand-in wider than the leader, every row's tab must
+// still land in one column.
+#[test]
+fn hydra_prefixes_replace_keeps_elastic_tabs_aligned() {
+    let config =
+        std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("tab-after-bookmarks.toml");
+    std::fs::write(
+        &config,
+        "[templates]\nlog_oneline = ''' %{elastic_tab(change_id)} %{bookmarks} %{elastic_tab()}|%{description}'''\n",
+    )
+    .unwrap();
+    let env = hydra_env(&[("BIJJOU__HYDRA__PREFIXES_REPLACE__STACK_HEAD", "stack/")]);
+    let out = render_fixture_under("hydra.txt", &config, &env);
+    assert!(out.contains("stack/delta"), "{}", out);
+
+    // Rule 2 collapses a cell on the rows whose `bookmarks` is empty, so the
+    // comparison is over the rows that carry a bookmark: a replaced name and
+    // an untouched one have to land in the same column.
+    let columns: Vec<usize> = out
+        .lines()
+        .map(plain)
+        .filter(|line| line.contains("|hydra ") || line.contains("|Update A"))
+        .filter_map(|line| line.chars().position(|c| c == '|'))
+        .collect();
+    // Four working copies, the head, four stack markers and the base.
+    assert_eq!(columns.len(), 10, "{}", out);
+    assert!(
+        columns.iter().all(|col| *col == columns[0]),
+        "{:?}\n{}",
+        columns,
+        out
+    );
+}
+
+// One visualized line with its `\e[...X` sequences taken back out, so a
+// column count is a column count.
+fn plain(line: &str) -> String {
+    let mut out = String::new();
+    let mut rest = line;
+    while let Some(at) = rest.find("\\e[") {
+        out.push_str(&rest[..at]);
+        rest = &rest[at + 3..];
+        match rest.find(|c: char| ('@'..='~').contains(&c)) {
+            Some(end) => rest = &rest[end + 1..],
+            None => return out,
+        }
+    }
+    out.push_str(rest);
+    out
 }
 
 // Hydra markup on, plus `graph.collapse`, which is how the hydra logs this is

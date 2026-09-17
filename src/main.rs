@@ -127,12 +127,17 @@ pub fn classify_row(body: &[u8]) -> RowKind {
 // Anchors only grow (collect_anchors takes maxima), so calling this across
 // successive streaming batches widens monotonically and never invalidates
 // rows already emitted above.
+// `hydra.prefixes-replace` renders a bookmark's leader as something of its
+// own width, so the anchors are measured on the replaced field — the same
+// substitution pass 2 emits.
 pub fn accumulate_metrics(
     rows: &[RowKind],
     templates: &HashMap<String, CompiledTemplate>,
     metrics: &mut HashMap<String, TemplateMetrics>,
     max_graph_col: &mut usize,
 ) {
+    let mut scratch = Vec::new();
+    let mut names = Vec::new();
     for row in rows {
         if let RowKind::Commit {
             graph_col,
@@ -143,8 +148,10 @@ pub fn accumulate_metrics(
         {
             if let Some(name) = template_name.as_deref() {
                 if let Some(CompiledTemplate::Parsed(template)) = templates.get(name) {
+                    let over = hydra::replace_names(fields, &mut scratch, &mut names)
+                        .then_some((hydra::BOOKMARKS_FIELD, names.as_slice()));
                     let entry = metrics.entry(name.to_string()).or_default();
-                    collect_anchors(template, fields, &mut entry.anchors);
+                    collect_anchors(template, fields, over, &mut entry.anchors);
                 }
             }
             if *graph_col > *max_graph_col {
@@ -370,6 +377,17 @@ KEYS
                                             whole names, e.g. `HYCR`
     stack-head  stack-working-copy          defaults \"S\", \"WC\"; followed
                                             by `-<stack>`, e.g. `HYWC-foo`
+
+  [hydra.prefixes-replace]                  string (each); what those names
+                                            read as; same keys, each unset
+                                            by default, classification
+                                            unchanged
+    prefix                                  stands in for the `HY` leader
+                                            alone, e.g. `⋔S-foo`
+    base  head  conflict-resolution         stand in for the whole name,
+                                            e.g. base = \"◆\" for `HYB`
+    stack-head  stack-working-copy          stand in for the leader and its
+                                            dash, e.g. `Ψfoo` for `HYS-foo`
 
 See bijjou-config.toml for defaults and discussion.
 ";

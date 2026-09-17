@@ -226,6 +226,36 @@
 # stack-head          = "S"
 # stack-working-copy  = "WC"
 
+[hydra.prefixes-replace]
+# What those names read as once rendered, keyed exactly like
+# `[hydra.prefixes]` above. Classification is untouched: the bookmarks are
+# still matched under their real names, only printed under these.
+#
+# A key that is set stands in for the whole leader `[hydra.prefixes]` builds
+# out of it, and the stack name behind that leader is kept:
+#
+#   base = "◆"         →  `HYB` renders `◆`
+#   stack-head = "Ψ"   →  `HYS-foo` renders `Ψfoo`
+#
+# The dash belongs to the leader, so `stack-head` and `stack-working-copy`
+# take it with them. `prefix` replaces the shared `HY` leader only —
+# `prefix = "Ψ"` renders `HYS-foo` as `ΨS-foo` and `HYB` as `ΨB` — and a
+# per-bookmark key wins over it. A key left unset leaves the bookmarks it
+# names exactly as jj printed them, so replacing one leader is not replacing
+# the rest.
+#
+# A stand-in is not the width of the name it replaces; the elastic-tab
+# columns are measured on what is rendered, so they line up either way.
+#
+# Defaults: every key unset — each name renders as itself.
+#
+# prefix              = "⋔"
+# base                = "◆"
+# head                = "H"
+# conflict-resolution = "CR"
+# stack-head          = "Ψ"
+# stack-working-copy  = "ψ"
+
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of
 # `batch-size` lines. The graph-column width is tracked across the whole

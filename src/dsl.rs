@@ -139,9 +139,14 @@ pub fn visible_width(bytes: &[u8]) -> usize {
 // edge lines up. An arg-ful tab advances the column by its field's width
 // (it emits that field); an arg-less tab advances by zero (the following
 // %{field} node accounts for the width instead).
+// `over` substitutes one field's bytes for this row, the same way
+// `render_row` takes them: the anchors have to be measured on what pass 2
+// will actually emit, and hydra's `hydra.prefixes-replace` stand-ins are not
+// the width of the names they replace.
 pub fn collect_anchors(
     template: &Template,
     fields: &HashMap<String, Vec<u8>>,
+    over: Option<(&str, &[u8])>,
     anchors: &mut Vec<usize>,
 ) {
     let mut col: usize = 0;
@@ -152,8 +157,7 @@ pub fn collect_anchors(
                 col += visible_width(bytes);
             }
             Node::Field(name) => {
-                let vw = fields.get(name).map(|v| visible_width(v)).unwrap_or(0);
-                col += vw;
+                col += visible_width(field_value(fields, over, name));
             }
             Node::ElasticTab(name) => {
                 if tab_i >= anchors.len() {
@@ -162,8 +166,7 @@ pub fn collect_anchors(
                 if col > anchors[tab_i] {
                     anchors[tab_i] = col;
                 }
-                let vw = fields.get(name).map(|v| visible_width(v)).unwrap_or(0);
-                col += vw;
+                col += visible_width(field_value(fields, over, name));
                 tab_i += 1;
             }
         }
@@ -204,9 +207,9 @@ enum Seg {
 // `leading_pad` is prepended as a Ws segment so the graph→content gap
 // emitted by `emit_classified` participates in steps 2-3 alongside the
 // template's own whitespace.
-// `over` substitutes one field's bytes for this row (hydra's recoloured
-// `bookmarks`). It only swaps colour codes, so the visible width — and with
-// it the anchors collected in pass 1 — is unchanged.
+// `over` substitutes one field's bytes for this row (hydra's rewritten
+// `bookmarks`). Its visible width may differ from the field jj printed, so
+// pass 1 has to be given the same substitution — `collect_anchors` takes it.
 pub fn render_row(
     template: &Template,
     fields: &HashMap<String, Vec<u8>>,
@@ -560,8 +563,8 @@ mod tests {
         .into_iter()
         .collect();
         let mut anchors: Vec<usize> = Vec::new();
-        collect_anchors(&t, &r1, &mut anchors);
-        collect_anchors(&t, &r2, &mut anchors);
+        collect_anchors(&t, &r1, None, &mut anchors);
+        collect_anchors(&t, &r2, None, &mut anchors);
         // tab0 (change_id) at col 0; tab1 (before description) at
         // max(change_id width) + 1 literal space = 6 + 1 = 7.
         assert_eq!(anchors, vec![0, 7]);
@@ -602,8 +605,8 @@ mod tests {
         let mut anchors_a: Vec<usize> = Vec::new();
         let mut anchors_b: Vec<usize> = Vec::new();
         for r in &rows {
-            collect_anchors(&ta, r, &mut anchors_a);
-            collect_anchors(&tb, r, &mut anchors_b);
+            collect_anchors(&ta, r, None, &mut anchors_a);
+            collect_anchors(&tb, r, None, &mut anchors_b);
         }
         for r in &rows {
             let mut oa = Vec::new();

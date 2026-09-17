@@ -93,6 +93,63 @@ impl HydraPrefixes {
             .map(|suffix| format!("{}{}", self.prefix, suffix))
             .collect()
     }
+
+    // What `HYS-` reads as: the per-bookmark key if set, else the `HY`
+    // leader replaced and the rest of the marker kept, else nothing.
+    pub fn stack_marker_replace(&self, r: &HydraPrefixReplace) -> Option<String> {
+        replace_leader(&r.stack_head, &r.prefix, &format!("{}-", self.stack_head))
+    }
+
+    // What `HYWC-` reads as, under the same rule.
+    pub fn working_copy_replace(&self, r: &HydraPrefixReplace) -> Option<String> {
+        replace_leader(
+            &r.stack_working_copy,
+            &r.prefix,
+            &format!("{}-", self.stack_working_copy),
+        )
+    }
+
+    // What `HYB` / `HYH` / `HYCR` read as, in the order `anchors` returns
+    // them.
+    pub fn anchors_replace(&self, r: &HydraPrefixReplace) -> Vec<Option<String>> {
+        [
+            (&r.base, &self.base),
+            (&r.head, &self.head),
+            (&r.conflict_resolution, &self.conflict_resolution),
+        ]
+        .into_iter()
+        .map(|(whole, suffix)| replace_leader(whole, &r.prefix, suffix))
+        .collect()
+    }
+}
+
+// `hydra.prefixes-replace`: what a hydra bookmark reads as once rendered,
+// keyed the same way as `hydra.prefixes`. A set key stands in for the leader
+// `hydra.prefixes` builds out of it, and the name behind that leader is kept:
+// `base = "◆"` renders `HYB` as `◆`, `stack-head = "Ψ"` renders `HYS-foo` as
+// `Ψfoo` — the dash belongs to the leader, so it goes with it. `prefix`
+// replaces the shared `HY` leader only, so `prefix = "Ψ"` renders `HYS-foo`
+// as `ΨS-foo`; a per-bookmark key wins over it. A key left unset leaves the
+// bookmarks it names exactly as jj printed them.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct HydraPrefixReplace {
+    pub prefix: Option<String>,
+    pub base: Option<String>,
+    pub head: Option<String>,
+    pub conflict_resolution: Option<String>,
+    pub stack_head: Option<String>,
+    pub stack_working_copy: Option<String>,
+}
+
+// One bookmark's rendered leader: the whole-leader replacement if that key
+// is set, else `prefix`'s replacement with the rest of the leader kept
+// behind it, else `None` — that bookmark is left alone.
+fn replace_leader(whole: &Option<String>, prefix: &Option<String>, rest: &str) -> Option<String> {
+    match (whole, prefix) {
+        (Some(whole), _) => Some(whole.clone()),
+        (None, Some(lead)) => Some(format!("{}{}", lead, rest)),
+        (None, None) => None,
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -189,6 +246,7 @@ pub struct Config {
     pub hydra_colors: HydraColors,
     pub hydra_color_bookmarks: bool,
     pub hydra_prefixes: HydraPrefixes,
+    pub hydra_prefixes_replace: HydraPrefixReplace,
 }
 
 impl Default for Config {
@@ -231,6 +289,7 @@ impl Default for Config {
             hydra_colors: HydraColors::Hash,
             hydra_color_bookmarks: true,
             hydra_prefixes: HydraPrefixes::default(),
+            hydra_prefixes_replace: HydraPrefixReplace::default(),
         }
     }
 }
@@ -456,6 +515,24 @@ impl Config {
             "hydra.prefixes.stack-head" => self.hydra_prefixes.stack_head = value.to_string(),
             "hydra.prefixes.stack-working-copy" => {
                 self.hydra_prefixes.stack_working_copy = value.to_string();
+            }
+            "hydra.prefixes-replace.prefix" => {
+                self.hydra_prefixes_replace.prefix = Some(value.to_string());
+            }
+            "hydra.prefixes-replace.base" => {
+                self.hydra_prefixes_replace.base = Some(value.to_string());
+            }
+            "hydra.prefixes-replace.head" => {
+                self.hydra_prefixes_replace.head = Some(value.to_string());
+            }
+            "hydra.prefixes-replace.conflict-resolution" => {
+                self.hydra_prefixes_replace.conflict_resolution = Some(value.to_string());
+            }
+            "hydra.prefixes-replace.stack-head" => {
+                self.hydra_prefixes_replace.stack_head = Some(value.to_string());
+            }
+            "hydra.prefixes-replace.stack-working-copy" => {
+                self.hydra_prefixes_replace.stack_working_copy = Some(value.to_string());
             }
             "debug.force-screen-height" => {
                 let n: i64 = value
@@ -1014,6 +1091,54 @@ graph-edge = 200
         cfg.apply_cli(args(&["--hydra__prefixes__stack-working-copy=W"]))
             .unwrap();
         assert_eq!(cfg.hydra_prefixes.working_copy(), "HYW-");
+    }
+
+    #[test]
+    fn hydra_prefix_replacements_come_from_toml_and_cli() {
+        let cfg = Config::from_toml("[hydra.prefixes-replace]\nstack-head = \"Ψ\"\n").unwrap();
+        let r = &cfg.hydra_prefixes_replace;
+        // The key that was set stands in; every other bookmark is untouched.
+        assert_eq!(
+            cfg.hydra_prefixes.stack_marker_replace(r).as_deref(),
+            Some("Ψ")
+        );
+        assert_eq!(cfg.hydra_prefixes.working_copy_replace(r), None);
+        assert_eq!(
+            cfg.hydra_prefixes.anchors_replace(r),
+            vec![None, None, None]
+        );
+
+        // `prefix` replaces the shared leader only, and a per-bookmark key
+        // wins over it.
+        let cfg =
+            Config::from_toml("[hydra.prefixes-replace]\nprefix = \"⋔\"\nbase = \"◆\"\n").unwrap();
+        let r = &cfg.hydra_prefixes_replace;
+        assert_eq!(
+            cfg.hydra_prefixes.stack_marker_replace(r).as_deref(),
+            Some("⋔S-")
+        );
+        assert_eq!(
+            cfg.hydra_prefixes.working_copy_replace(r).as_deref(),
+            Some("⋔WC-")
+        );
+        assert_eq!(
+            cfg.hydra_prefixes.anchors_replace(r),
+            vec![
+                Some("◆".to_string()),
+                Some("⋔H".to_string()),
+                Some("⋔CR".to_string())
+            ]
+        );
+
+        let mut cfg = Config::default();
+        cfg.apply_cli(args(&["--hydra__prefixes-replace__stack-working-copy=ψ"]))
+            .unwrap();
+        assert_eq!(
+            cfg.hydra_prefixes
+                .working_copy_replace(&cfg.hydra_prefixes_replace)
+                .as_deref(),
+            Some("ψ")
+        );
     }
 
     #[test]

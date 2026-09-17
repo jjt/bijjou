@@ -50,7 +50,7 @@ into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
 | `render.rs`  | Parse line → `Parsed{graph_col, graph_col_collapsed, graph_end, content_start, last_is_edge, last_is_edge_collapsed}`, recognize edges (box-drawing + elision) by codepoint and nodes structurally (any non-edge glyph in the graph region, incl. custom `log_node` glyphs), emit dimmed edges, and drop inter-column pad cells under `graph.collapse`. Node bytes (and their surrounding ANSI) are forwarded unchanged — node coloring is jj's job, unless `emit_dim_graph` is handed a hydra stack colour. `graph_nodes_to_verticals` rewrites a prefix's node back into a vertical, for the hydra padding row. `node_cell` reports the cell a prefix's node sits in, which is how hydra bounds a stack to its own column. |
 | `dsl.rs`     | Templating DSL + NUL/RS-framed record parser (`parse_nul_oneline`). `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render (`collect_anchors` → `render_row`): pass 1 records each elastic-tab's max natural column (anchor), keyed by tab position; pass 2 left-pads to the anchor so the following content's left edge lines up. An arg-ful tab then emits its field inline; an arg-less tab emits nothing (`%{elastic_tab()}%{X}` == `%{elastic_tab(X)}`). Whitespace follows a 4-rule model (see below). |
 | `stream.rs`  | Batched reader (`read_batch`), two-pass per batch with monotonic widening (anchors and `graph_col` targets never shrink as new batches arrive), `OutputSink` (stdout or pager spawned via `std::process::Command`/`posix_spawn`). |
-| `hydra.rs`   | Hydra awareness. `Topology::from_prefixes` expands `hydra.prefixes` into the bookmark names in force (`HYS-`, `HYWC-`, and the `HYB` / `HYH` / `HYCR` anchors) once, at `Walk::start`. `Walk` is the per-row state: it classifies each commit row by its `bookmarks` field (stack marker / working copy / anchor / neither), carries a stack's colour down from its marker to the content commits under it in the same graph column (`render::node_cell`), so a commit drawn in another column is nobody's stack, colours a `HYWC-*` row with its stack's colour without carrying it, and draws the top-stack separator row. `Walk::markup` returns both the row's node SGR and, under `hydra.color-bookmarks`, a rewritten `bookmarks` field whose `HYS-*` / `HYWC-*` names carry their stack's colour instead of jj's (`render_row`'s field override). No subprocess, so nothing to wait on. |
+| `hydra.rs`   | Hydra awareness. `Topology::from_prefixes` expands `hydra.prefixes` into the bookmark names in force (`HYS-`, `HYWC-`, and the `HYB` / `HYH` / `HYCR` anchors) once, into the `TOPOLOGY` `LazyLock`, together with the stand-in each reads as under `hydra.prefixes-replace`. `Walk` is the per-row state: it classifies each commit row by its `bookmarks` field (stack marker / working copy / anchor / neither), carries a stack's colour down from its marker to the content commits under it in the same graph column (`render::node_cell`), so a commit drawn in another column is nobody's stack, colours a `HYWC-*` row with its stack's colour without carrying it, and draws the top-stack separator row. `Walk::markup` returns both the row's node SGR and, under `hydra.color-bookmarks` or any `hydra.prefixes-replace` key, a rewritten `bookmarks` field whose hydra names carry their stack's colour instead of jj's and read under their stand-ins (`render_row`'s field override). `replace_names` is the same substitution without the colours, for pass 1's anchors. No subprocess, so nothing to wait on. |
 | `output.rs`  | Buffered path's terminal write / pager exec (`fork` + `execvp`, replacing bijjou's process)  |
 
 ## Render flow per line
@@ -103,7 +103,9 @@ into `CompiledTemplate` (`main.rs::compile_templates`). Each commit row's
 A hydra merges linear stacks as siblings off one base, so `jj log` gives each
 stack a graph column. The bookmark naming is configurable per repo, so
 `hydra.rs` reads it from `hydra.prefixes` and expands it once into
-`Topology{stack_prefix, wc_prefix, anchors}`. A repo with no hydra carries no
+`Topology{stack_prefix, wc_prefix, anchors}` plus the stand-in each of those
+reads as under `hydra.prefixes-replace`. The topology is a `LazyLock`, so
+both render passes see the same names. A repo with no hydra carries no
 bookmark that matches, which is the same thing as no markup. Asking
 `hydra status --toml` instead would be authoritative but shells out to jj
 several times per log — more than the whole render costs.
@@ -136,12 +138,19 @@ several times per log — more than the whole render costs.
   onto real degrees by skipping the bands, so the hues stay evenly spread. A
   configured palette is passed through as written.
 - Under `hydra.color-bookmarks` (default on) the same colour is put on the
-  names themselves: the `bookmarks` field is split on whitespace, each
-  `HYS-*` / `HYWC-*` token has jj's foreground SGRs dropped and the stack's
-  put in front, and the rewritten field reaches `render_row` as a per-row
-  field override. Recolouring changes no visible width, so the anchors
-  collected in pass 1 stay valid. Every other bookmark on the row passes
-  through byte-for-byte.
+  names themselves, and under `hydra.prefixes-replace` the names are printed
+  under their stand-ins: `rewrite_bookmarks` splits the `bookmarks` field on
+  whitespace, and for each `HYS-*` / `HYWC-*` / anchor token `emit_token`
+  drops jj's foreground SGRs (colours only), puts the stack's colour in
+  front, and substitutes the token's leader for its stand-in. The rewritten
+  field reaches `render_row` as a per-row field override. Every other
+  bookmark on the row passes through byte-for-byte.
+- A stand-in is not the width of the name it replaces, so pass 1 has to
+  measure the anchors on the rewritten field too: `accumulate_metrics` calls
+  `hydra::replace_names` — the same substitution, colourless, which needs no
+  walk state — and hands it to `collect_anchors` as the same kind of
+  override. Recolouring alone changes no width, which is why
+  `hydra.color-bookmarks` needs nothing in pass 1.
 - Opening the *second* stack draws the separator row jj skipped under the
   first: `graph_nodes_to_verticals` on that row's own graph prefix, back
   through `emit_dim_graph`, so every column lands where it does above and
@@ -218,7 +227,9 @@ Keys: top-level (`activate`, `pager`), `[ui].color`,
 (`dash-filler`, `graph-edge`), `[hydra]` (`enable`,
 `top-stack-padding`, `color-bookmarks`, `colors` = `true` | `false` |
 comma/TOML list of `int 0-255 | "#rrggbb"`), `[hydra.prefixes]` (`prefix`, `base`, `head`,
-`conflict-resolution`, `stack-head`, `stack-working-copy`), plus the hidden
+`conflict-resolution`, `stack-head`, `stack-working-copy`),
+`[hydra.prefixes-replace]` (the same keys, each optional, each the rendered
+stand-in for that name's leader), plus the hidden
 `debug.force-screen-height`. Full ref: `bijjou-config.toml`.
 
 ## Output

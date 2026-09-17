@@ -136,6 +136,15 @@ stack and keeps jj's own colours.
 - `hydra.color-bookmarks` puts that colour on the bookmark names themselves,
   so `HYS-<name>` and `HYWC-<name>` read in their column's colour instead of
   jj's. Other bookmarks on the row, and the anchors, keep jj's colours.
+- `[hydra.prefixes-replace]` renames those bookmarks in the output, keyed like
+  `[hydra.prefixes]`: a set key stands in for the whole leader built out of it
+  and keeps the stack name, so `base = "◆"` renders `HYB` as `◆` and
+  `stack-head = "Ψ"` renders `HYS-foo` as `Ψfoo` (the dash goes with the
+  leader). `prefix` replaces the shared `HY` leader alone, so `HYS-foo` reads
+  `ΨS-foo`; a per-bookmark key wins over it. A key left unset leaves the
+  bookmarks it names as jj printed them. Classification still runs on the real
+  names, and the elastic-tab columns are measured on the rendered width, so a
+  stand-in of any width stays aligned.
 
 ```shell
 ❯ jj log -T log_oneline | bijjou --graph__collapse=true
