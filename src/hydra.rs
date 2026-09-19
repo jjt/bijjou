@@ -480,8 +480,25 @@ fn hash_color(name: &str) -> Vec<u8> {
         h ^= b as u64;
         h = h.wrapping_mul(0x0000_0100_0000_01b3);
     }
-    let (r, g, b) = hsl_to_rgb(hue_of((h % HUE_SPACE) as u32), 0.68, 0.62);
+    let hue = hue_of((h % HUE_SPACE) as u32);
+    let (r, g, b) = hsl_to_rgb(hue, 0.68, stack_lightness(hue));
     format!("\x1b[38;2;{};{};{}m", r, g, b).into_bytes()
+}
+
+// Blues around 241° read dark against the terminal. Lift the lightness on a
+// linear ramp inside a 20° band either side of 241°: 0.62 at the band edges,
+// up to 0.70 at 241° itself. Outside the band the fixed 0.62 stands.
+fn stack_lightness(hue: u32) -> f64 {
+    const PEAK_HUE: f64 = 241.0;
+    const BAND: f64 = 20.0;
+    const BASE: f64 = 0.62;
+    const PEAK: f64 = 0.70;
+    let distance = (hue as f64 - PEAK_HUE).abs();
+    if distance >= BAND {
+        BASE
+    } else {
+        BASE + (PEAK - BASE) * (BAND - distance) / BAND
+    }
 }
 
 fn hsl_to_rgb(hue: u32, sat: f64, light: f64) -> (u8, u8, u8) {
