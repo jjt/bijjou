@@ -14,7 +14,7 @@ pub fn run() -> io::Result<()> {
     let c = cfg();
     let (first_size, rest_size) = resolve_batch_sizes(&c.stream_batch_size);
     let mut sink = OutputSink::open();
-    // Bookmark naming comes from `hydra.prefixes`; no lookup to overlap.
+    // The bookmark naming comes from `hydra.prefixes`. No lookup can overlap.
     let mut hy = hydra::Walk::start();
     let mut reader = BufReader::new(io::stdin().lock());
     let templates = compile_templates(&c.templates)
@@ -162,8 +162,8 @@ fn process_batch(
         .map(|l| classify_row(strip_trailing_nl(l).0))
         .collect();
 
-    // Monotonic widen: anchors only grow across batches so
-    // already-emitted rows above remain valid (column targets never shrink).
+    // Monotonic widen: anchors only grow across batches. As a result, the rows
+    // already emitted above stay valid because column targets never shrink.
     accumulate_metrics(&rows, templates, metrics, max_graph_col);
 
     let mut out: Vec<u8> = Vec::with_capacity(batch.iter().map(|l| l.len() + 16).sum());

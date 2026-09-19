@@ -15,8 +15,8 @@ pub fn write_output(buf: &[u8]) -> io::Result<()> {
     sink.close()
 }
 
-// Output destination: either stdout or a spawned pager child. Shared by the
-// buffered path (`write_output`) and the streaming path (`stream.rs`).
+// Output destination: either stdout or a spawned pager child. The buffered
+// path (`write_output`) and the streaming path (`stream.rs`) share it.
 pub enum OutputSink {
     Stdout(io::Stdout),
     Child {
@@ -26,9 +26,10 @@ pub enum OutputSink {
 }
 
 impl OutputSink {
-    // Spawn a pager when configured + a usable PAGER is set, else write to
-    // stdout. Auto only pages on a TTY; Always pages whenever PAGER is set;
-    // Never never pages. A failed spawn falls back to stdout.
+    // If bijjou is configured and PAGER holds a usable value, spawn a pager.
+    // If not, write to stdout. The Auto mode pages only on a TTY. The Always
+    // mode pages when PAGER is set. The Never mode does not page. A failed
+    // spawn falls back to stdout.
     pub fn open() -> Self {
         let is_tty = io::stdout().is_terminal();
         let pager_var = std::env::var("PAGER").ok().filter(|s| !s.trim().is_empty());
@@ -87,10 +88,10 @@ impl OutputSink {
     }
 }
 
-// Use std::process::Command (which calls posix_spawn on macOS) rather than
-// a manual fork+exec. Calling fork() after the Rust runtime initializes the
-// macOS frameworks/libdispatch can race the dispatch workqueue and get the
-// process killed (SIGKILL) on Apple Silicon.
+// Use std::process::Command, which calls posix_spawn on macOS. Do not use a
+// manual fork+exec. On Apple Silicon, a fork() call after the Rust runtime
+// initializes the macOS frameworks and libdispatch can race the dispatch
+// workqueue. As a result, the system kills the process with SIGKILL.
 fn spawn_pager(cmd_line: &str) -> Option<OutputSink> {
     use std::process::{Command, Stdio};
 

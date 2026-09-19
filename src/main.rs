@@ -30,24 +30,24 @@ pub enum RowKind {
         graph_end: usize,
         value: Vec<u8>,
     },
-    // Carries the graph boundary already located by `classify_row` (None when
-    // the line has no graph prefix at all) so `emit_classified` need not
-    // re-run `find_boundary`.
+    // Carries the graph boundary that `classify_row` already located. The value
+    // is None when the line has no graph prefix. As a result, `emit_classified`
+    // does not need to re-run `find_boundary`.
     Passthrough {
         parsed: Option<Parsed>,
     },
 }
 
 // A `templates.<name>` entry compiled at startup. `Empty` carries no template
-// body — the row's content is dropped, only the graph prefix is emitted.
+// body. bijjou drops the row content and emits only the graph prefix.
 pub enum CompiledTemplate {
     Empty,
     Parsed(Template),
 }
 
-// Per-template alignment state. `anchors[i]` is the row-wide max natural
-// column before the i-th elastic_tab in the template (tabs keyed by
-// left-to-right order). Grows monotonically as rows are scanned.
+// Per-template alignment state. `anchors[i]` is the row-wide maximum natural
+// column before the i-th elastic_tab in the template. The left-to-right order
+// keys the tabs. The anchors grow monotonically as bijjou scans the rows.
 #[derive(Default)]
 pub struct TemplateMetrics {
     pub anchors: Vec<usize>,
@@ -122,14 +122,14 @@ pub fn classify_row(body: &[u8]) -> RowKind {
     }
 }
 
-// Pass-1 accumulation shared by the buffered and streaming paths: fold every
-// commit row's elastic-tab anchors into `metrics` and widen `max_graph_col`.
-// Anchors only grow (collect_anchors takes maxima), so calling this across
-// successive streaming batches widens monotonically and never invalidates
-// rows already emitted above.
-// `hydra.prefixes-replace` renders a bookmark's leader as something of its
-// own width, so the anchors are measured on the replaced field — the same
-// substitution pass 2 emits.
+// The buffered and streaming paths share this pass-1 accumulation. It folds
+// every commit row elastic-tab anchors into `metrics` and widens
+// `max_graph_col`. Anchors only grow because collect_anchors takes maxima.
+// As a result, a call across successive streaming batches widens monotonically.
+// It never invalidates the rows already emitted above.
+// `hydra.prefixes-replace` renders a bookmark leader with its own width. As a
+// result, bijjou measures the anchors on the replaced field. Pass 2 emits the
+// same substitution.
 pub fn accumulate_metrics(
     rows: &[RowKind],
     templates: &HashMap<String, CompiledTemplate>,
@@ -241,9 +241,9 @@ pub fn emit_classified(
     }
 }
 
-// Render a single-row notice for a row whose `bijjou_template_name` doesn't
-// match any configured `templates.<name>`. The message is wrapped in the
-// dim SGR pair so it renders in bright black, matching the graph filler.
+// Render a single-row notice for a row whose `bijjou_template_name` does not
+// match any configured `templates.<name>`. The dim SGR pair wraps the message,
+// so it renders in bright black to match the graph filler.
 fn emit_missing_template(name: &str, leading_pad: usize, leading_left: LeftSide, out: &mut Vec<u8>) {
     let c = cfg();
     let mut bytes = Vec::with_capacity(c.dim_on.len() + 32 + name.len() + FG_RESET.len());
@@ -269,8 +269,8 @@ fn emit_missing_template(name: &str, leading_pad: usize, leading_left: LeftSide,
 }
 
 // A shared, allocation-free empty metrics table for the no-recorded-anchors
-// path (a template whose only row is the one being rendered now, or the
-// synthetic missing-template notice).
+// path. This path handles a template whose only row is the one bijjou renders
+// now, or the synthetic missing-template notice.
 fn empty_metrics() -> &'static TemplateMetrics {
     static EMPTY: OnceLock<TemplateMetrics> = OnceLock::new();
     EMPTY.get_or_init(TemplateMetrics::default)
@@ -298,22 +298,23 @@ CONFIGURATION
     $HOME/.config/bijjou/config.toml
 
   Env vars: prefix BIJJOU__, replace '.' with '__' and '-' with '_'.
-    Uppercase is the canonical form; lowercase is also accepted.
-    e.g. graph.edges.chars.horizontal -> BIJJOU__GRAPH__EDGES__CHARS__HORIZONTAL=X
-         layout.dash-start            -> BIJJOU__LAYOUT__DASH_START=<
-         activate                     -> BIJJOU__ACTIVATE=auto
+    Uppercase is canonical. Lowercase is also accepted. For example:
+      graph.edges.chars.horizontal -> BIJJOU__GRAPH__EDGES__CHARS__HORIZONTAL=X
+      layout.dash-start            -> BIJJOU__LAYOUT__DASH_START=<
+      activate                     -> BIJJOU__ACTIVATE=auto
 
   CLI flags: --<key>=<value>, replace '.' with '__' (hyphens are kept as-is).
-    e.g. graph.edges.chars.horizontal -> --graph__edges__chars__horizontal=X
-         layout.dash-start            -> --layout__dash-start=<
-         templates.log_oneline        -> --templates__log_oneline='...'
+    For example:
+      graph.edges.chars.horizontal -> --graph__edges__chars__horizontal=X
+      layout.dash-start            -> --layout__dash-start=<
+      templates.log_oneline        -> --templates__log_oneline='...'
 
-  Streaming mode flushes output in batches as input arrives. The first batch
-  is pre-scanned so every line in it shares the batch-wide max graph_col.
-  Subsequent batches widen monotonically per-line as wider rows arrive, and
-  alignment never shifts backwards. In streaming `auto` activation mode the
-  scan for the `bijjou_template_name` field is limited to the first batch;
-  if it isn't there, the rest of stdin is passed through verbatim.
+  Streaming mode flushes output in batches as input arrives. bijjou pre-scans
+  the first batch, so every line in it shares the batch-wide max graph_col.
+  Later batches widen monotonically per line as wider rows arrive. Alignment
+  never shifts backwards. In streaming `auto` activation mode, bijjou limits
+  the scan for the `bijjou_template_name` field to the first batch. If the
+  field is not there, the rest of stdin passes through verbatim.
 
 KEYS
   activate                                  auto|always|never
@@ -360,7 +361,7 @@ KEYS
                                             separator row jj skips under the
                                             log's top stack
     colors                                  true|false|list (default true);
-                                            colour each stack's graph nodes,
+                                            color each stack's graph nodes,
                                             and its HYWC-* working copy row.
                                             true hashes the stack name; a
                                             list of `int 0-255 | \"#rrggbb\"`
@@ -368,7 +369,7 @@ KEYS
                                             first names each stack
     color-bookmarks                         bool (default true); print the
                                             HYS-* and HYWC-* bookmark names
-                                            in their stack's colour too
+                                            in their stack's color too
 
   [hydra.prefixes]                          string (each); how this repo
                                             names its hydra bookmarks
