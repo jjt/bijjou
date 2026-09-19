@@ -2,4 +2,4 @@
 #MISE description="Build release binary"
 #MISE alias="b"
 set -euo pipefail
-cargo build --release "$@"
+go build -o bin/bijjou "$@" .

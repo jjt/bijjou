@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-#MISE description="Run insta golden snapshot tests"
-set -euo pipefail
-# Use `cargo insta test` so that a follow-up `cargo insta review` works.
-if command -v cargo-insta >/dev/null 2>&1; then
-  exec cargo insta test --test golden "$@"
-fi
-exec cargo test --test golden "$@"

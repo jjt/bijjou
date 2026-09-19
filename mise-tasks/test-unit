@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-#MISE description="Run unit tests in src/main.rs"
+#MISE description="Run unit tests in the internal packages"
 set -euo pipefail
-cargo test --bin bijjou "$@"
+go test ./internal/... "$@"

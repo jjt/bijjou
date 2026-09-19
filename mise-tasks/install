@@ -4,5 +4,5 @@
 set -euo pipefail
 dest="${1:-${BIJJOU_INSTALL_PATH:-$HOME/.local/bin/bijjou}}"
 mkdir -p "$(dirname "$dest")"
-install -m 755 target/release/bijjou "$dest"
+install -m 755 bin/bijjou "$dest"
 echo "Installed to $dest"
