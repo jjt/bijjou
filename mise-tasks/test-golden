@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Run the golden output tests (pass -update to accept new output)"
+set -euo pipefail
+go test . -run TestGolden "$@"

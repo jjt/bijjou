@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Run unit tests in the internal packages"
+set -euo pipefail
+go test ./internal/... "$@"

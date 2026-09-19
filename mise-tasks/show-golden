@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#MISE description="Print golden files with escape codes rendered as ANSI"
+#MISE alias="sg"
+# Usage:
+#   mise run show-golden                # all goldens
+#   mise run show-golden merge_graph    # one by short name
+#   mise run show-golden testdata/golden/merge_graph.txt   # full path
+set -euo pipefail
+
+render() {
+  perl -pe 's/\\e/\e/g; s/\\x([0-9a-f]{2})/chr hex $1/ge' "$1"
+}
+
+if [ $# -eq 0 ]; then
+  for f in testdata/golden/*.txt; do
+    printf '\e[1m=== %s ===\e[0m\n' "$f"
+    render "$f"
+    printf '\n'
+  done
+  exit 0
+fi
+
+for arg in "$@"; do
+  if [ -f "$arg" ]; then
+    f="$arg"
+  elif [ -f "testdata/golden/${arg}.txt" ]; then
+    f="testdata/golden/${arg}.txt"
+  else
+    echo "golden not found: $arg" >&2
+    exit 1
+  fi
+  printf '\e[1m=== %s ===\e[0m\n' "$f"
+  render "$f"
+  printf '\n'
+done
