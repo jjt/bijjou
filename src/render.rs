@@ -16,9 +16,10 @@ pub fn contains_bytes(haystack: &[u8], needle: &[u8]) -> bool {
     haystack.windows(needle.len()).any(|w| w == needle)
 }
 
-// Render one input line into `out`. Graph prefix is rewritten edge-by-edge
-// (dim color + glyph swap); everything past the graph prefix is copied
-// byte-for-byte. Lines with no graph prefix pass through verbatim.
+// Render one input line into `out`. The graph prefix is rewritten
+// edge-by-edge (dim color plus glyph swap). Every byte past the graph
+// prefix is copied byte-for-byte. A line with no graph prefix passes
+// through verbatim.
 pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, out: &mut Vec<u8>) {
     let (body, trailing_nl) = strip_trailing_nl(line);
     let collapse = cfg().graph_collapse;
@@ -27,9 +28,10 @@ pub fn emit_line(line: &[u8], parsed: Option<&Parsed>, out: &mut Vec<u8>) {
             emit_dim_graph(&body[..p.graph_end], collapse, None, out);
             out.extend_from_slice(&body[p.graph_end..]);
         }
-        // No boundary: this is either a pure connector row (`├─╯`, `│`, `~`)
-        // or prose that merely contains a box-drawing char. Only the former
-        // may collapse — dropping every second cell of prose shreds it.
+        // No boundary: this is a pure connector row (`├─╯`, `│`, `~`) or
+        // prose that contains a box-drawing char. Only the connector row can
+        // collapse. Collapse of prose shreds it by the loss of every second
+        // cell.
         None if has_graph_char(body) => {
             emit_dim_graph(body, collapse && is_graph_only(body), None, out);
         }
@@ -56,23 +58,25 @@ pub struct Parsed {
 }
 
 // Graph edges are box-drawing glyphs plus the elision `~`. This set is fixed
-// and jj-stable, so unlike nodes it can be recognized by codepoint.
+// and stable in jj. Unlike nodes, bijjou can recognize an edge by its
+// codepoint.
 fn is_edge_char(cp: u32) -> bool {
     matches!(cp, 0x2500..=0x257F | ELISION_CP)
 }
 
-// jj draws the graph in fixed two-cell columns: the glyph in the even cell,
-// the inter-column gap in the odd one. That gap holds a space, or a
-// horizontal when a connector runs through it. `graph.collapse` drops exactly
-// those cells, so column N lands at cell N instead of cell 2N.
+// jj draws the graph in fixed two-cell columns. The glyph sits in the even
+// cell. The gap between columns sits in the odd cell. That gap holds a
+// space, or a horizontal when a connector runs through it. `graph.collapse`
+// drops exactly those cells, so column N lands at cell N instead of cell 2N.
 //
-// Parity is what makes this safe. A bare "drop every horizontal and space"
-// rule also deletes glyph cells: `├───╯` spans three columns and two of its
-// glyphs are horizontals, and an inactive column is two spaces of which one
-// is a glyph cell — losing either slides the rest of the row out of its
-// column and off the verticals above and below it. The character check on top
-// of parity is defensive: an odd cell holding anything else (corner, tee,
-// node) is kept, costing one cell of width rather than losing a glyph.
+// Parity makes this safe. A bare "drop every horizontal and space" rule
+// also deletes glyph cells. `├───╯` spans three columns, and two of its
+// glyphs are horizontals. An inactive column is two spaces, and one of them
+// is a glyph cell. The loss of either cell slides the rest of the row out of
+// its column and off the verticals above and below it. The character check
+// on top of parity is defensive. An odd cell that holds anything else (a
+// corner, tee, or node) is kept. This costs one cell of width instead of the
+// loss of a glyph.
 fn is_horizontal_char(cp: u32) -> bool {
     matches!(cp, 0x2500 | 0x2504 | 0x2508) // ─ ┄ ┈
 }
@@ -83,14 +87,14 @@ fn is_pad_cell(cell: usize, cp: u32) -> bool {
 
 // A graph "node" is the commit marker jj draws at the rightmost graph column
 // (`@ ○ ● ◆ ×`, or any glyph a custom `log_node` template emits — □, Nerd
-// Font PUA, etc.). bijjou does NOT enumerate node glyphs: a node is any
-// non-edge, non-space glyph in the graph region, recognized structurally by
-// being followed (after any CSI) by a space or an edge. jj pads every graph
-// column, so a node is always followed by its column gap (a space) or, on a
-// merge tip, an edge; real content is always preceded by the gap, so its
-// first glyph is never in this position (that's what keeps plain text from
-// being misread as a graph row). The node glyph is forwarded unchanged — jj's
-// template owns the glyph and its color.
+// Font PUA, and more). bijjou does NOT enumerate node glyphs. A node is any
+// non-edge, non-space glyph in the graph region. bijjou recognizes it
+// structurally: a space or an edge follows it, after any CSI. jj pads every
+// graph column, so a space (the column gap) always follows a node. On a
+// merge tip an edge follows it instead. The gap always precedes real
+// content, so the first glyph of content is never in this position. This
+// keeps bijjou from a misread of plain text as a graph row. The node glyph
+// is forwarded unchanged. jj's template owns the glyph and its color.
 fn is_node_at(line: &[u8], pos: usize, cp: u32, len: usize) -> bool {
     if cp == b' ' as u32 || is_edge_char(cp) {
         return false;
@@ -168,7 +172,7 @@ pub fn find_boundary(line: &[u8]) -> Option<Parsed> {
             if is_edge_char(cp) || is_node_at(line, k, cp, len) {
                 i = k;
                 // Odd cells in the run are column pads and vanish under
-                // collapse; even ones are an inactive column's own cell.
+                // collapse. Even cells are an inactive column's own cell.
                 kept_col += (vis_col..vis_col + space_count)
                     .filter(|&cell| !is_pad_cell(cell, b' ' as u32))
                     .count();
@@ -222,10 +226,11 @@ pub fn has_graph_char(body: &[u8]) -> bool {
     false
 }
 
-// True when every visible cell is a graph edge or a space: the connector rows
-// jj draws between commits (`├─╯`, `│`, `~`). Nodes never appear here — a row
-// with a node carries content, so it has a boundary. Text containing a stray
-// box-drawing char fails this, which is what keeps collapse off prose.
+// True when every visible cell is a graph edge or a space. These are the
+// connector rows jj draws between commits (`├─╯`, `│`, `~`). Nodes never
+// appear here. A row with a node carries content, so it has a boundary. Text
+// with a stray box-drawing char fails this test. This keeps collapse off
+// prose.
 pub fn is_graph_only(body: &[u8]) -> bool {
     let mut i = 0;
     while i < body.len() {
@@ -243,13 +248,13 @@ pub fn is_graph_only(body: &[u8]) -> bool {
 }
 
 // jj's own vertical. `emit_dim_graph` maps it to
-// `graph.edges.chars.vertical` like any other edge, so a row synthesized
-// from it dims and collapses exactly like the rows around it.
+// `graph.edges.chars.vertical` like any other edge. A row synthesized from
+// it dims and collapses exactly like the rows around it.
 const JJ_VERTICAL: &[u8] = "│".as_bytes();
 
-// A graph prefix with its node turned back into a vertical: the connector row
-// jj would have drawn had the branch closed there. ANSI is dropped — the
-// result goes straight back through `emit_dim_graph`, which colours edges
+// A graph prefix with its node turned back into a vertical. This is the
+// connector row jj draws when a branch closes there. ANSI is dropped. The
+// result goes straight back through `emit_dim_graph`, which colors the edges
 // itself.
 pub fn graph_nodes_to_verticals(prefix: &[u8]) -> Vec<u8> {
     let mut out = Vec::with_capacity(prefix.len());
@@ -270,11 +275,11 @@ pub fn graph_nodes_to_verticals(prefix: &[u8]) -> Vec<u8> {
     out
 }
 
-// The cell the row's graph node sits in, counted as `find_boundary` counts
-// cells: jj's own two per column, pad cells included, ANSI not counted. A
-// commit row carries exactly one node, so the first non-edge glyph is it.
-// `None` is a prefix with no node at all — a connector row, or a row jj drew
-// with no graph.
+// The cell that holds the row's graph node, counted the way `find_boundary`
+// counts cells: jj's own two per column, pad cells included, ANSI not
+// counted. A commit row carries exactly one node, so the first non-edge
+// glyph is that node. `None` is a prefix with no node at all: a connector
+// row, or a row jj drew with no graph.
 pub fn node_cell(prefix: &[u8]) -> Option<usize> {
     let mut i = 0;
     let mut cell = 0;
@@ -293,10 +298,10 @@ pub fn node_cell(prefix: &[u8]) -> Option<usize> {
     None
 }
 
-// Node bytes pass through unchanged: jj's template (or upstream emitter) is
-// responsible for picking the right glyph and label color. Bijjou forwards
-// the bytes plus their surrounding ANSI verbatim — unless a hydra stack
-// colour is in force, which takes over the glyph's foreground.
+// Node bytes pass through unchanged. jj's template (or the upstream emitter)
+// picks the right glyph and label color. bijjou forwards the bytes plus
+// their surrounding ANSI verbatim. A hydra stack color, when in force, takes
+// over the glyph's foreground instead.
 fn emit_node(raw: &[u8], ansi: &[u8], color: Option<&[u8]>, out: &mut Vec<u8>) {
     let Some(sgr) = color else {
         out.extend_from_slice(ansi);
@@ -320,17 +325,18 @@ fn emit_edge(cp: u32, raw: &[u8], ansi: &[u8], out: &mut Vec<u8>) {
     out.extend_from_slice(FG_RESET);
 }
 
-// Emit bytes with all visible non-space chars wrapped in dim SGR, except
-// commit-node chars (○ ● ◆ @ ×) which pass through with normal intensity.
-// Strips jj's fg-color codes; preserves other ANSI sequences.
+// Emit bytes with every visible non-space char wrapped in dim SGR, except
+// commit-node chars (○ ● ◆ @ ×). Those pass through with normal intensity.
+// This strips jj's fg-color codes and preserves other ANSI sequences.
 //
-// Once a node char has appeared on the line, any space run between two
-// graph chars (node or edge) is filled with the dash glyph, one dash per
-// space. Runs before the first node, or trailing past the last graph char,
-// stay as plain spaces.
-// What abuts an internal space run on its right when the run is flushed.
-// `NonGraph` covers a newline, end of buffer, or end of the graph prefix —
-// the run does not terminate at a graph char, so it is never dashed.
+// After a node char appears on the line, bijjou fills any space run between
+// two graph chars (node or edge) with the dash glyph, one dash per space. A
+// run before the first node, or a run past the last graph char, stays as
+// plain spaces.
+// This enum records what abuts an internal space run on its right when the
+// run is flushed. `NonGraph` covers a newline, the end of the buffer, or the
+// end of the graph prefix. The run does not terminate at a graph char, so it
+// is never dashed.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum RightSide {
     Node,
@@ -338,9 +344,9 @@ enum RightSide {
     NonGraph,
 }
 
-// Tracks an in-progress run of spaces inside the graph prefix so it can be
-// rewritten as dashes on flush. `seen_node`/`left_was_node` describe the graph
-// context to the run's left; both reset at each newline via `reset_line`.
+// Tracks a run of spaces inside the graph prefix so it can be rewritten as
+// dashes on flush. `seen_node`/`left_was_node` describe the graph context to
+// the left of the run. Both reset at each newline through `reset_line`.
 struct GraphRun {
     seen_node: bool,
     left_was_node: bool,
@@ -358,19 +364,20 @@ impl GraphRun {
         self.left_was_node = false;
     }
 
-    // Replace the pending internal space run with dashes when the line has
-    // already seen its node and the run is followed by another graph char.
+    // Replace the pending internal space run with dashes when two conditions
+    // hold: the line already saw its node, and another graph char follows the
+    // run.
     //
     // Rules (per the dash spec):
-    //   - The cell immediately right of a node gets `dash_start` if and only
-    //     if that cell is also to the left of whitespace OR a graph edge —
-    //     i.e., the run is multi-cell, or it's a single cell between a node
+    //   - The cell immediately right of a node gets `dash_start` only when
+    //     that cell is also to the left of whitespace or a graph edge. That
+    //     is, the run is multi-cell, or it is a single cell between a node
     //     and an edge. A single-cell run between two nodes emits NO dash at
     //     all (the space is preserved).
-    //   - `dash_end` is never emitted here: intra-graph runs always terminate
-    //     at another graph char (never content), and the closing cap is meant
-    //     to attach the run to the content boundary on the right. The DSL's
-    //     content-side pad is responsible for that cap.
+    //   - `dash_end` is never emitted here. Intra-graph runs always terminate
+    //     at another graph char, never content. The closing cap attaches the
+    //     run to the content boundary on the right. The DSL's content-side
+    //     pad owns that cap.
     fn flush(&mut self, out: &mut Vec<u8>, right: RightSide, c: &crate::config::Config) {
         let Some(start) = self.start.take() else {
             return;
@@ -380,7 +387,7 @@ impl GraphRun {
         if !(self.seen_node && right_is_graph && count > 0) {
             return;
         }
-        // Single-cell gap between two nodes: emit no dash; keep the space.
+        // Single-cell gap between two nodes: emit no dash and keep the space.
         if count == 1 && self.left_was_node && right == RightSide::Node {
             return;
         }
@@ -399,8 +406,8 @@ impl GraphRun {
             }
         }
         out.extend_from_slice(FG_RESET);
-        // CSI bytes never contain literal space, so keeping non-space bytes
-        // preserves any colour setup that was buffered between the spaces.
+        // CSI bytes never contain a literal space. The non-space bytes are
+        // kept, so any color setup buffered between the spaces is preserved.
         for &b in &original {
             if b != b' ' {
                 out.push(b);
@@ -409,9 +416,9 @@ impl GraphRun {
     }
 }
 
-// `collapse` drops jj's inter-column pad cells (see `is_pad_cell`), pulling
-// every graph column one cell left of the last. Dropped cells still forward
-// their ANSI so colour state survives; only the glyph goes.
+// `collapse` drops jj's inter-column pad cells (see `is_pad_cell`). This
+// pulls every graph column one cell left of the last. A dropped cell still
+// forwards its ANSI so color state survives. Only the glyph goes.
 pub fn emit_dim_graph(bytes: &[u8], collapse: bool, node_color: Option<&[u8]>, out: &mut Vec<u8>) {
     let c = cfg();
     let mut i = 0;
@@ -516,8 +523,8 @@ mod tests {
 
     #[test]
     fn node_cell_counts_jjs_own_cells() {
-        // A stack's node in the leftmost column, and a neighbour's branch
-        // running past it in the next one.
+        // A stack's node sits in the leftmost column. A neighbor's branch
+        // runs past it in the next column.
         assert_eq!(node_cell("● │ ".as_bytes()), Some(0));
         assert_eq!(node_cell("│ ● ".as_bytes()), Some(2));
         // ANSI is not a cell, and a merge tip's node abuts its edges.
@@ -583,8 +590,8 @@ mod tests {
 
     #[test]
     fn boundary_node_followed_by_edge() {
-        // Merge tip `●─` then content: node is followed by an edge, not a
-        // space, and must still be recognized as a node.
+        // Merge tip `●─` then content: an edge follows the node, not a
+        // space. bijjou must still recognize it as a node.
         let line = "●─ abc".as_bytes();
         let p = find_boundary(line).expect("expected boundary");
         assert_eq!(p.graph_col, 2);
@@ -593,8 +600,9 @@ mod tests {
 
     #[test]
     fn boundary_glyph_abutting_letter_is_content_not_node() {
-        // A non-edge glyph directly followed by a letter (no gap) is content,
-        // not a node — guards against eating the payload. No graph → None.
+        // A non-edge glyph with a letter directly after it (no gap) is
+        // content, not a node. This guards the payload against a misread.
+        // No graph → None.
         let line = "□bc".as_bytes();
         assert!(find_boundary(line).is_none());
     }
@@ -656,8 +664,8 @@ mod tests {
 
     #[test]
     fn collapse_keeps_horizontals_sitting_in_glyph_cells() {
-        // `├───╯` spans three columns; the middle column's own glyph is a
-        // horizontal (cell 2) and must survive, or `╯` slides off its column.
+        // `├───╯` spans three columns. The middle column's own glyph is a
+        // horizontal (cell 2). It must survive, or `╯` slides off its column.
         let mut expected = dim(DEFAULT_GRAPH_TEE_RIGHT);
         expected.extend_from_slice(&dim(DEFAULT_GRAPH_HORIZONTAL));
         expected.extend_from_slice(&dim(DEFAULT_GRAPH_BOTTOM_RIGHT));
@@ -685,8 +693,8 @@ mod tests {
 
     #[test]
     fn collapse_forwards_ansi_of_dropped_cells() {
-        // The pad's own SGR must survive even though its glyph does not:
-        // dropping a reset would leak colour into the rest of the line.
+        // The pad's own SGR must survive even though its glyph does not. A
+        // dropped reset leaks color into the rest of the line.
         let out = run_emit_collapsed("│\x1b[1m \x1b[22m○".as_bytes());
         let mut expected = dim(DEFAULT_GRAPH_VERTICAL);
         expected.extend_from_slice(b"\x1b[1m\x1b[22m");
@@ -721,7 +729,7 @@ mod tests {
         assert!(is_graph_only("├─╯".as_bytes()));
         assert!(is_graph_only("│ │".as_bytes()));
         assert!(is_graph_only("~".as_bytes()));
-        // A description that happens to contain a box-drawing char.
+        // A description that contains a box-drawing char.
         assert!(!is_graph_only("fix: draw ─ separators".as_bytes()));
     }
 
