@@ -59,16 +59,17 @@ pub fn is_fg_color_sgr(params: &str) -> bool {
     }
 }
 
-// Drop every SGR (`CSI ... m`) sequence in `bytes`. Other CSI sequences and
-// plain bytes pass through unchanged.
+// Remove every SGR (`CSI ... m`) sequence from `bytes`. Other CSI sequences
+// and plain bytes pass through unchanged.
 pub fn strip_sgr(bytes: &[u8]) -> Vec<u8> {
     let mut out = Vec::with_capacity(bytes.len());
     emit_filtered_ansi(bytes, &mut out, |_| true);
     out
 }
 
-// The parameter bytes of an SGR sequence (`CSI ... m`); `None` for every
-// other CSI sequence, whose params are nobody's to read.
+// This gives the parameter bytes of an SGR sequence (`CSI ... m`). The
+// result is `None` for every other CSI sequence, whose params must not be
+// read.
 pub fn sgr_params(seq: &[u8]) -> Option<&str> {
     match seq {
         [0x1b, b'[', params @ .., b'm'] => Some(std::str::from_utf8(params).unwrap_or("")),
@@ -76,8 +77,8 @@ pub fn sgr_params(seq: &[u8]) -> Option<&str> {
     }
 }
 
-// Emit ANSI sequences from `bytes`, optionally filtering params.
-// `filter` returns true for params we should DROP.
+// Emit ANSI sequences from `bytes`, with an optional filter on params.
+// `filter` returns true for params that must be removed.
 pub fn emit_filtered_ansi(bytes: &[u8], out: &mut Vec<u8>, filter: impl Fn(&str) -> bool) {
     let mut i = 0;
     while i < bytes.len() {

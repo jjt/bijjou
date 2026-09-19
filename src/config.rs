@@ -4,10 +4,10 @@ use std::sync::OnceLock;
 
 pub const DEFAULT_DASH: &str = "─";
 pub const DEFAULT_DASH_START: &str = "╶";
-// Closing cell of a dash run — the cell abutting the content. Empty by
-// default so the content always has a plain space to its left. Set it to a
-// glyph (`╴` U+2574, the half-line matching `dash-start`) to cap the run
-// against the content instead.
+// The closing cell of a dash run is the cell next to the content. This cell
+// is empty by default, so the content always has a plain space to its left.
+// To cap the run against the content, set the cell to a glyph (`╴` U+2574,
+// the half-line that matches `dash-start`).
 pub const DEFAULT_DASH_END: &str = "";
 pub const DEFAULT_DIM_ON: &[u8] = b"\x1b[38;5;8m";
 pub const DEFAULT_EDGE_DIM_ON: &[u8] = b"\x1b[38;5;8m";
@@ -34,9 +34,10 @@ pub const DEFAULT_HYDRA_CONFLICT_RESOLUTION: &str = "CR";
 pub const DEFAULT_HYDRA_STACK_HEAD: &str = "S";
 pub const DEFAULT_HYDRA_STACK_WORKING_COPY: &str = "WC";
 
-// `hydra.colors`: leave the nodes alone, hash each stack's name into a
-// colour, or index an explicit palette by the stack's position in the graph
-// (top of the log first, wrapping when there are more stacks than colours).
+// `hydra.colors` selects one of three modes. It can leave the nodes alone,
+// hash each stack's name into a color, or index an explicit palette by the
+// stack's position in the graph. The top of the log comes first. The index
+// wraps when there are more stacks than colors.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum HydraColors {
     Off,
@@ -44,10 +45,10 @@ pub enum HydraColors {
     Palette(Vec<Vec<u8>>),
 }
 
-// `hydra.prefixes`: the bookmark naming this repo's hydra uses, so a row is
-// classified from its `bookmarks` field alone. `hydra status --toml` reports
-// the same naming, but it shells out to jj several times per log, which costs
-// more than every other thing bijjou does put together.
+// `hydra.prefixes` is the bookmark naming that this repo's hydra uses. A row
+// is classified from its `bookmarks` field alone. `hydra status --toml`
+// reports the same naming, but it shells out to jj several times per log.
+// This cost is more than every other thing that bijjou does put together.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HydraPrefixes {
     // Shared leader of every hydra bookmark: `HY`.
@@ -94,13 +95,14 @@ impl HydraPrefixes {
             .collect()
     }
 
-    // What `HYS-` reads as: the per-bookmark key if set, else the `HY`
-    // leader replaced and the rest of the marker kept, else nothing.
+    // This gives what `HYS-` reads as. If the per-bookmark key is set, that
+    // key is used. If the key is unset, the `HY` leader is replaced and the
+    // rest of the marker is kept. If neither applies, the result is nothing.
     pub fn stack_marker_replace(&self, r: &HydraPrefixReplace) -> Option<String> {
         replace_leader(&r.stack_head, &r.prefix, &format!("{}-", self.stack_head))
     }
 
-    // What `HYWC-` reads as, under the same rule.
+    // This gives what `HYWC-` reads as, under the same rule.
     pub fn working_copy_replace(&self, r: &HydraPrefixReplace) -> Option<String> {
         replace_leader(
             &r.stack_working_copy,
@@ -109,8 +111,8 @@ impl HydraPrefixes {
         )
     }
 
-    // What `HYB` / `HYH` / `HYCR` read as, in the order `anchors` returns
-    // them.
+    // This gives what `HYB` / `HYH` / `HYCR` read as. The order matches the
+    // order that `anchors` returns them in.
     pub fn anchors_replace(&self, r: &HydraPrefixReplace) -> Vec<Option<String>> {
         [
             (&r.base, &self.base),
@@ -123,14 +125,15 @@ impl HydraPrefixes {
     }
 }
 
-// `hydra.prefixes-replace`: what a hydra bookmark reads as once rendered,
-// keyed the same way as `hydra.prefixes`. A set key stands in for the leader
-// `hydra.prefixes` builds out of it, and the name behind that leader is kept:
-// `base = "◆"` renders `HYB` as `◆`, `stack-head = "Ψ"` renders `HYS-foo` as
-// `Ψfoo` — the dash belongs to the leader, so it goes with it. `prefix`
-// replaces the shared `HY` leader only, so `prefix = "Ψ"` renders `HYS-foo`
-// as `ΨS-foo`; a per-bookmark key wins over it. A key left unset leaves the
-// bookmarks it names exactly as jj printed them.
+// `hydra.prefixes-replace` sets what a hydra bookmark reads as once
+// rendered. It is keyed the same way as `hydra.prefixes`. A set key stands
+// in for the leader that `hydra.prefixes` builds out of it, and the name
+// behind that leader is kept. For example, `base = "◆"` renders `HYB` as
+// `◆`, and `stack-head = "Ψ"` renders `HYS-foo` as `Ψfoo`. The dash belongs
+// to the leader, so it goes with the leader. `prefix` replaces the shared
+// `HY` leader only, so `prefix = "Ψ"` renders `HYS-foo` as `ΨS-foo`. A
+// per-bookmark key wins over `prefix`. If a key is left unset, the bookmarks
+// it names stay exactly as jj printed them.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct HydraPrefixReplace {
     pub prefix: Option<String>,
@@ -141,9 +144,10 @@ pub struct HydraPrefixReplace {
     pub stack_working_copy: Option<String>,
 }
 
-// One bookmark's rendered leader: the whole-leader replacement if that key
-// is set, else `prefix`'s replacement with the rest of the leader kept
-// behind it, else `None` — that bookmark is left alone.
+// This gives one bookmark's rendered leader. If the whole-leader key is set,
+// that replacement is used. If not, `prefix`'s replacement is used, and the
+// rest of the leader is kept behind it. If neither is set, the result is
+// `None` and that bookmark is left alone.
 fn replace_leader(whole: &Option<String>, prefix: &Option<String>, rest: &str) -> Option<String> {
     match (whole, prefix) {
         (Some(whole), _) => Some(whole.clone()),
@@ -311,9 +315,9 @@ fn flatten_toml(
             toml::Value::Integer(i) => out.push((key, i.to_string())),
             toml::Value::Boolean(b) => out.push((key, b.to_string())),
             toml::Value::Float(f) => out.push((key, f.to_string())),
-            // A list of scalars flattens to the comma-joined form the env and
-            // CLI layers have to spell it in anyway, so one syntax covers
-            // every layer.
+            // A list of scalars flattens to the comma-joined form. The env
+            // and CLI layers must spell it in this form anyway, so one syntax
+            // covers every layer.
             toml::Value::Array(items) => out.push((key.clone(), join_scalars(&key, items)?)),
             toml::Value::Datetime(_) => return Err(format!("{}: datetimes not supported", key)),
         }
@@ -343,8 +347,8 @@ fn parse_bool_str(s: &str) -> Result<bool, String> {
     }
 }
 
-// Env-var convention: uppercase, `__` separates config-path segments
-// (becomes `.`), and single `_` becomes `-`. The lowercase / hyphenated
+// The env-var convention is uppercase. `__` separates config-path segments
+// and becomes `.`. A single `_` becomes `-`. The lowercase or hyphenated
 // form is accepted unchanged.
 fn env_key_to_config_key(name: &str) -> String {
     name.replace("__", ".").replace('_', "-").to_lowercase()
@@ -682,7 +686,7 @@ graph-edge = 200
 
     #[test]
     fn toml_activation_marker_key_is_now_unknown() {
-        // The configurable marker was removed; auto mode keys off the
+        // The configurable marker was removed. Auto mode now keys off the
         // `bijjou_template_name` field in the input instead.
         assert!(Config::from_toml("activation-marker = \"XX\"\n").is_err());
     }
@@ -1097,7 +1101,7 @@ graph-edge = 200
     fn hydra_prefix_replacements_come_from_toml_and_cli() {
         let cfg = Config::from_toml("[hydra.prefixes-replace]\nstack-head = \"Ψ\"\n").unwrap();
         let r = &cfg.hydra_prefixes_replace;
-        // The key that was set stands in; every other bookmark is untouched.
+        // The key that was set stands in. Every other bookmark is untouched.
         assert_eq!(
             cfg.hydra_prefixes.stack_marker_replace(r).as_deref(),
             Some("Ψ")
@@ -1109,7 +1113,7 @@ graph-edge = 200
         );
 
         // `prefix` replaces the shared leader only, and a per-bookmark key
-        // wins over it.
+        // wins over `prefix`.
         let cfg =
             Config::from_toml("[hydra.prefixes-replace]\nprefix = \"⋔\"\nbase = \"◆\"\n").unwrap();
         let r = &cfg.hydra_prefixes_replace;
