@@ -3,24 +3,23 @@
 // `jj log` prints one graph column per stack. Two things follow from that:
 //
 //   - The log's top stack has no `├─╯` row under it. jj closes a graph column
-//     only when the branch to its *left* ends, so every stack but the topmost
-//     gets a closing row; the topmost runs straight into its neighbour.
+//     only when the branch to its *left* ends. So every stack but the topmost
+//     gets a closing row. The topmost runs straight into its neighbor.
 //     `hydra.top-stack-padding` draws the separator jj skipped.
-//   - Each stack owns a column, so colouring its nodes per stack makes the
-//     columns readable at a glance (`hydra.colors`), and the stack's own
-//     bookmark names read as part of that column when they carry the same
-//     colour (`hydra.color-bookmarks`).
+//   - Each stack owns a column. A color per stack makes the columns readable
+//     at a glance (`hydra.colors`). If the stack's own bookmark names carry
+//     the same color, they read as part of that column (`hydra.color-bookmarks`).
 //
-// The bookmark naming comes from `hydra.prefixes`, so a row is classified
-// from its `bookmarks` field plus the graph prefix jj already drew: no
-// subprocess, no repo lookup. A repo that renamed its hydra bookmarks says
-// so in config; a repo with no hydra has no bookmark that matches, so it gets
+// The bookmark names come from `hydra.prefixes`. bijjou classifies a row from
+// its `bookmarks` field plus the graph prefix jj already drew. No subprocess
+// and no repo lookup are needed. A repo that renamed its hydra bookmarks says
+// so in config. A repo with no hydra has no bookmark that matches. So it gets
 // no markup at all.
 //
-// The column is what bounds a stack at the bottom. A marker opens its stack
-// and the rows under it in the same column are its content, but a commit
-// drawn in another column — an extra head off the base, sitting between the
-// bottom stack and `HYB` — is nobody's stack and keeps jj's own colours.
+// The column bounds a stack at the bottom. A marker opens its stack. The rows
+// under it in the same column are its content. A commit drawn in another
+// column is nobody's stack and keeps jj's own colors. This commit is an extra
+// head off the base, between the bottom stack and `HYB`.
 
 use std::collections::HashMap;
 use std::sync::LazyLock;
@@ -31,8 +30,9 @@ use crate::render::{emit_dim_graph, graph_nodes_to_verticals, node_cell};
 
 pub const BOOKMARKS_FIELD: &str = "bookmarks";
 
-// The bookmark names a hydra uses here, expanded from `hydra.prefixes` once,
-// each paired with what it reads as under `hydra.prefixes-replace`.
+// The bookmark names a hydra uses here. bijjou expands them from
+// `hydra.prefixes` once. Each name pairs with its stand-in under
+// `hydra.prefixes-replace`.
 #[derive(Clone)]
 struct Topology {
     // `HYS-` — the marker bookmark that opens a stack.
@@ -41,8 +41,8 @@ struct Topology {
     wc_prefix: String,
     // `HYB` / `HYH` / `HYCR`.
     anchors: Vec<String>,
-    // What each of those leaders renders as, `None` where the matching
-    // `hydra.prefixes-replace` key is unset — that name passes through as jj
+    // What each of those leaders renders as. `None` marks a leader whose
+    // `hydra.prefixes-replace` key is unset. That name passes through as jj
     // printed it. `anchor_replace` is index-aligned with `anchors`.
     stack_replace: Option<Vec<u8>>,
     wc_replace: Option<Vec<u8>>,
@@ -65,19 +65,19 @@ impl Topology {
         }
     }
 
-    // Nothing to stand in for any name: the rewrite only has colours to do.
+    // No name has a stand-in. The rewrite only applies colors.
     fn replaces(&self) -> bool {
         self.stack_replace.is_some()
             || self.wc_replace.is_some()
             || self.anchor_replace.iter().any(Option::is_some)
     }
 
-    // What one bookmark token renders as: the stand-in bytes plus how many
-    // bytes of the name they replace. `None` leaves the token alone — no key
+    // What one bookmark token renders as. This is the stand-in bytes plus the
+    // count of name bytes they replace. `None` leaves the token alone: no key
     // for its leader, or no hydra bookmark at all.
     fn replacement_of(&self, token: &[u8]) -> Option<(&[u8], usize)> {
-        // jj's out-of-sync `*` is not part of the name, and a remote ref is
-        // not a local hydra bookmark — the same rules `mark_of` applies.
+        // jj's out-of-sync `*` is not part of the name. A remote ref is not a
+        // local hydra bookmark. `mark_of` applies the same rules.
         let name = token.strip_suffix(b"*").unwrap_or(token);
         if name.contains(&b'@') {
             return None;
@@ -100,19 +100,19 @@ impl Topology {
     }
 }
 
-// The topology in force for this run, built once: `hydra.prefixes` and
+// The topology in force for this run, built once. `hydra.prefixes` and
 // `hydra.prefixes-replace` are config, so every pass reads the same names.
-// `None` is `hydra.enable = false` — nothing is classified or renamed.
+// `None` means `hydra.enable = false`. Then nothing is classified or renamed.
 static TOPOLOGY: LazyLock<Option<Topology>> = LazyLock::new(|| {
     let c = cfg();
     c.hydra_enable
         .then(|| Topology::from_prefixes(&c.hydra_prefixes, &c.hydra_prefixes_replace))
 });
 
-// Pass 1 needs the row's `bookmarks` field at its rendered width, and
+// Pass 1 needs the row's `bookmarks` field at its rendered width.
 // `hydra.prefixes-replace` changes that width, so the same substitution runs
-// there — without the colours, which cost no width. Returns false when the
-// row has no name to stand in for, leaving the caller with jj's field.
+// there. It runs without the colors, which cost no width. This returns false
+// when the row has no name to stand in for. Then the caller keeps jj's field.
 pub fn replace_names(
     fields: &HashMap<String, Vec<u8>>,
     scratch: &mut Vec<u8>,
@@ -130,30 +130,30 @@ pub fn replace_names(
 
 // What one row's hydra classification changes about its rendering.
 pub struct Markup<'a> {
-    // SGR for the row's graph node; `None` leaves the node as jj drew it.
+    // SGR for the row's graph node. `None` leaves the node as jj drew it.
     pub node: Option<&'a [u8]>,
-    // The row's `bookmarks` field with every hydra bookmark on it recoloured
-    // to its stack; `None` leaves the field as jj printed it.
+    // The row's `bookmarks` field, with every hydra bookmark recolored to its
+    // stack. `None` leaves the field as jj printed it.
     pub bookmarks: Option<&'a [u8]>,
 }
 
 // Per-row state, walked top-down with the log.
 pub struct Walk {
-    // `None` with `hydra.enable = false`: every row passes through untouched.
+    // `None` means `hydra.enable = false`. Then every row passes through untouched.
     topo: Option<Topology>,
-    // Stack names in the order the log first named them, top first — a
-    // stack's slot in `hydra.colors` when that is a palette.
+    // Stack names in the order the log first named them, top first. When
+    // `hydra.colors` is a palette, this order gives each stack its slot.
     seen: Vec<String>,
-    // SGR for the stack the walk is inside; empty outside any stack.
+    // SGR for the stack the walk is inside. It is empty outside any stack.
     color: Vec<u8>,
     // The graph cell that stack's nodes sit in, so a row drawn in another
     // column is recognized as some other branch. `None` outside any stack.
     column: Option<usize>,
-    // SGR for a single `HYWC-*` row, which belongs to a stack without being
-    // in it: the colour applies to that row and is not carried down.
+    // SGR for a single `HYWC-*` row. This row belongs to a stack but is not
+    // in it. The color applies to that row and is not carried down.
     wc_color: Vec<u8>,
     stacks_seen: usize,
-    // Reused scratch for the de-ANSI'd bookmarks field.
+    // Reused scratch for the bookmarks field, ANSI removed.
     scratch: Vec<u8>,
     // Reused buffer for the rewritten `bookmarks` field.
     bookmarks: Vec<u8>,
@@ -174,13 +174,13 @@ impl Walk {
     }
 
     // Classify one commit row and return what its rendering takes from the
-    // hydra. `prefix` is the row's graph prefix as jj drew it: when this row
-    // opens the second stack, the top stack's missing separator is drawn
+    // hydra. `prefix` is the row's graph prefix as jj drew it. When this row
+    // opens the second stack, bijjou draws the top stack's missing separator
     // from it into `out` first.
     //
-    // Rows must arrive in log order — the walk carries a stack's colour down
-    // from its marker through its content commits, which are the rows below
-    // it in its own graph column.
+    // Rows must arrive in log order. The walk carries a stack's color down
+    // from its marker through its content commits. These content commits are
+    // the rows below the marker in its own graph column.
     pub fn markup(
         &mut self,
         fields: &HashMap<String, Vec<u8>>,
@@ -194,7 +194,7 @@ impl Walk {
         let mut scratch = std::mem::take(&mut self.scratch);
         scratch.clear();
         strip_ansi_into(raw, &mut scratch);
-        // `None` topology is `hydra.enable = false`: nothing to classify.
+        // `None` topology means `hydra.enable = false`. Then bijjou classifies nothing.
         let mark = self.topo.as_ref().map(|topo| mark_of(topo, &scratch));
         self.scratch = scratch;
         let Some(mark) = mark else {
@@ -204,16 +204,16 @@ impl Walk {
             };
         };
 
-        // A working copy sits above the head, outside every stack, so it ends
-        // whichever stack the walk was in — but it is that stack's row, so it
-        // takes the stack's colour without carrying it down.
+        // A working copy sits above the head, outside every stack. So it ends
+        // whichever stack the walk was in. But the working copy is that
+        // stack's row. It takes the stack's color and does not carry it down.
         let from_wc = matches!(mark, Mark::WorkingCopy(_));
         match mark {
             Mark::Outside => self.leave(),
             // A stack owns one graph column, from its marker down to its last
-            // content commit, so a row whose node sits in another column is
-            // another branch entirely — an extra head off the base, say. The
-            // stack ends above it rather than lending it a colour.
+            // content commit. So a row whose node sits in another column is
+            // another branch entirely, for example an extra head off the base.
+            // The stack ends above that row and does not lend it a color.
             Mark::Inside => {
                 if !self.color.is_empty() && node_cell(prefix) != self.column {
                     self.leave();
@@ -240,7 +240,7 @@ impl Walk {
             Some(topo) if cfg().hydra_color_bookmarks => {
                 rewrite_bookmarks(topo, Some(&mut self.seen), &mut self.scratch, raw, &mut buf)
             }
-            // Colours off, names still replaced: `hydra.prefixes-replace` is
+            // Colors off, names still replaced. `hydra.prefixes-replace` is
             // independent of `hydra.color-bookmarks`.
             Some(topo) if topo.replaces() => {
                 rewrite_bookmarks(topo, None, &mut self.scratch, raw, &mut buf)
@@ -256,15 +256,15 @@ impl Walk {
         }
     }
 
-    // Out of every stack: the walk is between the head and the markers, or
-    // below the last one, and the next marker row starts the state over.
+    // Out of every stack. The walk is between the head and the markers, or
+    // below the last one. The next marker row starts the state over.
     fn leave(&mut self) {
         self.color.clear();
         self.column = None;
     }
 }
 
-// Position in the graph, top first: the log itself is the order, so a stack
+// Position in the graph, top first. The log itself is the order. So a stack
 // keeps its slot for the whole run once met.
 fn index_of(seen: &mut Vec<String>, name: &str) -> usize {
     if let Some(i) = seen.iter().position(|n| n == name) {
@@ -274,9 +274,10 @@ fn index_of(seen: &mut Vec<String>, name: &str) -> usize {
     seen.len() - 1
 }
 
-// Where a row sits relative to the stacks: opening one, carrying a stack's
-// working copy, outside every one, or carrying on in whichever the walk is
-// already in (a stack's own content commits name no bookmark at all).
+// Where a row sits relative to the stacks. A row can open a stack, carry a
+// stack's working copy, sit outside every stack, or continue in whichever
+// stack the walk is already in. A stack's own content commits name no
+// bookmark at all.
 enum Mark {
     Stack(String),
     WorkingCopy(String),
@@ -288,8 +289,8 @@ fn mark_of(topo: &Topology, bookmarks: &[u8]) -> Mark {
     let mut wc: Option<String> = None;
     let mut outside = false;
     for token in bookmarks.split(u8::is_ascii_whitespace) {
-        // jj flags a bookmark out of sync with its remote with a trailing `*`
-        // and prints remote refs as `name@remote`; only local names count.
+        // jj flags a bookmark out of sync with its remote with a trailing `*`.
+        // jj prints remote refs as `name@remote`. Only local names count.
         let token = token.strip_suffix(b"*").unwrap_or(token);
         if token.is_empty() || token.contains(&b'@') {
             continue;
@@ -316,15 +317,15 @@ fn mark_of(topo: &Topology, bookmarks: &[u8]) -> Mark {
     }
 }
 
-// Rewrite the row's `bookmarks` field into `out`: every hydra bookmark on it
-// carries its stack's colour instead of jj's, and reads under the stand-in
-// `hydra.prefixes-replace` gives its leader. Bookmarks are whitespace
-// separated and each comes wrapped in jj's own SGR, so a name we take over
-// has its foreground codes dropped and the stack's put in front; every other
-// bookmark on the row is copied byte-for-byte. `seen` carries the palette
-// order and is `None` when only the names are being replaced — pass 1, or
-// `hydra.color-bookmarks = false`. Returns false when the row has no name to
-// take over, which leaves the caller with jj's field untouched.
+// Rewrite the row's `bookmarks` field into `out`. Every hydra bookmark on it
+// carries its stack's color instead of jj's color. Each bookmark reads under
+// the stand-in `hydra.prefixes-replace` gives its leader. Bookmarks are
+// whitespace separated, and each comes wrapped in jj's own SGR. So a name
+// that bijjou takes over loses its foreground codes, and the stack's codes go
+// in front. Every other bookmark on the row is copied byte-for-byte. `seen`
+// carries the palette order. `seen` is `None` when bijjou replaces only the
+// names: pass 1, or `hydra.color-bookmarks = false`. This returns false when
+// the row has no name to take over. Then the caller keeps jj's field.
 fn rewrite_bookmarks(
     topo: &Topology,
     mut seen: Option<&mut Vec<String>>,
@@ -336,8 +337,8 @@ fn rewrite_bookmarks(
     let mut hit = false;
     let mut i = 0;
     while i < raw.len() {
-        // CSI sequences carry no whitespace, so splitting on raw bytes keeps
-        // each name together with the colour codes around it.
+        // CSI sequences carry no whitespace. So a split on raw bytes keeps
+        // each name together with the color codes around it.
         let start = i;
         let ws = raw[i].is_ascii_whitespace();
         while i < raw.len() && raw[i].is_ascii_whitespace() == ws {
@@ -364,8 +365,8 @@ fn rewrite_bookmarks(
                 out.extend_from_slice(FG_RESET);
                 hit = true;
             }
-            // Nothing to recolour, but the name still reads as its stand-in,
-            // in whichever colour jj gave it.
+            // Nothing to recolor, but the name still reads as its stand-in,
+            // in whichever color jj gave it.
             _ if replace.is_some() => {
                 emit_token(token, false, replace, out);
                 hit = true;
@@ -376,11 +377,11 @@ fn rewrite_bookmarks(
     hit
 }
 
-// Copy one bookmark token into `out`. `drop_fg` drops jj's foreground SGRs,
-// leaving the caller's colour in force. `replace` is the stand-in for the
-// token's leader plus the byte count it stands in for, counted over the
-// name's own bytes — the CSI sequences jj wrapped it in are copied either
-// way, so the colour around the name survives the substitution.
+// Copy one bookmark token into `out`. `drop_fg` drops jj's foreground SGRs
+// and keeps the caller's color in force. `replace` is the stand-in for the
+// token's leader, plus the byte count it stands in for. bijjou counts that
+// over the name's own bytes. The CSI sequences jj wrapped it in are copied
+// either way. So the color around the name survives the substitution.
 fn emit_token(token: &[u8], drop_fg: bool, replace: Option<(&[u8], usize)>, out: &mut Vec<u8>) {
     let (stand_in, mut drop_left) = replace.unwrap_or((&[], 0));
     let mut pending = replace.is_some();
@@ -408,8 +409,8 @@ fn emit_token(token: &[u8], drop_fg: bool, replace: Option<(&[u8], usize)>, out:
     }
 }
 
-// The stack a single bookmark name belongs to: both `HYS-<name>` and
-// `HYWC-<name>` name their stack, and the same flag and remote-ref rules as
+// The stack a single bookmark name belongs to. Both `HYS-<name>` and
+// `HYWC-<name>` name their stack. The same flag and remote-ref rules as
 // `mark_of` apply.
 fn stack_of(topo: &Topology, token: &[u8]) -> Option<String> {
     let token = token.strip_suffix(b"*").unwrap_or(token);
@@ -423,8 +424,9 @@ fn stack_of(topo: &Topology, token: &[u8]) -> Option<String> {
         .map(|name| String::from_utf8_lossy(name).into_owned())
 }
 
-// The separator row jj skipped under the log's top stack, drawn from the next
-// stack's marker row so every column lands where it does above and below.
+// The separator row jj skipped under the log's top stack. bijjou draws it
+// from the next stack's marker row, so every column lands where it does above
+// and below.
 fn emit_padding(prefix: &[u8], out: &mut Vec<u8>) {
     let verticals = graph_nodes_to_verticals(prefix);
     emit_dim_graph(&verticals, cfg().graph_collapse, None, out);
@@ -440,9 +442,9 @@ fn stack_color(name: &str, index: usize) -> Vec<u8> {
     }
 }
 
-// Hues the hashed palette does not hand out: the hue of a colour a stack
-// must not read as, plus 10° either side. `#a6e3a1` sits at 115° and
-// `#f5c2e7` at 316°. Ascending and disjoint, which `hue_of` counts on.
+// Hues the hashed palette does not hand out: the hue of a color a stack must
+// not read as, plus 10° either side. `#a6e3a1` sits at 115° and `#f5c2e7` at
+// 316°. The bands are ascending and disjoint, which `hue_of` counts on.
 const RESERVED_HUES: [(u32, u32); 2] = [(105, 125), (306, 326)];
 
 // Hues left to hand out, the reserved bands taken off the circle.
@@ -456,9 +458,9 @@ const HUE_SPACE: u64 = {
     left as u64
 };
 
-// The `index`-th hue still on offer, `index` in `0..HUE_SPACE`. Reserved
-// bands are skipped rather than clamped, so no hue is handed out twice as
-// often as another.
+// The `index`-th hue still on offer, with `index` in `0..HUE_SPACE`. This
+// function skips reserved bands and does not clamp them. So no hue is handed
+// out twice as often as another.
 fn hue_of(index: u32) -> u32 {
     let mut hue = index;
     for (lo, hi) in RESERVED_HUES {
@@ -469,11 +471,10 @@ fn hue_of(index: u32) -> u32 {
     hue
 }
 
-// A stack's colour has to be stable across runs and distinct from its
-// neighbours'. FNV-1a over the name picks a hue out of `HUE_SPACE`;
-// saturation and lightness are fixed so every stack lands in the same
-// legible band. Hashing straight into rgb instead would hand out
-// near-blacks and near-whites.
+// A stack's color must be stable across runs and distinct from its neighbors.
+// FNV-1a over the name picks a hue out of `HUE_SPACE`. Saturation and
+// lightness are fixed, so every stack lands in the same legible band. A hash
+// straight into rgb hands out near-blacks and near-whites instead.
 fn hash_color(name: &str) -> Vec<u8> {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
     for &b in name.as_bytes() {
@@ -485,9 +486,10 @@ fn hash_color(name: &str) -> Vec<u8> {
     format!("\x1b[38;2;{};{};{}m", r, g, b).into_bytes()
 }
 
-// Blues around 241° read dark against the terminal. Lift the lightness on a
-// linear ramp inside a 20° band either side of 241°: 0.62 at the band edges,
-// up to 0.70 at 241° itself. Outside the band the fixed 0.62 stands.
+// Blues around 241° read dark against the terminal. This function lifts the
+// lightness on a linear ramp inside a 20° band either side of 241°. The
+// lightness is 0.62 at the band edges, up to 0.70 at 241° itself. Outside the
+// band, the fixed 0.62 stands.
 fn stack_lightness(hue: u32) -> f64 {
     const PEAK_HUE: f64 = 241.0;
     const BAND: f64 = 20.0;
@@ -518,8 +520,8 @@ fn hsl_to_rgb(hue: u32, sat: f64, light: f64) -> (u8, u8, u8) {
     (byte(r), byte(g), byte(b))
 }
 
-// Copy `bytes` minus its CSI sequences, so bookmark names split on real
-// whitespace rather than on the colour codes jj wraps them in.
+// Copy `bytes` without its CSI sequences, so bookmark names split on real
+// whitespace and not on the color codes jj wraps them in.
 fn strip_ansi_into(bytes: &[u8], out: &mut Vec<u8>) {
     let mut i = 0;
     while i < bytes.len() {
@@ -568,9 +570,9 @@ mod tests {
         assert_eq!(t.anchors, vec!["ZZB", "ZZH", "ZZCR"]);
     }
 
-    // The row's `bookmarks` field as it renders, names replaced and nothing
-    // recoloured; `None` is "no name to take over", which leaves the caller
-    // with jj's own field.
+    // The row's `bookmarks` field as it renders, with names replaced and
+    // nothing recolored. `None` means "no name to take over", which leaves
+    // the caller with jj's own field.
     fn rewritten(topo: &Topology, bookmarks: &str) -> Option<String> {
         let mut scratch = Vec::new();
         let mut out = Vec::new();
@@ -633,7 +635,7 @@ mod tests {
         assert_eq!(rewritten(&t, "HYS-foo@origin"), None);
         // A bare leader names no stack.
         assert_eq!(rewritten(&t, "HYS-"), None);
-        // Neighbours on the row pass through beside the replaced name.
+        // Neighbors on the row pass through beside the replaced name.
         assert_eq!(
             rewritten(&t, "main HYS-foo v1").as_deref(),
             Some("main ⋔S-foo v1")
@@ -657,7 +659,7 @@ mod tests {
             &mut out,
         );
         assert!(hit);
-        // jj's foreground drops out, the stack's colour leads the stand-in.
+        // jj's foreground drops out, and the stack's color leads the stand-in.
         let mut want = stack_color("foo", 0);
         want.extend_from_slice("Ψfoo".as_bytes());
         want.extend_from_slice(FG_RESET);
@@ -696,7 +698,7 @@ mod tests {
 
     #[test]
     fn remote_refs_are_not_local_bookmarks() {
-        // `commit.bookmarks()` carries remote refs; a stack marker that only
+        // `commit.bookmarks()` carries remote refs. A stack marker that only
         // exists on a remote must not open a stack locally.
         assert!(matches!(mark("HYS-delta@origin"), Mark::Inside));
         assert!(matches!(mark("HYWC-delta@origin"), Mark::Inside));
@@ -716,7 +718,7 @@ mod tests {
     }
 
     // One commit row with `bookmarks` set, under the default config (hashed
-    // colours) and an empty graph prefix, so no padding row is in play.
+    // colors) and an empty graph prefix, so no padding row is in play.
     fn row(walk: &mut Walk, bookmarks: &str) -> (Option<Vec<u8>>, Option<Vec<u8>>) {
         let mut fields = HashMap::new();
         fields.insert(BOOKMARKS_FIELD.to_string(), bookmarks.as_bytes().to_vec());
@@ -733,7 +735,7 @@ mod tests {
     }
 
     // The same, with the row's graph prefix, so the stack's column is in
-    // play: `prefix` is jj's own drawing, one node glyph among the edges.
+    // play. `prefix` is jj's own drawing, one node glyph among the edges.
     fn node_at(walk: &mut Walk, prefix: &str, bookmarks: &str) -> Option<Vec<u8>> {
         let mut fields = HashMap::new();
         fields.insert(BOOKMARKS_FIELD.to_string(), bookmarks.as_bytes().to_vec());
@@ -750,8 +752,8 @@ mod tests {
         let marker = node_at(&mut walk, "● │ ", "HYS-alpha").expect("marker is coloured");
         assert_eq!(node_at(&mut walk, "● │ ", ""), Some(marker));
         // An extra head off the base, drawn in its own column once the stack
-        // closed above it: nobody's stack, so jj's colours stand — and the
-        // stack does not resume below it either.
+        // closed above it. This head is nobody's stack, so jj's colors stand.
+        // The stack does not resume below it either.
         assert_eq!(node_at(&mut walk, "│ ● ", ""), None);
         assert_eq!(node_at(&mut walk, "● │ ", ""), None);
     }
@@ -760,8 +762,8 @@ mod tests {
     fn a_working_copy_takes_its_stack_colour_without_carrying_it() {
         let mut walk = walk();
         let wc = node(&mut walk, "HYWC-delta").expect("working copy is coloured");
-        // The head sits between the working copies and the stacks: uncoloured,
-        // and it carries nothing down from the working copy above it.
+        // The head sits between the working copies and the stacks. It is
+        // uncolored, and it carries nothing down from the working copy above it.
         assert_eq!(node(&mut walk, "HYH"), None);
         assert_eq!(node(&mut walk, ""), None);
         // The stack itself, and its content commits, match its working copy.
@@ -776,7 +778,7 @@ mod tests {
         let (node, bookmarks) = row(&mut walk, "\x1b[38;5;5mHYS-delta\x1b[39m");
         let sgr = node.expect("stack marker is coloured");
         let bookmarks = bookmarks.expect("its name is recoloured too");
-        // jj's own foreground drops out, the stack's colour leads the name.
+        // jj's own foreground drops out, and the stack's color leads the name.
         let mut want = sgr.clone();
         want.extend_from_slice(b"HYS-delta");
         want.extend_from_slice(FG_RESET);
@@ -790,8 +792,8 @@ mod tests {
     #[test]
     fn bookmarks_outside_the_hydra_keep_jjs_colours() {
         let mut walk = walk();
-        // An anchor row, a plain bookmark and a remote-only stack marker are
-        // none of them a stack's name, so the field passes through.
+        // An anchor row, a plain bookmark, and a remote-only stack marker are
+        // not a stack's name. So the field passes through.
         assert_eq!(row(&mut walk, "\x1b[38;5;5mHYB main\x1b[39m").1, None);
         assert_eq!(row(&mut walk, "jjt/delta").1, None);
         assert_eq!(row(&mut walk, "HYS-delta@origin").1, None);
@@ -859,7 +861,7 @@ mod tests {
             assert!(last < Some(hue), "index {} went back to {}", index, hue);
             last = Some(hue);
         }
-        // The bands are skipped, not clipped: the circle's top is still in
+        // The bands are skipped, not clipped. The circle's top is still in
         // play.
         assert_eq!(hue_of(0), 0);
         assert_eq!(hue_of(HUE_SPACE as u32 - 1), 359);
@@ -870,8 +872,8 @@ mod tests {
 
     #[test]
     fn hashed_colors_avoid_the_reserved_hues() {
-        // The reserved bands are on hue, so the check is on hue: rebuild it
-        // from the rgb the hash actually emitted.
+        // The reserved bands are on hue, so the check is on hue. This check
+        // rebuilds the hue from the rgb the hash actually emitted.
         // `report` hashed into the pink band before the bands existed.
         for name in [
             "alpha", "beta", "gamma", "delta", "report", "retry", "green", "pink",
