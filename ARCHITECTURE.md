@@ -31,38 +31,39 @@ flowchart TD
     gate -->|"Always (default)"| paths
     paths -->|"true"| S
     paths -->|"false"| B
-    subgraph S["Streaming (stream.rs)"]
+    subgraph S["Streaming (internal/stream)"]
       direction TB
-      rb["read_batch: batch-size lines"] --> s1["pass 1: accumulate_metrics (monotonic widen)"]
-      s1 --> s2["pass 2: classify_row + emit_classified"]
+      rb["readBatch: batch-size lines"] --> s1["pass 1: AccumulateMetrics (monotonic widen)"]
+      s1 --> s2["pass 2: ClassifyRow + EmitClassified"]
       s2 -->|"more input"| rb
     end
-    subgraph B["Buffered (main.rs::run)"]
+    subgraph B["Buffered (pipeline.RunBuffered)"]
       direction TB
-      slurp["read all of stdin"] --> b1["pass 1: accumulate_metrics"]
-      b1 --> b2["pass 2: classify_row + emit_classified"]
+      slurp["read all of stdin"] --> b1["pass 1: AccumulateMetrics"]
+      b1 --> b2["pass 2: ClassifyRow + EmitClassified"]
     end
-    S --> sink{{"OutputSink"}}
+    S --> sink{{"output.Sink"}}
     B --> sink
     sink -->|"TTY + pager mode + PAGER"| pager["pager subprocess"]
     sink -->|"else"| stdout
 ```
 
-- **Activate gate** (`Activate::Never|Auto|Always`): `Never` = raw copy.
-  `Auto` = look for the `bijjou_template_name` field in input, else
-  passthrough (in streaming mode, the scan covers only the first batch).
-  `Always` (default) = process every line.
+- **Activate gate** (`config.ModeNever|ModeAuto|ModeAlways`): `ModeNever` =
+  raw copy. `ModeAuto` = look for the `bijjou_template_name` field in input,
+  else passthrough (in streaming mode, the scan covers only the first batch).
+  `ModeAlways` (default) = process every line.
 - **Stream vs buffered**: `[stream].enabled` switches paths (default on).
-  - Stream (`stream.rs`): read in batches, two-pass per batch, flush as
+  `cli.dispatch` reads the gate and picks the path.
+  - Stream (`internal/stream`): read in batches, two-pass per batch, flush as
     input arrives. Batch size is `[stream].batch-size` — a fixed line
     count (default 128) or `half-pager` (first batch = `rows-1`, each
     later batch = `(rows-1)/2`).
-  - Buffered (`main.rs::run`): read all of stdin, two-pass once, emit.
+  - Buffered (`pipeline.RunBuffered`): read all of stdin, two-pass once, emit.
 
 ## Templates
 
 A `[templates]` table maps names to DSL bodies. `bijjou` compiles them once at
-startup into `CompiledTemplate` (`main.rs::compile_templates`). Each commit
+startup into `CompiledTemplate` (`pipeline.CompileTemplates`). Each commit
 row's `bijjou_template_name` field picks the entry to render with:
 
 - **Parsed** body → render the row through the DSL.
@@ -73,40 +74,49 @@ row's `bijjou_template_name` field picks the entry to render with:
 - **No name** (row parsed as fields but carried no `bijjou_template_name`)
   → pass the rest of the line through verbatim instead of dropping it.
 
+`bijjou` scans a template body byte by byte and widens each byte to one
+codepoint, so a non-ASCII literal between `%{...}` tags renders as mojibake.
+The Go port keeps the behaviour of the Rust implementation, and field values
+are not affected.
+
 ## Modules
 
-| File         | Job                                                                                      |
-| ------------ | ---------------------------------------------------------------------------------------- |
-| `main.rs`    | Arg parse, config load chain, dispatch (stream vs buffered). Owns the shared row core: `RowKind`, `classify_row`, `emit_classified`, template compilation, and per-template `TemplateMetrics` (position-keyed anchors). |
-| `config.rs`  | `Config` struct, TOML/env/CLI merge, global `cfg()`. Precedence file < env < CLI            |
-| `ansi.rs`    | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
-| `render.rs`  | Parse line → `Parsed{graph_col, graph_col_collapsed, graph_end, content_start, last_is_edge, last_is_edge_collapsed}`. Recognize edges (box-drawing and elision) by codepoint, and nodes structurally (any non-edge glyph in the graph region, including custom `log_node` glyphs). Emit dimmed edges, and drop inter-column pad cells under `graph.collapse`. Node bytes (and their surrounding ANSI) pass through unchanged. Node coloring is jj's job, unless the caller hands `emit_dim_graph` a `hydra` stack color. `graph_nodes_to_verticals` rewrites a prefix's node back into a vertical, for the `hydra` padding row. `node_cell` reports the cell a prefix's node sits in, which is how `hydra` bounds a stack to its own column. |
-| `dsl.rs`     | Templating DSL and NUL/RS-framed record parser (`parse_nul_oneline`). `Template::parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render (`collect_anchors` → `render_row`). Pass 1 records each elastic-tab's max natural column (anchor), keyed by tab position. Pass 2 left-pads to the anchor so the following content's left edge lines up. An arg-ful tab then emits its field inline. An arg-less tab emits nothing (`%{elastic_tab()}%{X}` == `%{elastic_tab(X)}`). Whitespace follows a 4-rule model (see below). |
-| `stream.rs`  | Batched reader (`read_batch`), two-pass per batch with monotonic widening (anchors and `graph_col` targets never shrink as new batches arrive), `OutputSink` (stdout or pager spawned via `std::process::Command`/`posix_spawn`). |
-| `hydra.rs`   | Hydra awareness. `Topology::from_prefixes` expands `hydra.prefixes` into the bookmark names in force (`HYS-`, `HYWC-`, and the `HYB` / `HYH` / `HYCR` anchors) once, into the `TOPOLOGY` `LazyLock`, with the stand-in each reads as under `hydra.prefixes-replace`. `Walk` is the per-row state. It classifies each commit row by its `bookmarks` field (stack marker, working copy, anchor, or neither). It carries a stack's color down from its marker to the content commits under it in the same graph column (`render::node_cell`), so a commit drawn in another column is nobody's stack. It colors a `HYWC-*` row with its stack's color without carrying it. It draws the top-stack separator row. `Walk::markup` returns the row's node SGR. Under `hydra.color-bookmarks` or any `hydra.prefixes-replace` key, it also returns a rewritten `bookmarks` field whose `hydra` names carry their stack's color instead of jj's and read under their stand-ins (`render_row`'s field override). `replace_names` is the same substitution without the colors, for pass 1's anchors. No subprocess, so nothing to wait on. |
-| `output.rs`  | Buffered path's terminal write / pager exec (`fork` + `execvp`, which replaces `bijjou`'s process)  |
+| Package             | Job                                                                                      |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| `internal/cli`      | Argument handling, config load chain, dispatch (raw copy vs stream vs buffered). The cobra command runs through `fang`, which owns the styled help, the error output and the shell completions. `cli` sits above `pipeline` and `stream`, so the two never import each other. |
+| `internal/pipeline` | The shared row core: `Row` / `RowKind`, `ClassifyRow`, `EmitClassified`, template compilation, and per-template `Metrics` (position-keyed anchors). It also owns the buffered path (`RunBuffered`). |
+| `internal/config`   | `Config` struct, TOML/env/CLI merge, process-wide `Get()`. Precedence file < env < CLI      |
+| `internal/ansi`     | Byte-level ANSI utils: CSI skip, UTF-8 decode, SGR filter/strip                          |
+| `internal/render`   | Parse line → `Parsed{GraphCol, GraphColCollapsed, GraphEnd, ContentStart, LastIsEdge, LastIsEdgeCollapsed}`. Recognize edges (box-drawing and elision) by codepoint, and nodes structurally (any non-edge glyph in the graph region, including custom `log_node` glyphs). Emit dimmed edges, and drop inter-column pad cells under `graph.collapse`. Node bytes (and their surrounding ANSI) pass through unchanged. Node coloring is jj's job, unless the caller hands `EmitDimGraph` a `hydra` stack color. `GraphNodesToVerticals` rewrites a prefix's node back into a vertical, for the `hydra` padding row. `NodeCell` reports the cell a prefix's node sits in, which is how `hydra` bounds a stack to its own column. |
+| `internal/dsl`      | Templating DSL and NUL/RS-framed record parser (`ParseNULOneline`). `Parse` builds an AST of literal text, `%{field}` lookups, and `%{elastic_tab(field)}` align points. Two-pass render (`CollectAnchors` → `RenderRow`). Pass 1 records each elastic-tab's max natural column (anchor), keyed by tab position. Pass 2 left-pads to the anchor so the following content's left edge lines up. An arg-ful tab then emits its field inline. An arg-less tab emits nothing (`%{elastic_tab()}%{X}` == `%{elastic_tab(X)}`). Whitespace follows a 4-rule model (see below). |
+| `internal/stream`   | Batched reader (`readBatch`), two-pass per batch with monotonic widening (anchors and graph-column targets never shrink as new batches arrive), and the write loop over `output.Sink` (stdout or a pager child). |
+| `internal/hydra`    | Hydra awareness. `newTopology` expands `hydra.prefixes` into the bookmark names in force (`HYS-`, `HYWC-`, and the `HYB` / `HYH` / `HYCR` anchors), with the stand-in each reads as under `hydra.prefixes-replace`. A `Walk` (and a pass-1 `Renamer`) builds it once from `config.Get()` and holds it, so the run needs no global. `Walk` is the per-row state. It classifies each commit row by its `bookmarks` field (stack marker, working copy, anchor, or neither). It carries a stack's color down from its marker to the content commits under it in the same graph column (`render.NodeCell`), so a commit drawn in another column is nobody's stack. It colors a `HYWC-*` row with its stack's color without carrying it. It draws the top-stack separator row. `Walk.Markup` returns the row's node SGR. Under `hydra.color-bookmarks` or any `hydra.prefixes-replace` key, it also returns a rewritten `bookmarks` field whose `hydra` names carry their stack's color instead of jj's and read under their stand-ins (`RenderRow`'s field override). `Renamer.ReplaceNames` is the same substitution without the colors, for pass 1's anchors. No subprocess, so nothing to wait on. |
+| `internal/output`   | Terminal write and pager child (`os/exec`, bytes piped to the child's stdin). Both the buffered and the streaming path write through it. |
 
-The modules depend on each other as this diagram shows. `config.rs` and
-`ansi.rs` import no other module.
+The packages depend on each other as this diagram shows. `config` and `ansi`
+import no other package.
 
 ```mermaid
 flowchart TD
-    main["main.rs: row core + dispatch"]
-    stream["stream.rs"]
-    hydra["hydra.rs"]
-    render["render.rs"]
-    dsl["dsl.rs"]
-    output["output.rs"]
-    config["config.rs"]
-    ansi["ansi.rs"]
-    main --> config
-    main --> ansi
-    main --> render
-    main --> dsl
-    main --> output
-    main --> hydra
-    main --> stream
-    stream --> main
+    cli["internal/cli: args + dispatch"]
+    pipeline["internal/pipeline: row core"]
+    stream["internal/stream"]
+    hydra["internal/hydra"]
+    render["internal/render"]
+    dsl["internal/dsl"]
+    output["internal/output"]
+    config["internal/config"]
+    ansi["internal/ansi"]
+    cli --> config
+    cli --> pipeline
+    cli --> stream
+    pipeline --> config
+    pipeline --> ansi
+    pipeline --> render
+    pipeline --> dsl
+    pipeline --> output
+    pipeline --> hydra
+    stream --> pipeline
     stream --> render
     stream --> output
     stream --> hydra
@@ -125,63 +135,63 @@ flowchart TD
 
 ## Render flow per line
 
-1. `find_boundary` → locate end of graph prefix. A position is "graph"
+1. `FindBoundary` → locate end of graph prefix. A position is "graph"
    when its codepoint is an edge (box-drawing range or elision char). A
    position is also "graph" when it is a node. `bijjou` recognizes a node
    structurally, as any non-edge, non-space glyph that a space or an edge
    follows (the column gap jj pads after every node). So `bijjou` handles
    custom `log_node` glyphs (□, Nerd-Font PUA, and more) without a list of
    them. It never misreads content, because content's first glyph always
-   sits past the gap. `last_is_edge` records whether the prefix ended on an
+   sits past the gap. `LastIsEdge` records whether the prefix ended on an
    edge or a node.
    Under `graph.collapse`, `bijjou` drops the pad cell of every graph column
-   (`is_pad_cell`: an odd cell index that holds a space or a horizontal), so
+   (`isPadCell`: an odd cell index that holds a space or a horizontal), so
    column N lands at cell N. `Parsed` carries both column counts and both
-   `last_is_edge` flags. `classify_row` picks the pair that matches the
+   `LastIsEdge` flags. `ClassifyRow` picks the pair that matches the
    config, so the graph→content gap matches the prefix `bijjou` emits. Parity
    keeps this safe: horizontals that *are* a column's glyph (`├───╯`) and one
    cell of every inactive column survive. Passthrough rows with no boundary
-   collapse only when `is_graph_only` holds. Prose that holds a stray
+   collapse only when `IsGraphOnly` holds. Prose that holds a stray
    box-drawing char must not lose every second character.
-2. `classify_row` → after the graph prefix, look for a NUL/RS-framed
+2. `ClassifyRow` → after the graph prefix, look for a NUL/RS-framed
    payload (`key\0val\0…\x1e`, which the custom jj log template emits).
-   Lines that parse become `RowKind::Commit`, which carries `graph_col`,
-   `graph_end`, `last_is_edge`, `template_name`, and `fields`. A record that
-   is just `root\0<value>` becomes `RowKind::Root`. Anything else stays
-   `RowKind::Passthrough`.
-3. Pass 1 over the buffer (or batch): per named template, `collect_anchors`
+   Lines that parse become `RowCommit`, which carries `GraphCol`,
+   `GraphEnd`, `LastIsEdge`, `TemplateName`, and `Fields`. A record that
+   is just `root\0<value>` becomes `RowRoot`. Anything else stays
+   `RowPassthrough`.
+3. Pass 1 over the buffer (or batch): per named template, `CollectAnchors`
    records each elastic-tab's max natural column (anchor), keyed by tab
-   position. It also tracks the overall max `graph_col` across commit rows.
-4. Pass 2 — `emit_classified`:
-   - Commit: `hydra::Walk::node_color` gives the row's stack color (and the
+   position. It also tracks the overall max `GraphCol` across commit rows.
+4. Pass 2 — `EmitClassified`:
+   - Commit: `hydra.Walk.Markup` gives the row's stack color (and the
      top-stack separator row, when this row opens the second stack).
-     `emit_dim_graph` gives the graph prefix. Right-pad to the max graph
+     `EmitDimGraph` gives the graph prefix. Right-pad to the max graph
      column (the DSL takes this as a leading pad). Then dispatch on the row's
      template (Parsed / Empty / missing / no-name — see **Templates**). For a
-     Parsed body, `render_row` walks the template. Literal text and
+     Parsed body, `RenderRow` walks the template. Literal text and
      `%{field}` lookups emit verbatim. `%{elastic_tab(...)}` left-pads to its
      column's anchor (the fill is one space for a one-cell gap, otherwise
      dashes with `layout.dash-start` / `layout.dash-end` caps). Then an
      arg-ful tab emits its field value, and an arg-less tab emits nothing.
    - Root: emit the graph prefix, then a 2-cell pad and the `root` value
      verbatim (no template), so root commits do not perturb column widths.
-   - Passthrough: `emit_line` from `render.rs` handles the graph-only and
+   - Passthrough: `render.EmitLine` handles the graph-only and
      unframed cases (just the edge-dim rewrite and verbatim tail).
 
-`classify_row` sorts each line into one row kind. Pass 2 then dispatches on
+`ClassifyRow` sorts each line into one row kind. Pass 2 then dispatches on
 the row's template.
 
 ```mermaid
 flowchart TD
-    line["input line"] --> fb{"find_boundary: graph prefix?"}
-    fb -->|"none"| pt["RowKind::Passthrough"]
+    line["input line"] --> fb{"FindBoundary: graph prefix?"}
+    fb -->|"none"| pt["RowPassthrough"]
     fb -->|"found"| rs{"framed payload? (RS 0x1e terminator)"}
     rs -->|"no"| pt
-    rs -->|"root record"| root["RowKind::Root"]
+    rs -->|"root record"| root["RowRoot"]
     rs -->|"key/val record"| name{"has bijjou_template_name?"}
     name -->|"no"| noname["Commit: pass the tail verbatim"]
     name -->|"yes"| disp{"look up templates[name]"}
-    disp -->|"Parsed"| parsed["render_row through the DSL"]
+    disp -->|"Parsed"| parsed["RenderRow through the DSL"]
     disp -->|"Empty body"| empty["emit the graph prefix only"]
     disp -->|"Missing"| missing["emit a dim missing-template notice"]
 ```
@@ -192,37 +202,38 @@ The two render passes run in this order.
 sequenceDiagram
     participant In as rows buffer or batch
     participant P1 as pass 1 collect
-    participant M as TemplateMetrics
+    participant M as Metrics
     participant P2 as pass 2 emit
     participant H as hydra Walk
     participant R as render
     In->>P1: for each Commit row
-    P1->>M: collect_anchors, max anchor per tab
-    P1->>M: widen max_graph_col
+    P1->>M: CollectAnchors, max anchor per tab
+    P1->>M: widen maxGraphCol
     Note over M: monotonic, never shrinks
     In->>P2: for each row in log order
-    P2->>H: markup(fields, prefix)
+    P2->>H: Markup(fields, prefix)
     H-->>P2: node SGR + rewritten bookmarks
-    P2->>R: emit_dim_graph(prefix, color)
-    P2->>R: render_row(anchors, leading_pad)
+    P2->>R: EmitDimGraph(prefix, color)
+    P2->>R: RenderRow(anchors, leadingPad)
     R-->>P2: rendered bytes
-    P2-->>In: flush to OutputSink
+    P2-->>In: flush to output.Sink
 ```
 
 ## Hydra markup
 
 A `hydra` merges linear stacks as siblings off one base, so `jj log` gives each
 stack a graph column. The bookmark naming is configurable per repo. So
-`hydra.rs` reads it from `hydra.prefixes` and expands it once into
-`Topology{stack_prefix, wc_prefix, anchors}`, plus the stand-in each of those
-reads as under `hydra.prefixes-replace`. The topology is a `LazyLock`, so
-both render passes see the same names. A repo with no `hydra` carries no
-bookmark that matches, which is the same as no markup. A `hydra status
---toml` call is authoritative, but it calls jj several times per log, which
-costs more than the whole render.
+`internal/hydra` reads it from `hydra.prefixes` and expands it once into
+`topology{stackPrefix, wcPrefix, anchors}`, plus the stand-in each of those
+reads as under `hydra.prefixes-replace`. Each `Walk`, and each pass-1
+`Renamer`, builds the topology once from `config.Get()` and holds it. So both
+passes read the same names, and the run holds no package-level state. A repo
+with no `hydra` carries no bookmark that matches, which is the same as no
+markup. A `hydra status --toml` call is authoritative, but it calls jj several
+times per log, which costs more than the whole render.
 
-`Walk::node_color` runs once per commit row, in log order, from
-`emit_classified`:
+`Walk.Markup` runs once per commit row, in log order, from
+`EmitClassified`:
 
 - A row that carries `HYS-<name>` opens that stack. A row that carries an
   anchor (`HYB` / `HYH` / `HYCR`) leaves `hydra` territory. A row that carries
@@ -234,7 +245,7 @@ costs more than the whole render.
   and jj's out-of-sync `*` flag first, because `commit.bookmarks()` carries
   both.
 - The column bounds a stack at the bottom. A marker records the cell its node
-  sits in (`render::node_cell` over the row's own graph prefix, which counts
+  sits in (`render.NodeCell` over the row's own graph prefix, which counts
   jj's two cells per column). A bookmarkless row keeps the stack's color only
   while its node stays in that cell. A commit drawn in another column is
   nobody's stack, so it keeps jj's colors, and the stack does not resume
@@ -244,27 +255,27 @@ costs more than the whole render.
   (`hydra.colors = true`), or takes the palette entry for its index. The
   index is the order the log first named that stack, held for the rest of the
   run. Working-copy rows come above the stacks, so they register the order.
-  The hash walks `HUE_SPACE` — the hue circle less `RESERVED_HUES`, 10°
-  either side of `#a6e3a1` (115°) and `#f5c2e7` (316°). `hue_of` maps its
+  The hash walks `hueSpace` — the hue circle less `reservedHues`, 10°
+  either side of `#a6e3a1` (115°) and `#f5c2e7` (316°). `hueOf` maps its
   index back onto real degrees and skips the bands, so the hues stay evenly
   spread. `bijjou` passes a configured palette through as written.
 - Under `hydra.color-bookmarks` (default on), `bijjou` puts the same color on
   the names themselves. Under `hydra.prefixes-replace`, `bijjou` prints the
-  names under their stand-ins. `rewrite_bookmarks` splits the `bookmarks`
+  names under their stand-ins. `rewriteBookmarks` splits the `bookmarks`
   field on whitespace. For each `HYS-*` / `HYWC-*` / anchor token,
-  `emit_token` drops jj's foreground SGRs (colors only), puts the stack's
+  `emitToken` drops jj's foreground SGRs (colors only), puts the stack's
   color in front, and substitutes the token's leader for its stand-in. The
-  rewritten field reaches `render_row` as a per-row field override. Every
+  rewritten field reaches `RenderRow` as a per-row field override. Every
   other bookmark on the row passes through byte-for-byte.
 - A stand-in is not the width of the name it replaces, so pass 1 must measure
-  the anchors on the rewritten field too. `accumulate_metrics` calls
-  `hydra::replace_names` — the same substitution, colorless, which needs no
-  walk state — and hands it to `collect_anchors` as the same kind of
+  the anchors on the rewritten field too. `AccumulateMetrics` calls
+  `hydra.Renamer.ReplaceNames` — the same substitution, colorless, which
+  needs no walk state — and hands it to `CollectAnchors` as the same kind of
   override. A recolor alone changes no width, so `hydra.color-bookmarks`
   needs nothing in pass 1.
 - When the *second* stack opens, `bijjou` draws the separator row that jj
-  skipped under the first. It runs `graph_nodes_to_verticals` on that row's
-  own graph prefix, back through `emit_dim_graph`, so every column lands
+  skipped under the first. It runs `GraphNodesToVerticals` on that row's
+  own graph prefix, back through `EmitDimGraph`, so every column lands
   where it does above and below (under `graph.collapse` too).
 
 The walk is single-pass and stateful, so it works the same on the buffered
@@ -273,8 +284,8 @@ and streaming paths. It assumes jj's default top-down order. Under `jj log
 follow.
 
 The walk holds one of two states as it reads the log from top to bottom.
-`mark_of` classifies each row into a `Mark`: `Stack`, `Inside`,
-`WorkingCopy`, or `Outside`. The `Mark` drives the transition.
+`markOf` classifies each row into a `mark`: `markStack`, `markInside`,
+`markWorkingCopy`, or `markOutside`. The `mark` drives the transition.
 
 ```mermaid
 stateDiagram-v2
@@ -283,31 +294,31 @@ stateDiagram-v2
     InStack --> InStack : content row, node in same column
     InStack --> Outside : node leaves the column
     InStack --> Outside : anchor HYB/HYH/HYCR
-    InStack --> Outside : HYWC-name row, wc_color then color dropped
+    InStack --> Outside : HYWC-name row, wcColor then color dropped
     Outside --> InStack : HYS-name opens the next stack
     Outside --> Outside : anchor, content, or HYWC row
     note right of InStack
       color carried down to content commits
-      column = node_cell(prefix)
+      column = render.NodeCell(prefix)
     end note
     note right of Outside
-      color empty, column None
+      color empty, no column
       the second HYS- also draws top-stack padding
     end note
 ```
 
 ## DSL whitespace model
 
-`render_row` classifies output into segments (`Content`, touchable `Ws`,
-elastic-tab left-pad `Anchor`, and zero-width `EmptyTag`) and applies four
-rules in order:
+`RenderRow` classifies output into segments (`segContent`, touchable `segWs`,
+elastic-tab left-pad `segAnchor`, and zero-width `segEmptyTag`) and applies
+four rules in order:
 
 1. `bijjou` preserves leading whitespace before the first non-whitespace
    character verbatim (it never collapses, even when the first field is
    empty).
 2. When a `%{}` block emits empty bytes, every whitespace cell between it
    and the nearest non-whitespace character to its **left** collapses to
-   zero. `Anchor` cells stop the walk — column-alignment survives empty
+   zero. `segAnchor` cells stop the walk — column-alignment survives empty
    values.
 3. After rules 1-2 and elastic-tab alignment, `bijjou` dash-fills any run of
    consecutive whitespace cells (single cells stay spaces, and runs of two or
@@ -320,8 +331,8 @@ rules in order:
 
 A "dash run" is the filler between a graph node and the rest of the commit
 info on the same line. The spec is the single source of truth for both the
-intra-graph runs (`render.rs::flush_internal_run`) and the graph→content /
-inter-field runs (`dsl.rs::emit_pad`).
+intra-graph runs (`render`'s `graphRun.flush`) and the graph→content /
+inter-field runs (`dsl.emitPad`).
 
 - A dash run goes between a graph **node** (not a graph edge) and the
   rest of the commit info on the line.
@@ -348,22 +359,23 @@ plain dash).
 
 ## Config surface
 
-Single global `OnceLock<Config>` via `cfg()`. Three merge layers:
+One `Config` holds every setting. Three layers merge into it:
 
-1. `Config::load` → read TOML from `$BIJJOU_CONFIG` | XDG | `~/.config/...`.
+1. `config.Load` → read TOML from `$BIJJOU_CONFIG` | XDG | `~/.config/...`.
    Writes the embedded `bijjou-config.toml` to the XDG path on first run.
-2. `apply_env` → `BIJJOU__SECTION__KEY=VAL`.
-3. `apply_cli` → `--key__sub=val` (plus shorthands `--activate`,
+2. `ApplyEnv` → `BIJJOU__SECTION__KEY=VAL`.
+3. `ApplyCLI` → `--key__sub=val` (plus shorthands `--activate`,
    `--color`, `--stream[=bool]`).
 
-The three layers merge from low to high precedence.
+The three layers merge from low to high precedence. Then `config.Init` records
+the result, and `config.Get()` returns it everywhere.
 
 ```mermaid
 flowchart LR
-    def["built-in defaults"] --> file["Config::load — TOML from BIJJOU_CONFIG or XDG or ~/.config"]
-    file --> env["apply_env — BIJJOU__SECTION__KEY=VAL"]
-    env --> cli["apply_cli — --key__sub=val"]
-    cli --> store["cfg(): OnceLock&lt;Config&gt;"]
+    def["built-in defaults"] --> file["config.Load — TOML from BIJJOU_CONFIG or XDG or ~/.config"]
+    file --> env["ApplyEnv — BIJJOU__SECTION__KEY=VAL"]
+    env --> cli["ApplyCLI — --key__sub=val"]
+    cli --> store["config.Init, then config.Get()"]
 ```
 
 Keys: top-level (`activate`, `pager`), `[ui].color`,
@@ -380,30 +392,37 @@ stand-in for that name's leader), plus the hidden
 
 ## Output
 
-- TTY + `pager=auto|always` + `$PAGER` set → spawn pager subprocess,
-  pipe bytes.
-- Else → `stdout.write_all`.
-- `--color=auto` strips SGR when stdout not a TTY (via `ansi::strip_sgr`;
-  gated by `config::color_enabled`).
+- TTY + `pager=auto|always` + `$PAGER` set → spawn a pager child
+  (`os/exec`) and pipe the bytes to its stdin.
+- Else → write to stdout.
+- `--color=auto` strips SGR when stdout not a TTY (via `ansi.StripSGR`;
+  gated by `config.ColorEnabled`).
 
 `bijjou` selects the output path from the color and pager settings.
 
 ```mermaid
 flowchart TD
-    buf["rendered bytes"] --> col{"color_enabled()?"}
-    col -->|"no"| strip["ansi::strip_sgr"]
+    buf["rendered bytes"] --> col{"config.ColorEnabled()?"}
+    col -->|"no"| strip["ansi.StripSGR"]
     col -->|"yes"| dest
     strip --> dest{"TTY + pager mode + PAGER?"}
-    dest -->|"yes"| pager["spawn pager, pipe bytes"]
-    dest -->|"no"| out["stdout.write_all"]
+    dest -->|"yes"| pager["spawn pager child, pipe bytes to its stdin"]
+    dest -->|"no"| out["write to stdout"]
 ```
 
 ## Tests
 
-- `tests/golden.rs` + `insta` snapshots under `tests/snapshots/`, rendered
-  under `bijjou-config.toml` with `ui.color` forced on and `hydra.enable`
-  forced off (the `hydra` cases opt back in — the fixture's own `HY*` bookmarks
-  carry the topology, so no test depends on a live `hydra`). Run
-  `mise run test-insta`. Review with `cargo insta review`.
-- Unit tests inline in `render.rs`, `dsl.rs`, `ansi.rs`, `stream.rs`,
-  `config.rs`, `hydra.rs`.
+- Golden tests in `golden_test.go` (package `main_test`), with the expected
+  text in `testdata/golden/*.txt` and the inputs in
+  `testdata/fixtures/*.txt`. Each fixture renders under `bijjou-config.toml`
+  with `ui.color` forced on and `hydra.enable` forced off (the `hydra` cases
+  opt back in — the fixture's own `HY*` bookmarks carry the topology, so no
+  test depends on a live `hydra`). Run `mise run test-golden`. After an
+  intentional output change, rewrite the expected text with
+  `mise run test-golden -- -update`. `BIJJOU_TEST_BIN=<path>` points the
+  harness at a binary that is already built.
+- Unit tests are Go package tests beside each package
+  (`internal/render/render_test.go`, `internal/dsl/dsl_test.go`,
+  `internal/ansi/ansi_test.go`, `internal/stream/stream_test.go`,
+  `internal/config/config_test.go`, `internal/hydra/hydra_test.go`,
+  `internal/pipeline/pipeline_test.go`). Run `mise run test-unit`.

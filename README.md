@@ -170,10 +170,10 @@ follow.
 From source:
 
 ```sh
-cargo install --path .
+go install tangled.org/jjt.io/bijjou@latest
 ```
 
-Or with [mise](https://mise.jdx.dev):
+Or with [mise](https://mise.jdx.dev), which pins the Go toolchain:
 
 ```sh
 mise run install               # installs to ~/.local/bin/bijjou
@@ -225,11 +225,12 @@ Run `bijjou --help` for the same reference inline.
 ## Development
 
 ```sh
-mise run build              # release build
+mise run build              # build bin/bijjou
 mise run test               # all tests
-mise run test-unit          # unit tests only
-mise run test-insta         # golden snapshot tests
-mise run show-golden [name] # render a golden snapshot with ANSI codes live
+mise run test-unit          # package unit tests only
+mise run test-golden        # golden output tests
+mise run show-golden [name] # render a golden file with ANSI codes live
 ```
 
-Golden snapshots live under `tests/snapshots/`. After intentional output changes, run `cargo insta review` to accept the new versions.
+Golden files live under `testdata/golden/`. After intentional output changes,
+run `mise run test-golden -- -update` to rewrite them, then read the diff.
