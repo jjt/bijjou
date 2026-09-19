@@ -6,23 +6,23 @@
 #   3. $HOME/.config/bijjou/config.toml
 #
 # Every key is optional. Omitted keys keep their built-in default.
-# Sections may be omitted entirely. Comments must start in column 0
+# You can omit whole sections. Comments must start in column 0
 # (inline `# ...` after a value is not supported).
 #
 # Overrides (low → high precedence): config file < env vars < CLI flags.
 #   Env: prefix `BIJJOU__`, replace `.` with `__` and `-` with `_`.
-#     Uppercase is canonical; lowercase also accepted.
-#     e.g. `graph.edges.chars.horizontal` → `BIJJOU__GRAPH__EDGES__CHARS__HORIZONTAL`
+#     Uppercase is canonical. Lowercase is also accepted.
+#     For example, `graph.edges.chars.horizontal` → `BIJJOU__GRAPH__EDGES__CHARS__HORIZONTAL`
 #   CLI: `--<key>=<value>`, replace `.` with `__`.
-#     e.g. `--graph__edges__chars__horizontal=X`
+#     For example, `--graph__edges__chars__horizontal=X`
 #   `--activate` with no value is shorthand for `--activate=auto`.
 
 # Processing mode: one of "auto", "always", "never".
-#   auto   — process only if the `bijjou_template_name` field appears in the
-#            input; otherwise pass stdin through byte-for-byte.
-#   always — process every line regardless (default).
-#   never  — passthrough stdin byte-for-byte without processing.
-# The `--activate=<auto|always|never>` CLI flag overrides this; `--activate`
+#   auto   — process the input only when the `bijjou_template_name` field
+#            appears. If not, pass stdin through byte-for-byte.
+#   always — process every line (default).
+#   never  — pass stdin through byte-for-byte, with no processing.
+# The `--activate=<auto|always|never>` CLI flag overrides this. `--activate`
 # with no value resolves to "auto".
 #
 # Default: "always"
@@ -31,8 +31,8 @@
 
 # Pager mode: one of "auto", "always", "never".
 #   auto   — page only when $PAGER is set and stdout is a terminal (default).
-#   always — always page; bijjou errors at startup if $PAGER is unset.
-#   never  — never page; output goes straight to stdout.
+#   always — always page. If $PAGER is unset, bijjou errors at startup.
+#   never  — never page. Output goes straight to stdout.
 #
 # Default: "auto"
 #
@@ -40,10 +40,10 @@
 
 [ui]
 # Color output: one of "auto", "always", "never".
-#   auto   — emit color when stdout is a terminal; strip otherwise (default).
+#   auto   — emit color when stdout is a terminal. If not, strip it (default).
 #   always — always emit color sequences.
 #   never  — strip every SGR sequence from the output.
-# The `--color=<auto|always|never>` CLI flag overrides this; `--color` with no
+# The `--color=<auto|always|never>` CLI flag overrides this. `--color` with no
 # value resolves to "auto".
 #
 # Default: "auto"
@@ -53,12 +53,12 @@
 [graph]
 # Collapse the graph's inter-column space.
 #
-# jj draws the graph in fixed two-cell columns: the glyph (`│`, `├`, a node,
-# …) in the first cell, an inter-column gap in the second — a space, or a
-# horizontal when a connector runs through it. With `collapse = true` those
-# gap cells are dropped, so column N sits at cell N instead of cell 2N and
-# the whole graph is half as wide. The graph→content gap (and therefore the
-# dash run) shrinks with it.
+# jj draws the graph in fixed two-cell columns. The first cell holds the
+# glyph (`│`, `├`, a node, …). The second cell holds an inter-column gap:
+# a space, or a horizontal when a connector runs through it. `collapse =
+# true` drops those gap cells. Column N then sits at cell N instead of
+# cell 2N, and the whole graph is half as wide. The graph→content gap
+# (and therefore the dash run) shrinks with it.
 #
 #   collapse = false          collapse = true
 #   ○╶───╴rppzwpzx           ○╶─╴rppzwpzx
@@ -66,10 +66,10 @@
 #   𜸩 𜸩 ○ vxqsrzyn           𜸩𜸩○ vxqsrzyn
 #   𜸩 ○╶𜸩╴mzpomyto           𜸩○𜸩╴mzpomyto
 #
-# Only gap cells go. A glyph that happens to be a horizontal because a
-# connector spans several columns (`├───╯`) keeps its own cell, and an
-# inactive column keeps one of its two spaces — otherwise the glyphs to the
-# right would slide off the columns above and below them.
+# Only gap cells go. A glyph that is a horizontal because a connector
+# spans several columns (`├───╯`) keeps its own cell. An inactive column
+# keeps one of its two spaces. If not, the glyphs to the right slide off
+# the columns above and below them.
 #
 # Default: false
 #
@@ -93,18 +93,18 @@
 # elision      = "𜹀"
 
 [layout]
-# `dash` — glyph repeated to fill the interior cells of a dash run
-# between a graph node and the rest of the commit info, and to fill
-# elastic_tab pads of two or more cells in the content template.
+# `dash` — the glyph that fills the interior cells of a dash run between
+# a graph node and the rest of the commit info. It also fills elastic_tab
+# pads of two or more cells in the content template.
 #
 # `dash-start` — opening cap glyph that replaces the first cell of a
 # multi-cell dash run (the cell immediately to the right of a graph
-# node). Set to "" to drop the cap; the cell becomes a plain `dash`.
+# node). Set to "" to drop the cap. The cell then becomes a plain `dash`.
 #
 # `dash-end` — glyph for the closing cell of a dash run, the cell
 # immediately to the left of the content the run terminates against.
-# That cell is never a dash: when `dash-end` is "" (the default) it is a
-# plain space, so the change id always has a space to its left:
+# That cell is never a dash. When `dash-end` is "" (the default), the cell
+# is a plain space. The change id then always has a space to its left:
 #
 #   ○╶───── qquxkvlu bade4917 …     dash-end = ""   (default)
 #   ○╶────╴qquxkvlu bade4917 …      dash-end = "╴"
@@ -130,17 +130,18 @@
 
 [hydra]
 # A jj hydra merges several linear stacks as siblings off one base, so
-# `jj log` gives each stack its own graph column. With `enable = true` bijjou
-# marks those columns up, recognizing them by the bookmark names under
-# `[hydra.prefixes]` below: a row carrying `HYS-<name>` opens that stack, the
-# anchors (`HYB` / `HYH` / `HYCR`) and the `HYWC-*` working copies close it.
-# A repo with no hydra carries none of those bookmarks, so it gets no markup
-# — the output is byte-for-byte what it is with `enable = false`.
+# `jj log` gives each stack its own graph column. With `enable = true`,
+# bijjou marks up those columns. bijjou recognizes them by the bookmark
+# names under `[hydra.prefixes]` below. A row that carries `HYS-<name>`
+# opens that stack. The anchors (`HYB` / `HYH` / `HYCR`) and the `HYWC-*`
+# working copies close it. A repo with no hydra carries none of those
+# bookmarks, so it gets no markup. The output is then byte-for-byte the
+# same as with `enable = false`.
 #
-# A stack also ends where its graph column does: the rows under a marker are
-# its content only while their node stays in the marker's column, so an extra
-# head off the base — drawn below the bottom stack, above `HYB` — is nobody's
-# stack and keeps jj's own colours.
+# A stack also ends where its graph column ends. The rows under a marker
+# are its content only while their node stays in the marker's column. An
+# extra head off the base belongs to no stack, and it keeps jj's own
+# colors. This head is drawn below the bottom stack, above `HYB`.
 #
 # Classification is per row, off the `bookmarks` field and the graph prefix jj
 # already drew: no subprocess, no repo lookup, nothing to wait on.
@@ -152,10 +153,10 @@
 #
 # enable = true
 
-# jj closes a graph column only when the branch to its *left* ends, so every
-# stack gets a `├─╯` row under it except the topmost, which runs straight
-# into its neighbour. `top-stack-padding = true` draws the separator jj
-# skipped: the next stack's own columns, all verticals.
+# jj closes a graph column only when the branch to its *left* ends. So
+# every stack gets a `├─╯` row under it, except the topmost. The topmost
+# runs straight into its neighbor. `top-stack-padding = true` draws the
+# separator jj skipped: the next stack's own columns, all verticals.
 #
 #   top-stack-padding = false     top-stack-padding = true
 #   𜸩𜸩𜸩● knktkz                   𜸩𜸩𜸩● knktkz
@@ -168,37 +169,40 @@
 #
 # top-stack-padding = true
 
-# Colour each stack's graph nodes, so a column is readable at a glance.
-#   true   — hash the stack's name into a colour (stable across runs, and a
-#            stack keeps its colour as the log reorders). The hash picks a
-#            hue at fixed saturation and lightness, out of the circle less
-#            two reserved bands: 10° either side of `#a6e3a1` (115°) and of
-#            `#f5c2e7` (316°), so a stack never reads as those. An explicit
-#            palette is yours, so it is used as given.
+# Color each stack's graph nodes, so a column is readable at a glance.
+#   true   — hash the stack's name into a color. The color is stable
+#            across runs, and a stack keeps its color as the log
+#            reorders. The hash picks a hue at fixed saturation and
+#            lightness. It uses the circle less two reserved bands: 10°
+#            either side of `#a6e3a1` (115°) and of `#f5c2e7` (316°). So
+#            a stack never reads as those. An explicit palette is yours,
+#            so bijjou uses it as given.
 #   false  — leave every node exactly as jj drew it.
-#   list   — an explicit palette, indexed by the order the log first names
-#            each stack: the first stack named takes the first entry, the
-#            next one the second, wrapping when there are more stacks than
-#            colours. Working-copy rows sit above the stacks, so they are
-#            what sets that order. Entries are `int 0-255 | "#rrggbb"`, same
-#            as `[colors]`. Over env or CLI, spell the list comma-separated:
+#   list   — an explicit palette. bijjou indexes it by the order the log
+#            first names each stack. The first stack named takes the
+#            first entry, and the next one takes the second. The list
+#            wraps when there are more stacks than colors. Working-copy
+#            rows sit above the stacks, so they set that order. Entries
+#            are `int 0-255 | "#rrggbb"`, same as `[colors]`. Over env or
+#            CLI, spell the list comma-separated:
 #            `--hydra__colors=1,2,"#aabbcc"`.
 #
-# A stack's `HYWC-<name>` working copy takes the same colour as the stack,
-# so the two read as one thing even though the working copy sits outside the
-# stack. The anchors (`HYB` / `HYH` / `HYCR`) and anything outside the hydra
-# keep jj's colours.
+# A stack's `HYWC-<name>` working copy takes the same color as the stack.
+# So the two read as one thing, even though the working copy sits outside
+# the stack. The anchors (`HYB` / `HYH` / `HYCR`) and anything outside
+# the hydra keep jj's colors.
 #
 # Default: true
 #
 # colors = true
 
-# Print the hydra bookmark names in their stack's colour as well: `HYS-foo`
-# on the marker row and `HYWC-foo` on the working copy both read in the same
-# colour as the column they belong to. jj's own colour is replaced for those
-# names only; every other bookmark on the row, and the anchors
-# (`HYB` / `HYH` / `HYCR`), keep the colours jj gave them. With
-# `colors = false` there is no stack colour to use, so this does nothing.
+# bijjou also prints the hydra bookmark names in their stack's color.
+# `HYS-foo` on the marker row and `HYWC-foo` on the working copy both
+# read in the same color as the column they belong to. bijjou replaces
+# jj's own color for those names only. Every other bookmark on the row,
+# and the anchors (`HYB` / `HYH` / `HYCR`), keep the colors jj gave them.
+# With `colors = false`, there is no stack color to use, so this key does
+# nothing.
 #
 # Default: true
 #
@@ -207,13 +211,14 @@
 [hydra.prefixes]
 # How this repo names its hydra bookmarks — the same naming
 # `hydra status --toml` reports under `bookmarks.*`, spelled here so bijjou
-# never has to ask. Change these only if the repo changed its own naming; a
-# mismatch means no markup, never wrong markup.
+# never has to ask. If the repo changed its own naming, change these keys.
+# If not, leave them unchanged. A mismatch means no markup, never wrong
+# markup.
 #
 # `prefix` leads every hydra bookmark. `base`, `head` and
 # `conflict-resolution` complete a whole bookmark name (`HYB`, `HYH`,
-# `HYCR`). `stack-head` and `stack-working-copy` are followed by
-# `-<stack name>` (`HYS-foo`, `HYWC-foo`).
+# `HYCR`). `stack-head` and `stack-working-copy` take a `-<stack name>`
+# suffix (`HYS-foo`, `HYWC-foo`).
 #
 # Defaults: prefix = "HY", base = "B", head = "H",
 #           conflict-resolution = "CR", stack-head = "S",
@@ -228,24 +233,25 @@
 
 [hydra.prefixes-replace]
 # What those names read as once rendered, keyed exactly like
-# `[hydra.prefixes]` above. Classification is untouched: the bookmarks are
-# still matched under their real names, only printed under these.
+# `[hydra.prefixes]` above. Classification does not change: bijjou still
+# matches the bookmarks under their real names, and only prints them under
+# these.
 #
-# A key that is set stands in for the whole leader `[hydra.prefixes]` builds
-# out of it, and the stack name behind that leader is kept:
+# A set key replaces the whole leader that `[hydra.prefixes]` builds from
+# it. bijjou keeps the stack name behind that leader:
 #
 #   base = "◆"         →  `HYB` renders `◆`
 #   stack-head = "Ψ"   →  `HYS-foo` renders `Ψfoo`
 #
 # The dash belongs to the leader, so `stack-head` and `stack-working-copy`
-# take it with them. `prefix` replaces the shared `HY` leader only —
-# `prefix = "Ψ"` renders `HYS-foo` as `ΨS-foo` and `HYB` as `ΨB` — and a
-# per-bookmark key wins over it. A key left unset leaves the bookmarks it
-# names exactly as jj printed them, so replacing one leader is not replacing
-# the rest.
+# take it with them. `prefix` replaces the shared `HY` leader only. For
+# example, `prefix = "Ψ"` renders `HYS-foo` as `ΨS-foo` and `HYB` as `ΨB`.
+# A per-bookmark key overrides `prefix`. An unset key leaves the bookmarks
+# it names exactly as jj printed them. So a replacement of one leader does
+# not replace the rest.
 #
-# A stand-in is not the width of the name it replaces; the elastic-tab
-# columns are measured on what is rendered, so they line up either way.
+# A stand-in is not the width of the name it replaces. bijjou measures the
+# elastic-tab columns on what it renders, so they align either way.
 #
 # Defaults: every key unset — each name renders as itself.
 #
@@ -258,32 +264,33 @@
 
 [stream]
 # Streaming mode flushes rendered output as input arrives, in batches of
-# `batch-size` lines. The graph-column width is tracked across the whole
-# stream and grows monotonically the moment a wider graph column appears
-# (not at the batch boundary), so column alignment never shifts backwards.
-# `batch-size` controls flush cadence: smaller batches give lower latency to
-# first paint, larger batches reduce syscalls. When stdout is a terminal and
-# $PAGER is set, batches are flushed into the pager (the pager must tolerate
-# partial input — modern `less` does).
+# `batch-size` lines. bijjou tracks the graph-column width across the whole
+# stream. The width grows monotonically the moment a wider graph column
+# appears, not at the batch boundary. So column alignment never shifts
+# backwards. `batch-size` controls flush cadence: smaller batches give
+# lower latency to first paint, larger batches reduce syscalls. When stdout
+# is a terminal and $PAGER is set, bijjou flushes batches into the pager.
+# The pager must tolerate partial input (modern `less` does).
 #
-# Note: streaming and non-streaming intentionally differ here. Non-streaming
-# has the whole input up front and aligns every line to the global max
-# graph_col, so early narrow rows get dash filler that extends to the widest
-# point of the log. Streaming pre-scans the first batch so every line in it
-# shares the batch-wide max; subsequent batches widen monotonically per-line
-# as wider rows arrive (and never shrink). Same input → different output
-# between the two modes for any log that fans out after the first batch.
+# Note: streaming and non-streaming intentionally differ here.
+# Non-streaming has the whole input in advance. It aligns every line to the
+# global max graph_col. So early narrow rows get dash filler that extends
+# to the widest point of the log. Streaming pre-scans the first batch, so
+# every line in it shares the batch-wide max. Later batches widen
+# monotonically per line as wider rows arrive, and never shrink. Same
+# input → different output between the two modes for any log that fans out
+# after the first batch.
 #
-# When `activate = "auto"` and streaming is on, the scan for the
-# `bijjou_template_name` field is limited to the first batch. If it isn't
-# there, the rest of stdin is passed through byte-for-byte without further
-# processing. Set `activate = "always"` to skip the scan entirely.
+# When `activate = "auto"` and streaming is on, bijjou limits the scan for
+# the `bijjou_template_name` field to the first batch. If the field is not
+# there, bijjou passes the rest of stdin through byte-for-byte, with no
+# further processing. Set `activate = "always"` to skip the scan entirely.
 #
-# `batch-size` accepts a positive integer or the string "half-pager", which
-# sizes the first batch to (terminal_rows - 1) and each subsequent batch to
-# floor((terminal_rows - 1) / 2) — useful with a pager so the first paint
-# fills a screen and follow-up batches stream in half-screens. Falls back to
-# the default integer when no terminal size is detectable.
+# `batch-size` accepts a positive integer or the string "half-pager".
+# "half-pager" sizes the first batch to (terminal_rows - 1) and each later
+# batch to floor((terminal_rows - 1) / 2). This value helps with a pager:
+# the first paint fills a screen, and later batches stream in half-screens.
+# bijjou uses the default integer when it cannot detect a terminal size.
 #
 # Defaults: enabled = true, batch-size = 128
 #
