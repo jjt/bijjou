@@ -1,4 +1,1 @@
-target
-debug
-**/*.rs.bk
-
+bin
