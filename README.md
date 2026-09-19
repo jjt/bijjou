@@ -1,8 +1,8 @@
 # bijjou
 
-A post-processor that takes `NUL` separated fields from custom jj templates (log, etc) and displays them according to bijjou templates.
+bijjou is a post-processor. It reads `NUL`-separated fields from custom jj templates (`log` and more) and shows them through bijjou templates.
 
-We leverage jj's template system functionality to write `NUL`-separated key/value strings and pipe the output to bijjou. In general, jj handles the content of the pieces, and bijjou pieces them together.
+bijjou uses jj's template system to write `NUL`-separated key/value strings, then pipes the output to bijjou. jj makes the content of each piece. bijjou puts the pieces together.
 
 ## Example config
 
@@ -84,13 +84,13 @@ bijjou_log_oneline = '''
 ```
 
 
-Color is preserved if enabled from jj and bijjou. By default jj will not emit color if it's being piped to a non-tty process, so you might have to add a config option or use the `--color=always` cli flag.
+bijjou keeps color when jj and bijjou both enable it. By default, jj emits no color when a pipe sends its output to a non-TTY process. To keep color, add a config option or use the `--color=always` CLI flag.
 
-The `elastic_tab()` function is a tab stop: it left-pads the current row so the content that follows lines up in a column across rows, adding a horizontal guide line in the gap. You can see this in effect in the change ids: note how they are all aligned. `%{elastic_tab(field)}` is shorthand for a tab immediately followed by `%{field}` — it pads, then emits the field. Columns are keyed by tab position, so each `elastic_tab` in a template is its own column.
+The `elastic_tab()` function is a tab stop. It left-pads the current row so the content that follows lines up in a column across rows. It also adds a horizontal guide line in the gap. You can see this effect in the change ids, which all line up. `%{elastic_tab(field)}` is shorthand for a tab that a `%{field}` follows. It pads, then emits the field. bijjou keys columns by tab position, so each `elastic_tab` in a template is its own column.
 
-The one output replacement bijjou does handle is the graph edges, which are replaced with something more aesthetic: Large Type Pieces from the [Symbols for Legacy Computing Supplement block](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing_Supplement) introduced in Unicode 16.0 ([unicode pdf](https://www.unicode.org/charts/PDF/Unicode-16.0/U160-1CC00.pdf)). If you don't like those, you can configure the various graph edge characters to whatever you'd like. I can't stop you if you make them all the cowboy emoji, for example.
+bijjou makes one output replacement: it rewrites the graph edges into something more aesthetic. These are Large Type Pieces from the [Symbols for Legacy Computing Supplement block](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing_Supplement), introduced in Unicode 16.0 ([unicode pdf](https://www.unicode.org/charts/PDF/Unicode-16.0/U160-1CC00.pdf)). If you do not like those, you can set the graph edge characters to anything you want. For example, you can make them all the cowboy emoji.
 
-jj draws the graph in fixed two-cell columns: the glyph in the first cell, an inter-column gap in the second (a space, or a horizontal where a connector runs through). Set `graph.collapse = true` to drop those gap cells — the graph becomes half as wide, and the dash run to the content shrinks with it:
+jj draws the graph in fixed two-cell columns. The glyph sits in the first cell. An inter-column gap sits in the second cell (a space, or a horizontal where a connector passes through). Set `graph.collapse = true` to drop those gap cells. Then the graph becomes half as wide, and the dash run to the content shrinks with it:
 
 ```shell
 ❯ jj log -T bijjou_log_oneline | bijjou --graph__collapse=true
@@ -104,47 +104,48 @@ jj draws the graph in fixed two-cell columns: the glyph in the first cell, an in
 𜸨𜹃
 ```
 
-Only gap cells go. A glyph that happens to be a horizontal because a connector spans several columns (`├───╯`) keeps its cell, and an inactive column keeps one of its two spaces, so nothing slides off the column it belongs to.
+Only gap cells go. A glyph that is a horizontal because a connector spans several columns (`├───╯`) keeps its cell. An inactive column keeps one of its two spaces. As a result, nothing slides off the column it belongs to.
 
-Bijjou takes streaming input and by default streams output in batches, either a fixed size (default 128), or in `half-pager` mode. This designed for use with pagers (shocking, I know). It sets the batch size based on screen height (`height/2 - 1`) to reduce or avoid tears between page down/up events while paging. The `-1` is there to acommodate for the status bar of pagers like `less` and `more`. _PS: I recommend [moor](https://github.com/walles/moor) as a pager. It's great._
+bijjou takes streaming input. By default, it streams output in batches, either a fixed size (default 128) or `half-pager` mode. This mode works with pagers. It sets the batch size from the screen height (`height/2 - 1`) to reduce or remove tears between page-down and page-up events during paging. The `-1` accommodates the status bar of pagers like `less` and `more`. _PS: I recommend [moor](https://github.com/walles/moor) as a pager. It's great._
 
-Output streaming can also be disabled via config.
+You can also turn off output streaming in the config.
 
 ## Hydra topologies
 
-A jj *hydra* merges several linear *stacks*
-as siblings off one base, so `jj log` gives each stack its own graph column.
-With `hydra.enable = true` (the default) bijjou marks those columns up. It
-recognizes them by bookmark name, from the naming in `[hydra.prefixes]`: a row
-carrying `HYS-<name>` opens that stack, an anchor (`HYB` / `HYH` / `HYCR`) or a
-`HYWC-*` working copy closes it, and the rows between keep the stack they sit
-in — for as long as they sit in its graph column. A commit drawn in another
-column, like an extra head off the base below the bottom stack, is nobody's
-stack and keeps jj's own colours.
+A jj *hydra* merges several linear *stacks* as siblings off one base. As a
+result, `jj log` gives each stack its own graph column. With `hydra.enable =
+true` (the default), bijjou marks those columns up. bijjou recognizes them by
+bookmark name, from the naming in `[hydra.prefixes]`. A row that carries
+`HYS-<name>` opens that stack. An anchor (`HYB` / `HYH` / `HYCR`) or a
+`HYWC-*` working copy closes it. The rows between keep the stack they sit in,
+for as long as they stay in its graph column. A commit drawn in another
+column is nobody's stack and keeps jj's own colors. An extra head off the
+base below the bottom stack is one example.
 
-- `hydra.top-stack-padding` draws the separator row jj skips under the log's
-  top stack. jj closes a graph column only when the branch to its *left* ends,
-  so every stack gets a `├─╯` row under it except the topmost, which runs
-  straight into its neighbour.
-- `hydra.colors` colours each stack's graph nodes: `true` hashes the stack
-  name into a hue, `false` leaves jj's nodes alone, and a list is a palette
-  indexed by the order the log first names each stack (wrapping). The hash
-  skips two reserved bands — 10° either side of `#a6e3a1` (115°) and
-  `#f5c2e7` (316°) — so a hashed stack never reads as one of those; a palette
-  you wrote is used as given. A stack's `HYWC-<name>` working copy takes its
-  stack's colour too, so the two read as one thing.
-- `hydra.color-bookmarks` puts that colour on the bookmark names themselves,
-  so `HYS-<name>` and `HYWC-<name>` read in their column's colour instead of
-  jj's. Other bookmarks on the row, and the anchors, keep jj's colours.
-- `[hydra.prefixes-replace]` renames those bookmarks in the output, keyed like
-  `[hydra.prefixes]`: a set key stands in for the whole leader built out of it
-  and keeps the stack name, so `base = "◆"` renders `HYB` as `◆` and
-  `stack-head = "Ψ"` renders `HYS-foo` as `Ψfoo` (the dash goes with the
-  leader). `prefix` replaces the shared `HY` leader alone, so `HYS-foo` reads
-  `ΨS-foo`; a per-bookmark key wins over it. A key left unset leaves the
-  bookmarks it names as jj printed them. Classification still runs on the real
-  names, and the elastic-tab columns are measured on the rendered width, so a
-  stand-in of any width stays aligned.
+- `hydra.top-stack-padding` draws the separator row that jj skips under the
+  log's top stack. jj closes a graph column only when the branch to its
+  *left* ends. As a result, every stack gets a `├─╯` row under it, except the
+  topmost. The topmost stack runs straight into its neighbor.
+- `hydra.colors` colors each stack's graph nodes. `true` hashes the stack
+  name into a hue. `false` leaves jj's nodes alone. A list is a palette,
+  indexed by the order the log first names each stack (the index wraps). The
+  hash skips two reserved bands, 10° either side of `#a6e3a1` (115°) and
+  `#f5c2e7` (316°). As a result, a hashed stack never reads as one of those.
+  bijjou uses a palette you wrote as given. A stack's `HYWC-<name>` working
+  copy takes its stack's color too, so the two read as one thing.
+- `hydra.color-bookmarks` puts that color on the bookmark names themselves.
+  As a result, `HYS-<name>` and `HYWC-<name>` read in their column's color
+  instead of jj's. Other bookmarks on the row, and the anchors, keep jj's
+  colors.
+- `[hydra.prefixes-replace]` renames those bookmarks in the output, keyed
+  like `[hydra.prefixes]`. A set key stands in for the whole leader built out
+  of it and keeps the stack name. For example, `base = "◆"` renders `HYB` as
+  `◆`, and `stack-head = "Ψ"` renders `HYS-foo` as `Ψfoo` (the dash goes with
+  the leader). `prefix` replaces the shared `HY` leader alone, so `HYS-foo`
+  reads `ΨS-foo`. A per-bookmark key wins over `prefix`. A key left unset
+  leaves the bookmarks it names as jj printed them. Classification still runs
+  on the real names. bijjou measures the elastic-tab columns on the rendered
+  width, so a stand-in of any width stays aligned.
 
 ```shell
 ❯ jj log -T log_oneline | bijjou --graph__collapse=true
@@ -156,11 +157,11 @@ stack and keeps jj's own colours.
 𜸩𜸩𜸨𜹃
 ```
 
-A repo with no hydra carries no such bookmark, so it gets no markup — output
-is byte-for-byte what `hydra.enable = false` gives. Classification is per row
-off the `bookmarks` field, so there is no subprocess and nothing to wait on;
-if the repo renamed its hydra bookmarks, spell the new naming in
-`[hydra.prefixes]`. Markup needs jj's default top-down log order — `jj log
+A repo with no hydra carries no such bookmark, so it gets no markup. The
+output is byte-for-byte what `hydra.enable = false` gives. Classification
+runs per row off the `bookmarks` field, so there is no subprocess and nothing
+to wait on. If the repo renamed its hydra bookmarks, spell the new naming in
+`[hydra.prefixes]`. Markup needs jj's default top-down log order. `jj log
 --reversed` puts a stack's commits above its marker, which the walk cannot
 follow.
 
@@ -189,9 +190,9 @@ Config file paths (first match wins):
 - `$XDG_CONFIG_HOME/bijjou/config.toml`
 - `$HOME/.config/bijjou/config.toml`
 
-If no file is present, bijjou writes a default one to the XDG path on first run.
+If no file is present, bijjou writes a default file to the XDG path on first run.
 
-Env vars: prefix `BIJJOU__`, replace `.` with `__` and `-` with `_`. Uppercase is canonical, lowercase is accepted too.
+Env vars: prefix `BIJJOU__`, replace `.` with `__` and `-` with `_`. Uppercase is canonical. bijjou also accepts lowercase.
 
 ```shell
 BIJJOU__GRAPH__EDGES__CHARS__HORIZONTAL=X jj log | bijjou
@@ -211,9 +212,9 @@ and explanatory comment. Quick reference:
 | (top level)           | `activate`, `pager`                                                                                 |
 | `[ui]`                | `color` (auto\|always\|never)                                                                       |
 | `[layout]`            | `dash`, `dash-start`, `dash-end`                                                                    |
-| `[templates]`         | `<name>` (DSL body; a row's `bijjou_template_name` selects one)                                     |
+| `[templates]`         | `<name>` (DSL body — a row's `bijjou_template_name` selects one)                                     |
 | `[stream]`            | `enabled`, `batch-size` (int or `"half-pager"`)                                                     |
-| `[graph]`             | `collapse` (bool; drop the graph's inter-column pad cells)                                           |
+| `[graph]`             | `collapse` (bool — drop the graph's inter-column pad cells)                                          |
 | `[graph.edges.chars]` | `horizontal`, `vertical`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `tee-right`, `tee-left`, `tee-down`, `tee-up`, `cross`, `elision` |
 | `[colors]`            | `dash-filler`, `graph-edge` (int 0–255 or `"#rrggbb"`)                              |
 | `[hydra]`             | `enable`, `top-stack-padding`, `color-bookmarks` (bool), `colors` (`true`\|`false`\|list of colors)     |
@@ -231,4 +232,4 @@ mise run test-insta         # golden snapshot tests
 mise run show-golden [name] # render a golden snapshot with ANSI codes live
 ```
 
-Golden snapshots live under `tests/snapshots/`. After intentional output changes run `cargo insta review` to accept the new versions.
+Golden snapshots live under `tests/snapshots/`. After intentional output changes, run `cargo insta review` to accept the new versions.
